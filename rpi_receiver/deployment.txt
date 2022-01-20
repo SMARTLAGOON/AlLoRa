@@ -1,0 +1,4 @@
+In /etc/rc.local is put: 
+sudo su - pi -c "cd /home/pi/Desktop && uvicorn main:app --host 0.0.0.0 --reload-dir /home/pi/Desktop"
+
+
