@@ -1,3 +1,6 @@
+'''
+This class eases the use of a File divided in chunks
+'''
 class File:
 
 
@@ -19,7 +22,7 @@ class File:
         return self.__content
 
 
-    #Largo en bloques, no caracteres
+    #Block length not characters
     def get_length(self):
         return len(self.__chunks)
 

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 
-
+'''
+Parent class for every communication state.
+'''
 class State(ABC):
 
 
@@ -9,5 +11,5 @@ class State(ABC):
 
 
     @abstractmethod
-    def do_action(self, buoy):  # Buoy es el Context
+    def do_action(self, buoy):  # Buoy is the context
         pass

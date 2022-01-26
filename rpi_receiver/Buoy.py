@@ -5,7 +5,10 @@ from File import File
 from states.ProcessChunkState import ProcessChunkState
 from states.RequestDataState import RequestDataState
 
-
+'''
+This class helps to handle senders (buoys) in a handy way.
+It mounts a basic State pattern helping with communication protocol, also saves its state just in case of a blackout or whatever. 
+'''
 class Buoy:
 
 

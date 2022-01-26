@@ -1,3 +1,6 @@
+'''
+Analogous class to Lopy's one but instead of making chunks, this one reassembles them
+'''
 class File:
 
 

@@ -1,4 +1,1 @@
-In /etc/rc.local is put: 
-sudo su - pi -c "cd /home/pi/Desktop && uvicorn main:app --host 0.0.0.0 --reload-dir /home/pi/Desktop"
-
-
+COMPLETE THIS WITH THE NEW WAY, IT MIGHT BE ADDING A DAEMON AT THE STARTUP
