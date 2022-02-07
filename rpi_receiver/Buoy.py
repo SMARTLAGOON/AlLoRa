@@ -1,5 +1,10 @@
+import json
 import os
 import pickle
+import time
+from threading import Thread
+
+import requests
 
 from File import File
 from states.ProcessChunkState import ProcessChunkState
@@ -16,7 +21,9 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
 
-    def __init__(self, mac_address: str):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str):
+        self.__name = name
+        self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address
         self.__next_state = RequestDataState()
         self.__current_file = None
@@ -41,7 +48,6 @@ class Buoy:
 
 
     def __backup(self):
-
         try:
             os.mkdir('application_backup')
         except Exception as e:
@@ -56,3 +62,45 @@ class Buoy:
                 pass
             with open('./{}/{}'.format(self.__mac_address, self.__current_file.get_name()), 'wb') as fp:
                 fp.write(self.__current_file.get_content().encode('utf-8'))
+
+    def sync_remote(self, endpoint: str):
+        def sync(buoy, endpoint: str):
+            while (True):
+                try:
+                    # List directory
+                    file_names = os.listdir('./{}'.format(self.__mac_address))
+                    # Open each file
+                    for f in file_names:
+                        print(f)
+                        with open('./{}/{}'.format(self.__mac_address, f), 'r') as fp:
+                            file_content = json.loads(fp.read())
+                            #This is the Sensingtools format
+                            content_to_upload = list()
+                            for k, v in file_content.items():
+                                content_to_upload.append({"name": self.__name,
+                                                      "lat": self.__coordinates[0],
+                                                      "lon": self.__coordinates[1],
+                                                      "alt": self.__coordinates[2],
+                                                      "sensor_type": k,
+                                                      "value": v,
+                                                      "timestamp": buoy.__current_file.get_timestamp()})
+
+                            print("ENVIANDO", content_to_upload)
+                            status_code = 0
+                            # Not-to-lose-even-one approach
+                            while status_code != 200:
+                                try:
+                                    response = requests.post(url=endpoint, json= content_to_upload)
+                                    status_code = response.status_code
+                                except Exception as e:
+                                    print(e)
+                                finally:
+                                    time.sleep(5) #For not to overload server
+                            os.remove('./{}/{}'.format(self.__mac_address, f))
+                except FileNotFoundError as e:
+                    pass
+
+        thread = Thread(target=sync, args=(self, endpoint,))
+        thread.start()
+
+

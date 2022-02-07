@@ -17,6 +17,7 @@ class ProcessChunkState(State):
 
     def do_action(self, buoy) -> str:
         mac_address = buoy.get_mac_address()
+        
         file = buoy.get_current_file()
         print("process chunk state")
         print("missing chunks", file.get_missing_chunks())
@@ -31,7 +32,10 @@ class ProcessChunkState(State):
             if response != "":
                 new_chunk = response.split(';;;')[1].split(':::')[1].encode()
                 file.add_chunk(next_chunk, new_chunk)
-            return State.PROCESS_CHUNK_STATE # While chunks are left.
-        else:
-            print(file.get_content())
-            return State.REQUEST_DATA_STATE # If chunks are exhausted, it starts over again.
+                
+            # If this chunk was the last one, the cycle is reset
+            if len(file.get_missing_chunks()) <= 0:
+                return State.REQUEST_DATA_STATE
+            
+            # While chunks are left.
+            return State.PROCESS_CHUNK_STATE

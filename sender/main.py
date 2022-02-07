@@ -10,6 +10,7 @@ import socket
 import binascii
 import hashlib
 from File import File
+import uos
 
 
 #We enable the Lora connection socket and garbage collector
@@ -92,6 +93,20 @@ def listen_receiver():
 
 
 '''
+Function for generating realistic JSON
+'''
+def generate_file(file_counter):
+	dissolved_oxygen = uos.urandom(1)[0] % 8 + 8
+	chlorophyll = uos.urandom(1)[0] % 20
+	ph = uos.urandom(1)[0] % 3 + 7
+	temperature = uos.urandom(1)[0] % 30 + 1
+	json = '{"dissolved_oxygen":' + str(dissolved_oxygen) + ', "chlorophyll":' + str(chlorophyll) + ', "pH":' + str(ph) + ', "temperature":' + str(temperature) +'}'
+	print(json)
+	file = File('{}.json'.format(file_counter), json, 200)
+	return file
+
+
+'''
 This function mocks up an existing datalogger
 '''
 def read_datalogger():
@@ -108,12 +123,10 @@ def read_datalogger():
 		if READ_NEW_LOG_FILE == True:
 			if DEBUG == True:
 				print("new log_file")
-			log_file = File("{}.txt".format(file_counter),
-							'{"a": 100, "b": "ewCkbS3QxUxdgPbmm62EYHiAA6izr22JnEkVdFagyKLmFki8SB2wjTXQJckxgtTWZCVBpEVwBKh54KzSz8YwZtchkDMXXDBCpLpTKYXMvT3qqqqqqqqqqqqqqqqqqqqqqqqq1", "tercera": "xxxa98sx79a8s7x998a7sf98u7a9ufy9ahvizuxyvkjxuivhkjwhvuisdhkjhviuxhkvuishvkhsdhjvxc"}'.encode(),
-							200)
+			log_file = generate_file(file_counter)
 			READ_NEW_LOG_FILE = False
 		file_counter += 1
-		time.sleep(5)
+		time.sleep(60)
 
 
 '''

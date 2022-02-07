@@ -1,3 +1,5 @@
+from time import time
+
 '''
 Analogous class to Lopy's one but instead of making chunks, this one reassembles them
 '''
@@ -10,6 +12,13 @@ class File:
         self.__length = length
         self.__content = str()
         self.__missing_chunks = list()
+
+        #Timestamp is not saved along the rest of variables, so in case of network shutdown or something, the record will not respect the timeseries
+        self.__timestamp = int(time() * 1000) #FIXME This is a temporal solution until the datalogger can put a timestamp
+
+
+    def get_timestamp(self):
+        return self.__timestamp
 
 
     def get_name(self):
