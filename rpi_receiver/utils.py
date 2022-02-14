@@ -39,8 +39,8 @@ logger_debug.addHandler(handler)
 logger_error.addHandler(handler)
 
 
-SENDER_API_HOST = "192.168.4.1"
-SENDER_API_PORT = 80
+RECEIVER_API_HOST = "192.168.4.1"
+RECEIVER_API_PORT = 80
 SOCKET_TIMEOUT = 10
 COMMAND_RETRY_SLEEP = 5
 SOCKET_RECV_SIZE = 10000
@@ -51,8 +51,8 @@ SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS = 1
 
 
 def load_config():
-    global SENDER_API_HOST
-    global SENDER_API_PORT
+    global RECEIVER_API_HOST
+    global RECEIVER_API_PORT
     global SOCKET_TIMEOUT
     global COMMAND_RETRY_SLEEP
     global SOCKET_RECV_SIZE
@@ -66,11 +66,11 @@ def load_config():
     config = ConfigParser()
     config.read(os.path.join(os.path.dirname(__file__), './config.ini'))
 
-    SENDER_API_HOST = config.get('sender', 'SENDER_API_HOST')
-    SENDER_API_PORT = config.getint('sender', 'SENDER_API_PORT')
-    SOCKET_TIMEOUT = config.getint('sender', 'SOCKET_TIMEOUT')
-    COMMAND_RETRY_SLEEP = config.getint('sender', 'COMMAND_RETRY_SLEEP')
-    SOCKET_RECV_SIZE = config.getint('sender', 'SOCKET_RECV_SIZE')
+    RECEIVER_API_HOST = config.get('receiver', 'RECEIVER_API_HOST')
+    RECEIVER_API_PORT = config.getint('receiver', 'RECEIVER_API_PORT')
+    SOCKET_TIMEOUT = config.getint('receiver', 'SOCKET_TIMEOUT')
+    COMMAND_RETRY_SLEEP = config.getint('receiver', 'COMMAND_RETRY_SLEEP')
+    SOCKET_RECV_SIZE = config.getint('receiver', 'SOCKET_RECV_SIZE')
     SYNC_REMOTE_FILE_SENDING_TIME_SLEEP = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_TIME_SLEEP')
     SYNC_REMOTE_FILE_SENDING_MAX_RETRIES = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_MAX_RETRIES')
     NEXT_ACTION_TIME_SLEEP = config.getint('general', 'NEXT_ACTION_TIME_SLEEP')
@@ -89,8 +89,8 @@ This function carries out all the communication with receiver's HTTP API.
 Disclaimer: Using Python Requests was unsuccessful. I still do not know why.
 '''
 def send_command(command: str, buoy):
-    global SENDER_API_HOST
-    global SENDER_API_PORT
+    global RECEIVER_API_HOST
+    global RECEIVER_API_PORT
     global SOCKET_TIMEOUT
     global COMMAND_RETRY_SLEEP
     global SOCKET_RECV_SIZE
@@ -101,7 +101,7 @@ def send_command(command: str, buoy):
         try:
             s = socket.socket()
             s.setblocking(True)
-            addr = socket.getaddrinfo(SENDER_API_HOST, SENDER_API_PORT)[0][-1]
+            addr = socket.getaddrinfo(RECEIVER_API_HOST, RECEIVER_API_PORT)[0][-1]
             s.settimeout(SOCKET_TIMEOUT)
             s.connect(addr)
 
@@ -110,7 +110,7 @@ def send_command(command: str, buoy):
                                   "buoy_mac_address": buoy.get_mac_address()})
 
             httpreq = 'POST {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}'.format(
-                "/send-command", SENDER_API_HOST, len(content), content).encode('utf-8')
+                "/send-command", RECEIVER_API_HOST, len(content), content).encode('utf-8')
 
 
             ready_to_read, ready_to_write, in_error = select.select([],

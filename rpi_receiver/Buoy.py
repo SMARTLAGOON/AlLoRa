@@ -4,10 +4,7 @@ import pickle
 import time
 from json.decoder import JSONDecodeError
 from multiprocessing.context import Process
-from threading import Thread
-
 import requests
-
 import utils
 from File import File
 from states.ProcessChunkState import ProcessChunkState

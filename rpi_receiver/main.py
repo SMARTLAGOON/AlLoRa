@@ -1,6 +1,5 @@
 import pickle
 import time
-
 import utils
 from Buoy import Buoy
 
@@ -45,7 +44,4 @@ if __name__ == "__main__":
     while (True):
         for buoy in buoys:
             buoy.do_next_action()
-            time.sleep(1)
-
-
-
+            time.sleep(utils.NEXT_ACTION_TIME_SLEEP)
