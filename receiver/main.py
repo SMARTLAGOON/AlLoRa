@@ -5,6 +5,7 @@ from network import WLAN
 import pycom
 import lora_handler
 import gc
+import ujson
 
 #Enable garbage collector
 gc.enable()
@@ -19,31 +20,34 @@ DEBUG = True
 This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
 '''
 def client_thread(clientsocket):
-	global DEBUG
+	try:
+		global DEBUG
 
-    # Receive maximum of 4096 bytes from the client (nothing special with this number)
-	r = clientsocket.recv(4096)
+	    # Receive maximum of 4096 bytes from the client (nothing special with this number)
+		r = clientsocket.recv(4096)
 
-	# If recv() returns with 0 the other end closed the connection
-	if len(r) == 0:
-	    clientsocket.close()
-	    return
-	else:
-	    if DEBUG == True:
-	    	print("Received: {}".format(str(r)))
+		# If recv() returns with 0 the other end closed the connection
+		if len(r) == 0:
+		    clientsocket.close()
+		    return
+		else:
+		    if DEBUG == True:
+		    	print("Received: {}".format(str(r)))
 
-	http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
+		http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
 
-	if "POST /send-command "in str(r):
-		response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
+		if "POST /send-command "in str(r):
+			response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
 
-		#Response to the sender (buoy)
-		buoy_response = lora_handler.send_command(response_json['command'], response_json['buoy_mac_address'])
+			#Response to the sender (buoy)
+			buoy_response = lora_handler.send_command(response_json['command'], response_json['buoy_mac_address'])
 
-		json_buoy_response = ujson.dumps({"command_response": buoy_response})
-		if DEBUG == True:
-			print("HTTP", json_buoy_response)
-		clientsocket.send(http + json_buoy_response)
+			json_buoy_response = ujson.dumps({"command_response": buoy_response})
+			if DEBUG == True:
+				print("HTTP", json_buoy_response)
+			clientsocket.send(http + json_buoy_response)
+	except Exception as e:
+		print(e)
 	# Close the socket and terminate the thread
 	clientsocket.close()
 

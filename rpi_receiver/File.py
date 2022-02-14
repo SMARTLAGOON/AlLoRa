@@ -9,7 +9,7 @@ class File:
     def __init__(self, name: str, length: int):
         self.__name = name
         self.__chunks = dict()
-        self.__length = length
+        self.__length = length # Length in chunks
         self.__content = str()
         self.__missing_chunks = list()
 

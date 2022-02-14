@@ -58,9 +58,9 @@ This function broadcasts a message
 '''
 def send_command(command, buoy_mac_address):
 	global DEBUG
-	
-    socket.setblocking(False)
+
+	socket.setblocking(False)
 	if DEBUG == True:
-    	print("SEND_COMMAND() || command: {}".format(command))
-    socket.send(command.encode())
-    return wait_sender_data(buoy_mac_address)
+		print("SEND_COMMAND() || command: {}".format(command))
+	socket.send(command.encode())
+	return wait_sender_data(buoy_mac_address)

@@ -1,3 +1,4 @@
+import utils
 from states.State import State
 from utils import send_command
 
@@ -16,19 +17,19 @@ class ProcessChunkState(State):
 
 
     def do_action(self, buoy) -> str:
+        utils.logger_debug.debug("Buoy {} ProcessChunkState command: {}".format(buoy.get_name(), self.__command))
         mac_address = buoy.get_mac_address()
         
         file = buoy.get_current_file()
-        print("process chunk state")
-        print("missing chunks", file.get_missing_chunks())
+        utils.logger_debug.debug("Buoy {} Missing chunks: {}".format(buoy.get_name(), file.get_missing_chunks()))
 
         # While there are chunks...
         if len(file.get_missing_chunks()) > 0:
             # It may be any, but we keep an order, so not.
             next_chunk = file.get_missing_chunks()[0]
-            print("pcs", self.__command.format(mac_address, next_chunk))
-            response = send_command(self.__command.format(mac_address, next_chunk), mac_address)
-            print("pcs response", response)
+            utils.logger_debug.debug("Buoy {} Next chunk command: {}".format(buoy.get_name(), self.__command.format(mac_address, next_chunk)))
+            response = send_command(command=self.__command.format(mac_address, next_chunk), buoy=buoy)
+            utils.logger_debug.debug("Buoy {} Response: {}".format(buoy.get_name(), response))
             if response != "":
                 new_chunk = response.split(';;;')[1].split(':::')[1].encode()
                 file.add_chunk(next_chunk, new_chunk)
