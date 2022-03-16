@@ -32,23 +32,10 @@ Once the rpi_receiver knows those metadata, it elaborates a bunch of requests un
 
 When rpi_receiver has finished fetching all the chunks, it reassembles and saves the data file and the process starts over.
 
-## Running an example
-The project structure is divided in three folders:
+# Running an example
+> You can also follow this instructions [here...](https://barratia.notion.site/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
 
-__sender:__ Pycom Lopy 4 code for buoy side.
-
-__receiver:__ Pycom Lopy 4 code for land side.
-
-__rpi_receiver:__ Raspberry Pi code for land side.
-
-
-## Hardware Setup:
-
-The following section looks so much better [here...](https://barratia.notion.site/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
-<details>
-<summary><b><u> But you can check the same content by opening this toggle </u></b></summary>
-
-## Hardware Requirements
+### Hardware Requirements
 
 - [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
 - 2 [Lopy4](https://pycom.io/product/lopy4/)
@@ -56,7 +43,16 @@ The following section looks so much better [here...](https://barratia.notion.sit
 - [Pygate 868](https://pycom.io/product/pygate/)
 - [Power over Ehternet (PoE) Adapter](https://pycom.io/product/power-over-ethernet-adapter/)
 
-## Setup:
+The project structure is divided in three folders (one per device...):
+
+- __sender:__ Pycom Lopy 4 code for buoy side.
+
+- __receiver:__ Pycom Lopy 4 code for land side.
+
+- __rpi_receiver:__ Raspberry Pi code for land side.
+
+
+### Setup:
 
 Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware) or clone the repo.
 
@@ -295,7 +291,6 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
     ```
 
     If everything is ok, the RP4 should start receiving data from the receiver (and the receiver from the sender) and create a folder with the MAC address of the receiver and register the received data inside.
-</details>
 
 ## rpi_receiver configurations
 
