@@ -41,75 +41,251 @@ __receiver:__ Pycom Lopy 4 code for land side.
 
 __rpi_receiver:__ Raspberry Pi code for land side.
 
-### What are we going to need?
 
-#### Devices:
-- x2 Pycom Lopy4 devices with their USB cables.
-- x1 Raspberry Pi with Raspbian 32bit as OS and Python 3.8 installed.
+# Hardware Setup:
 
-#### Software:
-To manipulate Pycom devices will be necessary to install either Visual Studio Code or Atom. _(For this tutorial Atom on Linux was chosen)_
-In Atom it is required to install the PyMakr module going to Edit -> Preferences -> Packages.
+## Hardware Requirements
 
-Pycom Firmware Tool will be useful in cases where Lopy get hanged or simply a firmware customization is required, which will be the case.
+- [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
+- 2 [Lopy4](https://pycom.io/product/lopy4/)
+- [Pysense 2.0 X](https://pycom.io/product/pysense-2-0-x/)
+- [Pygate 868](https://pycom.io/product/pygate/)
+- [Power over Ehternet (PoE) Adapter](https://pycom.io/product/power-over-ethernet-adapter/)
 
-For the Raspberry Pi side Pycharm IDE from Jetbrains will be used along with Python 3.8.
+## Setup:
 
-### Preparing the Raspberry Pi
+Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware) or clone the repo.
 
-Raspberry Pi will be who leads the communications, will be referred as "rpi_receiver" hereinafter.
+### Lopy4 + Pygate (sender) & Lopy4 + Pysense 2.0 X (receiver)
 
-1. Load the __rpi_receiver__ folder into rpi_receiver.
-2. Install Python3.8 dependencies using the command _pip install -r requirements.txt_
-3. As rpi_receiver will need to stay connected to two networks, giving one of them Internet connection, Ethernet port will be used to keep rpi_receiver connected to Internet; the built-in Wi-Fi adapter will be used to stay connected to one Lopy 4.
+- 1. Updating the expansion boards (Pysense 2.0 X and Pygate)
+    1. Follow this:
 
-_(Next steps have to wait for Lopy4 to be ready)_
-4. Connect rpi_receiver to Lopy4's Wi-Fi hotspot called "smartlagoon". _(Note that both, SSID and key are hardcoded until the date, so looking into receiver/boot.py will reveal the information)_
-5. Start the rpi_receiver main.py either using console command _python3.8 main.py_ or pressing Play button in Thonny, the Python editor included in Raspbian.
+        [Updating Expansion Board Firmware](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html)
 
-### Preparing Lopy4 receiver
+        - TL;DR ⚡️
 
-This Lopy4 will act as a package forwarder between rpi_receiver and buoy senders. Will be called _receiver_ hereinafter.
+            <aside>
+            ⚠️ You should remove the LoPy4 from the board for this step, we are only working with the Pysense 2 and the Pygate
 
-Assuming Atom with Pymakr module is installed along with Pycom Firmware Tool _(PFT hereinafter)_:
+            </aside>
 
-1. It is needed to install the firmware __1.19.0b4(legacy)__ using PFT. As far as I know, Wi-Fi hotspot along with LoRa only works well under this version.
+            1. Download this:
 
-  1.1. Select the serial device port and type "legacy" on the dropdown lists on the PFT startup screen.
+                • **[Pysense 2 DFU](https://software.pycom.io/findupgrade?key=pysense2.dfu&type=all&redirect=true)**
 
-  1.2. Check "Erase during update" checkbox and the correct firmware version.
+                • **[Pygate](https://software.pycom.io/findupgrade?key=pygate.dfu&type=all&redirect=true)**
 
-  ![PFT screenshot](./readme_assets/1.png)
+            2. Install dfu-util:
+                - MacOs
 
-2. Ensure your serial communications under Linux works permissionless following [this tutorial](https://websistent.com/fix-serial-port-permission-denied-errors-linux/).
+                    ```bash
+                    brew install dfu-util
+                    ```
 
-3. Load __receiver__ folder content into Lopy as showed below:
+                - Linux
 
-  3.1. Select the serial device.
+                    ```bash
+                    sudo apt-get install dfu-util
+                    ```
 
-  ![Atom PyMakr screenshot](./readme_assets/2.png)
+                - Windows
 
-  3.2. Upload the code.
+                    Harder, follow the [official explanation](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html) or check-out this video:
 
-  ![Atom PyMakr screenshot](./readme_assets/3.png)
+                    [https://www.youtube.com/watch?v=FkycTZvj-ss](https://www.youtube.com/watch?v=FkycTZvj-ss)
 
-The code will start on boot every time you give power to Lopy4.
+            3. Use dfu-util to update each expansion board
 
-4. Lopy4 will deploy a Wi-Fi hotspot as mentioned before, now is the moment to connect the rpi_receiver to it, for the rest of times this connection will occur automatically.
+                Write this in the terminal
 
-### Preparing Lopy4 sender (Buoy)
+                - MacOs and Linux
+                    - Update Pysense 2:
 
-This Lopy4 will send under demand the data rpi_receiver requests through receiver.
+                        ```bash
+                        sudo dfu-util -D pysense2_v16.dfu #This name will change with new versions, match it...
+                        ```
 
-1. Perform the same first step as with the receiver and load the firmware.
-2. Load __sender__ folder content into Lopy in the same way as with the receiver.
+                    - Update Pygate:
 
-The code will start on boot every time you give power to Lopy4.
+                        ```bash
+                        sudo dfu-util -D pygate_v13_1049665.dfu #This name will change with new versions, match it...
+                        ```
 
-### Running the example
+                - Windows
+                    - Update Pysense 2:
 
-Run the code on rpi_receiver, plug the Lopys and wait. Finally after waiting several seconds, received data will begin to be written inside the __rpi_receiver__ folder under specific folders by sender's MACs.
-The received content is saved in folders under the project folder, named by source MAC address.
+                        ```bash
+                        dfu-util-static.exe -D #This name will change with new versions, match it...
+                        ```
+
+                    - Update Pygate:
+
+                        ```bash
+                        dfu-util-static.exe -D #This name will change with new versions, match it...
+                        ```
+
+
+                Connect the expansion board to your computer while pressing the DFU button (toggle to check where it is depending of the board...)
+
+                - Pysense 2
+
+                    ![Untitled](readme_assets/Untitled.png)
+
+                - Pygate
+
+                    ![Untitled](readme_assets/Untitled%201.png)
+
+
+                Wait 1 second, release the DFU button and press enter in the terminal to run the code.
+
+                As a result, you should expect something like this:
+
+                ![Untitled](readme_assets/Untitled%202.png)
+
+            4. Check it with:
+
+                ```bash
+                lsusb
+                ```
+
+                You should expect something like this:
+
+                ```bash
+                Bus 000 Device 001: ID 04d8:f012 Microchip Technology Inc. Pysense  Serial: Py8d245e
+                ```
+
+- 2. Update the Lopy4’s
+    1. Download the Pycom Firmware Tool from:
+
+        [Updating Device Firmware](https://docs.pycom.io/updatefirmware/device/)
+
+    2. Download this legacy firmware: [LoPy4-1.19.0.b4.tar.gz](https://software.pycom.io/downloads/LoPy4-1.19.0.b4.tar.gz)
+        - (You can find it here)
+
+            [Firmware Downgrade](https://docs.pycom.io/advance/downgrade/)
+
+    3. Connect each LoPy4 to it’s respective Expansion Board (The LED side of the LoPy should be facing the USB port of the expansion board) ant then plug it on your computer
+    4. Open Pycom Firmware Tool and press continue 2 times to get to the “Communication” section
+    5. Select the port and the speed (for me 115200 worked ok), select the “Show Advanced Settings” checkbox and select “Flash from local file” and locate the firmware that we downloaded a few steps before (LoPy4-1.19.0.b4.tar.gz).
+    6. Select the Erase flash file system and Force update LoRa region and press continue
+    7. In the LoRa region selection select your country or region to establish your LoRa frequency.
+    8. Press “Done” and it should start updating
+    9. Repeat this step with the other LoPy4 with it’s respective expansion board...
+- 3. Setting the environment
+
+    [documentation](https://docs.pycom.io/gettingstarted/software/)
+
+    We’ll need to upload the programs using PyMakr, a library that can be installed into [VS Code](https://code.visualstudio.com/) and [Atom](https://atom.io/) (I will refer to them as [IDE](https://en.wikipedia.org/wiki/Integrated_development_environment))
+
+    <aside>
+    ⚠️ I’m personally using an M1 Pro Macbook Pro and Atom with PyMakr and it’s working fine for me.
+
+    </aside>
+
+    - Here is the official Pycom guide to using Atom + PyMakr:
+
+        [Atom](https://docs.pycom.io/gettingstarted/software/atom/)
+
+    - If you want to use VS Code, here are the official Pycom instructions:
+
+        [Visual Studio Code](https://docs.pycom.io/gettingstarted/software/vscode/)
+
+
+    Once you have everything installed and working, you should be able to connect your LoPy4 + expansion board (Pygate  and Pysense 2.0 X for the sender and the receiver respectively) to your computer using an USB cable and PyMakr should recognise it.
+
+- 4. Uploading and running the code
+
+    ### Sender:
+
+    1.  Open the sender folder of the repo in your IDE
+    2. Connect your LoPy4 + Pygate to your computer. PyMakr should recognise it and show you something like this:
+
+        ![Untitled](readme_assets/Untitled%203.png)
+
+        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+
+            ![Untitled](readme_assets/Untitled%204.png)
+
+    3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+
+        ![Untitled](readme_assets/Untitled%205.png)
+
+        With this, the code will boot automatically each time the LoPy4 is on.
+
+    4. If everything is ok, you should see something like this on the terminal:
+
+        ![Untitled](readme_assets/Untitled%206.png)
+
+        Register your LoPy4’s MAC Address (we will use it later...), in this example mine is: 70b3d5499973b469
+
+
+    ### Receiver:
+
+    <aside>
+    ✌🏻 The process is exactly the same that for the [sender](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2), but changing the project folder... (and [steps #4](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2) and [#5](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2))
+
+    </aside>
+
+    1.  Open the receiver folder of the repo in your IDE
+    2. Connect your LoPy4 + PySense 2.0 X to your computer. PyMakr should recognise it and show you something like this:
+
+        ![Untitled](readme_assets/Untitled%203.png)
+
+        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+
+            ![Untitled](readme_assets/Untitled%204.png)
+
+    3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+
+        ![Untitled](readme_assets/Untitled%205.png)
+
+        With this, the code will boot automatically each time the LoPy4 is on.
+
+    4. If everything is ok, you should see something like this on the terminal:
+
+        ![Untitled](readme_assets/Untitled%207.png)
+
+    5. Open the boot file and check line number #9:
+
+        ![Untitled](readme_assets/Untitled%208.png)
+
+         Those are the SSID and Password of the Lopy4's Wi-Fi hotspot, we will need this info in order to [connect the Raspberry Pi 4 to it late](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
+
+
+### Raspberry Pi 4 (RPI_Receiver)
+
+1. Setup your Raspberry Pi 4 with [Raspberry Pi OS 32bit](https://www.raspberrypi.com/software/) and [install Python 3.8.](https://itheo.tech/install-python-38-on-a-raspberry-pi)
+2. Download the rpi_receiver folder from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware)
+3. Install Python3.8 dependencies using:
+
+    ```bash
+    sudo python3.8 pip install -r requirements.txt
+    ```
+
+
+## Running the code:
+
+1. Power on everything ⚡️ (The LoPy4’s and the Raspberry Pi 4). Both LoPy4’s should start booting their code automatically if all the previous steps were successful.
+2. Connect the RP4 to internet using its Ethernet Port.
+3. Open the Wi-Fi settings in the RP4 and connect to the receiver’s [Wi-Fi hotspot](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
+4. Go to the [rpi_receiver](https://github.com/SMARTLAGOON/BuoySoftware/tree/main/rpi_receiver) folder in the Raspberry Pi 4 and open the terminal (we will use it soon...)
+5. Open and edit the [buoy-list.json](https://github.com/SMARTLAGOON/BuoySoftware/blob/main/rpi_receiver/buoy-list.json), leave only one buoy and change the mac_address to the one that we found previously [here](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2).
+
+    You can change the name and other properties If you want to.
+
+    <aside>
+    🛠 If you want to add other devices (other buoys), you should add them manually in this JSON file.
+
+    </aside>
+
+6. With everything ready, run the [main.py](https://github.com/SMARTLAGOON/BuoySoftware/blob/main/rpi_receiver/main.py) in the RP4 like this:
+
+    ```bash
+    python3.8 main.py
+    ```
+
+    If everything is ok, the RP4 should start receiving data from the receiver (and the receiver from the sender) and create a folder with the MAC address of the receiver and register the received data inside.
 
 
 ## rpi_receiver configurations
