@@ -42,7 +42,11 @@ __receiver:__ Pycom Lopy 4 code for land side.
 __rpi_receiver:__ Raspberry Pi code for land side.
 
 
-# Hardware Setup:
+## Hardware Setup:
+
+The following section looks so much better [here...](https://barratia.notion.site/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
+<details>
+<summary><b><u> But you can check the same content by opening this toggle </u></b></summary>
 
 ## Hardware Requirements
 
@@ -56,114 +60,117 @@ __rpi_receiver:__ Raspberry Pi code for land side.
 
 Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware) or clone the repo.
 
-### Lopy4 + Pygate (sender) & Lopy4 + Pysense 2.0 X (receiver)
+<details>
+<summary><b><u>Lopy4 + Pygate (sender) & Lopy4 + Pysense 2.0 X (receiver)</u></b></summary>
 
-- 1. Updating the expansion boards (Pysense 2.0 X and Pygate)
-    1. Follow this:
+    
+*   <details>
+    <summary><b>1. Updating the expansion boards (Pysense 2.0 X and Pygate)</b></summary>
+ 
+    
+    Follow this: [Updating Expansion Board Firmware](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html)
 
-        [Updating Expansion Board Firmware](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html)
+    * <details>
+      <summary><b><i>TL;DR ⚡ </i></b></summary>
 
-        - TL;DR ⚡️
+      >    
+      > ⚠️ You should remove the LoPy4 from the board for this step, we are only working with the Pysense 2 and the Pygate
+      >
 
-            <aside>
-            ⚠️ You should remove the LoPy4 from the board for this step, we are only working with the Pysense 2 and the Pygate
+        1. Download this:
 
-            </aside>
+            • **[Pysense 2 DFU](https://software.pycom.io/findupgrade?key=pysense2.dfu&type=all&redirect=true)**
 
-            1. Download this:
+            • **[Pygate](https://software.pycom.io/findupgrade?key=pygate.dfu&type=all&redirect=true)**
 
-                • **[Pysense 2 DFU](https://software.pycom.io/findupgrade?key=pysense2.dfu&type=all&redirect=true)**
-
-                • **[Pygate](https://software.pycom.io/findupgrade?key=pygate.dfu&type=all&redirect=true)**
-
-            2. Install dfu-util:
-                - MacOs
-
-                    ```bash
-                    brew install dfu-util
-                    ```
-
-                - Linux
-
-                    ```bash
-                    sudo apt-get install dfu-util
-                    ```
-
-                - Windows
-
-                    Harder, follow the [official explanation](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html) or check-out this video:
-
-                    [https://www.youtube.com/watch?v=FkycTZvj-ss](https://www.youtube.com/watch?v=FkycTZvj-ss)
-
-            3. Use dfu-util to update each expansion board
-
-                Write this in the terminal
-
-                - MacOs and Linux
-                    - Update Pysense 2:
-
-                        ```bash
-                        sudo dfu-util -D pysense2_v16.dfu #This name will change with new versions, match it...
-                        ```
-
-                    - Update Pygate:
-
-                        ```bash
-                        sudo dfu-util -D pygate_v13_1049665.dfu #This name will change with new versions, match it...
-                        ```
-
-                - Windows
-                    - Update Pysense 2:
-
-                        ```bash
-                        dfu-util-static.exe -D #This name will change with new versions, match it...
-                        ```
-
-                    - Update Pygate:
-
-                        ```bash
-                        dfu-util-static.exe -D #This name will change with new versions, match it...
-                        ```
-
-
-                Connect the expansion board to your computer while pressing the DFU button (toggle to check where it is depending of the board...)
-
-                - Pysense 2
-
-                    ![Untitled](readme_assets/Untitled.png)
-
-                - Pygate
-
-                    ![Untitled](readme_assets/Untitled%201.png)
-
-
-                Wait 1 second, release the DFU button and press enter in the terminal to run the code.
-
-                As a result, you should expect something like this:
-
-                ![Untitled](readme_assets/Untitled%202.png)
-
-            4. Check it with:
+        2. Install dfu-util:
+            - MacOs
 
                 ```bash
-                lsusb
+                brew install dfu-util
                 ```
 
-                You should expect something like this:
+            - Linux
 
                 ```bash
-                Bus 000 Device 001: ID 04d8:f012 Microchip Technology Inc. Pysense  Serial: Py8d245e
+                sudo apt-get install dfu-util
                 ```
 
-- 2. Update the Lopy4’s
-    1. Download the Pycom Firmware Tool from:
+            - Windows
 
-        [Updating Device Firmware](https://docs.pycom.io/updatefirmware/device/)
+                Harder, follow the [official explanation](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html) or check-out this video:
+
+                [https://www.youtube.com/watch?v=FkycTZvj-ss](https://www.youtube.com/watch?v=FkycTZvj-ss)
+
+        3. Use dfu-util to update each expansion board
+
+            Write this in the terminal
+
+            - MacOs and Linux
+                - Update Pysense 2:
+
+                    ```bash
+                    sudo dfu-util -D pysense2_v16.dfu #This name will change with new versions, match it...
+                    ```
+
+                - Update Pygate:
+
+                    ```bash
+                    sudo dfu-util -D pygate_v13_1049665.dfu #This name will change with new versions, match it...
+                    ```
+
+            - Windows
+                - Update Pysense 2:
+
+                    ```bash
+                    dfu-util-static.exe -D #This name will change with new versions, match it...
+                    ```
+
+                - Update Pygate:
+
+                    ```bash
+                    dfu-util-static.exe -D #This name will change with new versions, match it...
+                    ```
+
+
+            Connect the expansion board to your computer while pressing the DFU button (toggle to check where it is depending of the board...)
+
+            - Pysense 2
+
+                ![Untitled](readme_assets/Untitled.png)
+
+            - Pygate
+
+                ![Untitled](readme_assets/Untitled%201.png)
+
+
+            Wait 1 second, release the DFU button and press enter in the terminal to run the code.
+
+            As a result, you should expect something like this:
+
+            ![Untitled](readme_assets/Untitled%202.png)
+
+        4. Check it with:
+
+            ```bash
+            lsusb
+            ```
+
+            You should expect something like this:
+
+            ```bash
+            Bus 000 Device 001: ID 04d8:f012 Microchip Technology Inc. Pysense  Serial: Py8d245e
+            ```
+    </details>
+*   <details>
+    <summary><b>2. Update the Lopy4’s </b></summary>
+ 
+    
+
+    1. Download the Pycom Firmware Tool from: [Updating Device Firmware](https://docs.pycom.io/updatefirmware/device/)
 
     2. Download this legacy firmware: [LoPy4-1.19.0.b4.tar.gz](https://software.pycom.io/downloads/LoPy4-1.19.0.b4.tar.gz)
-        - (You can find it here)
-
-            [Firmware Downgrade](https://docs.pycom.io/advance/downgrade/)
+        - (You can find it here) [Firmware Downgrade](https://docs.pycom.io/advance/downgrade/)
 
     3. Connect each LoPy4 to it’s respective Expansion Board (The LED side of the LoPy should be facing the USB port of the expansion board) ant then plug it on your computer
     4. Open Pycom Firmware Tool and press continue 2 times to get to the “Communication” section
@@ -172,88 +179,90 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
     7. In the LoRa region selection select your country or region to establish your LoRa frequency.
     8. Press “Done” and it should start updating
     9. Repeat this step with the other LoPy4 with it’s respective expansion board...
-- 3. Setting the environment
+    </details>
 
-    [documentation](https://docs.pycom.io/gettingstarted/software/)
+*   <details>
+    <summary><b>3. Setting the environment</b></summary>
+
+    Here is the official [documentation](https://docs.pycom.io/gettingstarted/software/) for this step.
 
     We’ll need to upload the programs using PyMakr, a library that can be installed into [VS Code](https://code.visualstudio.com/) and [Atom](https://atom.io/) (I will refer to them as [IDE](https://en.wikipedia.org/wiki/Integrated_development_environment))
 
-    <aside>
-    ⚠️ I’m personally using an M1 Pro Macbook Pro and Atom with PyMakr and it’s working fine for me.
+    
+    > ⚠️ I’m personally using an M1 Pro Macbook Pro and Atom with PyMakr and it’s working fine for me.
 
-    </aside>
 
-    - Here is the official Pycom guide to using Atom + PyMakr:
+    - Here is the official Pycom guide to using Atom + PyMakr: [Atom](https://docs.pycom.io/gettingstarted/software/atom/)
 
-        [Atom](https://docs.pycom.io/gettingstarted/software/atom/)
-
-    - If you want to use VS Code, here are the official Pycom instructions:
-
-        [Visual Studio Code](https://docs.pycom.io/gettingstarted/software/vscode/)
+    - If you want to use VS Code, here are the official Pycom instructions: [Visual Studio Code](https://docs.pycom.io/gettingstarted/software/vscode/)
 
 
     Once you have everything installed and working, you should be able to connect your LoPy4 + expansion board (Pygate  and Pysense 2.0 X for the sender and the receiver respectively) to your computer using an USB cable and PyMakr should recognise it.
+    </details>
+*   <details>
+    <summary><b>4. Uploading and running the code</b></summary>
 
-- 4. Uploading and running the code
+    *   <details>
+        <summary><b>Sender</b></summary>
 
-    ### Sender:
+        1.  Open the sender folder of the repo in your IDE
+        2. Connect your LoPy4 + Pygate to your computer. PyMakr should recognise it and show you something like this:
 
-    1.  Open the sender folder of the repo in your IDE
-    2. Connect your LoPy4 + Pygate to your computer. PyMakr should recognise it and show you something like this:
+            ![Untitled](readme_assets/Untitled%203.png)
 
-        ![Untitled](readme_assets/Untitled%203.png)
+            - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
 
-        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+                ![Untitled](readme_assets/Untitled%204.png)
 
-            ![Untitled](readme_assets/Untitled%204.png)
+        3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
 
-    3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+            ![Untitled](readme_assets/Untitled%205.png)
 
-        ![Untitled](readme_assets/Untitled%205.png)
+            With this, the code will boot automatically each time the LoPy4 is on.
 
-        With this, the code will boot automatically each time the LoPy4 is on.
+        4. If everything is ok, you should see something like this on the terminal:
 
-    4. If everything is ok, you should see something like this on the terminal:
+            ![Untitled](readme_assets/Untitled%206.png)
 
-        ![Untitled](readme_assets/Untitled%206.png)
+            Register your LoPy4’s MAC Address (we will use it later...), in this example mine is: 70b3d5499973b469
 
-        Register your LoPy4’s MAC Address (we will use it later...), in this example mine is: 70b3d5499973b469
+        </details>
+    *   <details>
+        <summary><b>Receiver:</b></summary>
 
+    
+        >✌🏻 The process is exactly the same that for the [sender](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2), but changing the project folder... (and [steps #4](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2) and [#5](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2))
 
-    ### Receiver:
+        1.  Open the receiver folder of the repo in your IDE
+        2. Connect your LoPy4 + PySense 2.0 X to your computer. PyMakr should recognise it and show you something like this:
 
-    <aside>
-    ✌🏻 The process is exactly the same that for the [sender](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2), but changing the project folder... (and [steps #4](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2) and [#5](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2))
+            ![Untitled](readme_assets/Untitled%203.png)
 
-    </aside>
+            - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
 
-    1.  Open the receiver folder of the repo in your IDE
-    2. Connect your LoPy4 + PySense 2.0 X to your computer. PyMakr should recognise it and show you something like this:
+                ![Untitled](readme_assets/Untitled%204.png)
 
-        ![Untitled](readme_assets/Untitled%203.png)
+        3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
 
-        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+            ![Untitled](readme_assets/Untitled%205.png)
 
-            ![Untitled](readme_assets/Untitled%204.png)
+            With this, the code will boot automatically each time the LoPy4 is on.
 
-    3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+        4. If everything is ok, you should see something like this on the terminal:
 
-        ![Untitled](readme_assets/Untitled%205.png)
+            ![Untitled](readme_assets/Untitled%207.png)
 
-        With this, the code will boot automatically each time the LoPy4 is on.
+        5. Open the boot file and check line number #9:
 
-    4. If everything is ok, you should see something like this on the terminal:
+            ![Untitled](readme_assets/Untitled%208.png)
 
-        ![Untitled](readme_assets/Untitled%207.png)
+             Those are the SSID and Password of the Lopy4's Wi-Fi hotspot, we will need this info in order to [connect the Raspberry Pi 4 to it late](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
+        </details>
+    </details>
+ </details>
 
-    5. Open the boot file and check line number #9:
-
-        ![Untitled](readme_assets/Untitled%208.png)
-
-         Those are the SSID and Password of the Lopy4's Wi-Fi hotspot, we will need this info in order to [connect the Raspberry Pi 4 to it late](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
-
-
-### Raspberry Pi 4 (RPI_Receiver)
+<details>
+ <summary><b><u>Raspberry Pi 4 (RPI_Receiver)</u></b></summary>
 
 1. Setup your Raspberry Pi 4 with [Raspberry Pi OS 32bit](https://www.raspberrypi.com/software/) and [install Python 3.8.](https://itheo.tech/install-python-38-on-a-raspberry-pi)
 2. Download the rpi_receiver folder from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware)
@@ -262,7 +271,7 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
     ```bash
     sudo python3.8 pip install -r requirements.txt
     ```
-
+</details>
 
 ## Running the code:
 
@@ -286,7 +295,7 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
     ```
 
     If everything is ok, the RP4 should start receiving data from the receiver (and the receiver from the sender) and create a folder with the MAC address of the receiver and register the received data inside.
-
+</details>
 
 ## rpi_receiver configurations
 
