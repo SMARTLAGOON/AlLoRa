@@ -15,7 +15,7 @@ import uos
 
 #We enable the Lora connection socket and garbage collector
 gc.enable()
-lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
+lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)	#sf=7
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 socket.setblocking(False)
 
@@ -23,7 +23,7 @@ socket.setblocking(False)
 MAC = binascii.hexlify(network.LoRa().mac())
 
 #Controls logging messages
-DEBUG = False
+DEBUG = True
 
 #Thread exit flag
 THREAD_EXIT = False
@@ -31,6 +31,10 @@ THREAD_EXIT = False
 #datalogger mockup
 READ_NEW_LOG_FILE = True
 log_file = None
+
+# For testing
+sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+len_list = len(sizes)
 
 '''
 This function prints the signal strength of the last received package over LoRa
@@ -64,8 +68,12 @@ def handle_command(command, type):
 	if type == "request-data-info":
 		READ_NEW_LOG_FILE = True #It allows to load the next one
 		response = "MAC:::{};;;LENGTH:::{};;;FILENAME:::{}".format(MAC.decode('utf-8'), log_file.get_length(), log_file.get_name()).encode()
+		if log_file:
+			t_file(log_file.get_name(), False)
 	elif type == "chunk-":
 		requested_chunk = int(command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
+		if DEBUG == True:
+			print("RC: {}".format(requested_chunk))
 		response = "MAC:::{};;;CHUNK:::{}".format(MAC.decode('utf-8'), log_file.get_chunk(requested_chunk)).encode()
 
 	socket.send(response)
@@ -106,16 +114,37 @@ def generate_file(file_counter):
 	return file
 
 # For testing
-def read_file(file_counter):
+def read_file(file_counter, chunk_size):
 	#with open('files/file_150kb', 'rb') as f:	#For now sending 1k
     	#content = f.read()
-	f = open('files/file_150kb')
+	global sizes
+	global len_list
+	size = sizes[file_counter%len_list]
+	f = open('files/file_{}kb'.format(size))
 	content = f.read()
 	f.close()
-	#print(content)
-	file = File('{}.json'.format(file_counter), content, 200)
+	if DEBUG == True:
+		print("Going to send {} kb file...".format(size))
+	file = File('{}.json'.format(size), content, chunk_size)
 	#print("150kb")
 	return file
+
+def t_file(file, t0_tf):
+	t = time.time()
+	print("SAVING!")
+	test_log = open('log.txt', "ab")
+	if t0_tf:
+		test_log.write("{}: t0 -> {}".format(file, t))
+	else:
+		test_log.write("-> {}\n".format(t))
+	test_log.close()
+	return t
+
+def clean_t_file():
+	test_log = open('log.txt', "wb")
+	test_log.write("")
+	test_log.close()
+
 
 
 '''
@@ -128,6 +157,7 @@ def read_datalogger():
 	global DEBUG
 
 	file_counter = 0
+	chunk_size = 200	# Variable
 	while (True):
 		if THREAD_EXIT == True:
 			break
@@ -135,16 +165,22 @@ def read_datalogger():
 		if READ_NEW_LOG_FILE == True:
 			if DEBUG == True:
 				print("new log_file")
-			log_file = read_file(file_counter)	#generate_file
+			log_file = read_file(file_counter, chunk_size)	#generate_file
 			READ_NEW_LOG_FILE = False
+			t_file(log_file.get_name(), True)
+			pycom.rgbled(0x007f00) # green
+			time.sleep(1)
+			pycom.rgbled(0x000000)
 		file_counter += 1
 		time.sleep(60)
+
 
 
 '''
 This function starts the datalogger mockup and keeps a loop waiting for messages.
 '''
 if __name__ == "__main__":
+	clean_t_file()	#Dangerous!
 	_thread.start_new_thread(read_datalogger, ())
 	try:
 		while (True):
