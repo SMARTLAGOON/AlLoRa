@@ -1,7 +1,7 @@
 
 def file_with_size(size):
     with open(f'file_{size}kb', 'wb') as f:
-        num_chars = 1_000 * size    #1_024 did not gave the same results
+        num_chars = 1_024 * size    #1_024 did not gave the same results
         f.write(b'0' * num_chars)
 
 def ask_size():
@@ -17,7 +17,7 @@ def file_check_and_print():
 if __name__ == "__main__":
     #file_with_size()
     #file_check_and_print()
-    sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192]
+    sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
     for size in sizes:
         file_with_size(size)
 

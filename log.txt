@@ -1,0 +1,7 @@
+1.json kb: t0 -> 1851.json kb: tf -> 197: SST = 12; Retransmition = 0 []
+2.json kb: t0 -> 1992.json kb: tf -> 220: SST = 21; Retransmition = 0 []
+4.json kb: t0 -> 2224.json kb: tf -> 277: SST = 55; Retransmition = 0 []
+8.json kb: t0 -> 2798.json kb: tf -> 383: SST = 104; Retransmition = 0 []
+16.json kb: t0 -> 38616.json kb: tf -> 638: SST = 252; Retransmition = 3 []
+32.json kb: t0 -> 64132.json kb: tf -> 1054: SST = 413; Retransmition = 1 []
+64.json kb: t0 -> 106064.json kb: tf -> 2160: SST = 1100; Retransmition = 17 []
