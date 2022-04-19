@@ -39,7 +39,8 @@ if __name__ == "__main__":
     for buoy in utils.load_buoys_json():
         aux_buoy = restore_backup(buoy)
         buoys.append(aux_buoy)
-        buoys[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
+        #buoys[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
+        # Comentado para testing
 
     while (True):
         for buoy in buoys:

@@ -47,7 +47,7 @@ def wait_sender_data(buoy_mac_address):
 			if source_mac_address == buoy_mac_address:
 				received = True
 				break
-		time.sleep(1)
+		time.sleep(1)	# Reducir
 		timeout = timeout - 1
 
 	return received_data

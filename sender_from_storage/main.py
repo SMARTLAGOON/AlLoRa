@@ -14,7 +14,7 @@ import uos
 
 
 #We enable the Lora connection socket and garbage collector
-#gc.enable()
+gc.enable()
 lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 socket.setblocking(False)
@@ -35,8 +35,6 @@ log_file = None
 # For testing
 sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
-chunk_list = [32, 64, 128, 200]
-
 len_list = len(sizes)
 file_counter = 0
 chunk_size = 200	# Variable
@@ -81,7 +79,8 @@ def handle_command(command, type):
 				file_counter += 1
 			else:
 				log_file.retransmission += 1
-				print("asked again for data_info")
+				if DEBUG == True:
+					print("asked again for data_info")
 			#if not, continue trying to send first packet of the file
 		else:	# For the first file
 			log_file = read_file(file_counter, chunk_size)	#generate_file
@@ -112,7 +111,8 @@ def listen_receiver():
 	global DEBUG
 
 	data = socket.recv(256)
-	print_rssi_quality_percentage()
+	if DEBUG == True:
+		print_rssi_quality_percentage()
 	request_data_info_command = "MAC:::{};;;COMMAND:::{}".format(MAC.decode('utf-8'), 'request-data-info').encode()
 	chunk_command = "MAC:::{};;;COMMAND:::{}".format(MAC.decode('utf-8'), 'chunk-').encode()
 	if DEBUG == True:
@@ -134,7 +134,8 @@ def generate_file(file_counter):
 	ph = uos.urandom(1)[0] % 3 + 7
 	temperature = uos.urandom(1)[0] % 30 + 1
 	json = '{"dissolved_oxygen":' + str(dissolved_oxygen) + ', "chlorophyll":' + str(chlorophyll) + ', "pH":' + str(ph) + ', "temperature":' + str(temperature) +'}'
-	print(json)
+	if DEBUG == True:
+		print(json)
 	file = File('{}.json'.format(file_counter), json, 200)
 	return file
 
@@ -148,7 +149,6 @@ def read_file(file_counter, chunk_size):
 
 	#f = open('files/file_{}kb'.format(size))
 	content = ''
-	gc.enable()
 	gc.collect()
 	content = '{}'.format(n%10)*(1024 * size)
 	#content = f.read()
@@ -222,9 +222,8 @@ if __name__ == "__main__":
 	try:
 		while (True):
 			listen_receiver()
-			gc.enable()
 			gc.collect()
-			time.sleep(1)
+			time.sleep(1)		# Bajar este tiempo
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")
 		THREAD_EXIT = True
