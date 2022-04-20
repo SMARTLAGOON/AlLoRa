@@ -7,7 +7,7 @@ lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 10
-DEBUG = True
+DEBUG = False
 
 def print_rssi_quality_percentage():
 	global lora
@@ -47,7 +47,7 @@ def wait_sender_data(buoy_mac_address):
 			if source_mac_address == buoy_mac_address:
 				received = True
 				break
-		time.sleep(1)	# Reducir
+		#time.sleep(1)	# Reducir
 		timeout = timeout - 1
 
 	return received_data

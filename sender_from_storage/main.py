@@ -23,7 +23,7 @@ socket.setblocking(False)
 MAC = binascii.hexlify(network.LoRa().mac())
 
 #Controls logging messages
-DEBUG = True
+DEBUG = False
 
 #Thread exit flag
 THREAD_EXIT = False
@@ -162,8 +162,8 @@ def read_file(file_counter, chunk_size):
 def t_file(file, t0_tf):
 	file_name = file.get_name()
 	t = time.time()
-
-	print("SAVING!")
+	if DEBUG == True:
+		print("SAVING!")
 	test_log = open('log.txt', "ab")
 	if t0_tf:
 		file.first_sent = t
@@ -175,7 +175,8 @@ def t_file(file, t0_tf):
 			file.last_sent = t
 			txt = "tf;{};SST;{};Retransmission;{};[{}]\n".format(t, t - file.first_sent, file.retransmission, file.get_name())
 			test_log.write(txt)
-			print(txt)
+			if DEBUG == True:
+				print(txt)
 	test_log.close()
 	return t
 
@@ -223,7 +224,7 @@ if __name__ == "__main__":
 		while (True):
 			listen_receiver()
 			gc.collect()
-			time.sleep(1)		# Bajar este tiempo
+			#time.sleep(1)		# Bajar este tiempo
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")
 		THREAD_EXIT = True

@@ -1,0 +1,10 @@
+1.json;t0;461;tf;471;SST;10;Retransmission;0;[1.json]
+2.json;t0;474;tf;495;SST;21;Retransmission;0;[2.json]
+4.json;t0;497;tf;535;SST;38;Retransmission;0;[4.json]
+8.json;t0;536;tf;625;SST;89;Retransmission;1;[8.json]
+16.json;t0;628;tf;809;SST;181;Retransmission;1;[16.json]
+32.json;t0;812;tf;1142;SST;330;Retransmission;1;[32.json]
+64.json;t0;1147;tf;1815;SST;668;Retransmission;2;[64.json]
+128.json;t0;1833;tf;3231;SST;1398;Retransmission;7;[128.json]
+256.json;t0;3309;tf;6312;SST;3003;Retransmission;14;[256.json]
+512.json;t0;6576;

@@ -14,7 +14,7 @@ gc.enable()
 THREAD_EXIT = False
 
 #Debug flag
-DEBUG = True
+DEBUG = False
 
 '''
 This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
