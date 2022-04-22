@@ -148,14 +148,20 @@ def read_file(file_counter, chunk_size):
 	size = sizes[n]
 
 	#f = open('files/file_{}kb'.format(size))
-	content = ''
 	gc.collect()
 	content = '{}'.format(n%10)*(1024 * size)
 	#content = f.read()
 	#f.close()
 	if DEBUG == True:
 		print("Going to send {} kb file...".format(size))
+
+	if file:
+		del(file)
+		gc.collect()
 	file = File('{}.json'.format(size), content, chunk_size)
+
+	del(content)
+	gc.collect()
 	#print("150kb")
 	return file
 
@@ -169,7 +175,8 @@ def t_file(file, t0_tf):
 		file.first_sent = t
 		txt = "{};t0;{};".format(file.get_name(), t)
 		test_log.write(txt)
-		print(txt)
+		if DEBUG == True:
+			print(txt)
 	else:
 		if file.first_sent is not None:
 			file.last_sent = t
@@ -224,7 +231,7 @@ if __name__ == "__main__":
 		while (True):
 			listen_receiver()
 			gc.collect()
-			#time.sleep(1)		# Bajar este tiempo
+			time.sleep(0.1)		# Bajar este tiempo
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")
 		THREAD_EXIT = True
