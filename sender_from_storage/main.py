@@ -34,7 +34,7 @@ log_file = None
 
 # For testing
 sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
-sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
+#sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
 len_list = len(sizes)
 file_counter = 0
 chunk_size = 200	# Variable
@@ -75,7 +75,7 @@ def handle_command(command, type):
 		if log_file:
 			if log_file.first_sent and not log_file.last_sent:	# If some chunks are already sent...
 				t_file(log_file, False)	# Take this as a final ack for last package
-				log_file = read_file(file_counter, chunk_size)	#generate_file
+				log_file = generate_file(file_counter, chunk_size)	#generate_file
 				file_counter += 1
 			else:
 				log_file.retransmission += 1
@@ -83,7 +83,7 @@ def handle_command(command, type):
 					print("asked again for data_info")
 			#if not, continue trying to send first packet of the file
 		else:	# For the first file
-			log_file = read_file(file_counter, chunk_size)	#generate_file
+			log_file = generate_file(file_counter, chunk_size)	#generate_file
 			file_counter += 1
 
 		#READ_NEW_LOG_FILE = True #It allows to load the next one
@@ -93,13 +93,16 @@ def handle_command(command, type):
 		requested_chunk = int(command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
 		if DEBUG == True:
 			print("RC: {}".format(requested_chunk))
-		response = "MAC:::{};;;CHUNK:::{}".format(MAC.decode('utf-8'), log_file.get_chunk(requested_chunk)).encode()
-		if not log_file.first_sent:
-			t_file(log_file, True)	# Reading new file
+		if log_file:
+			response = "MAC:::{};;;CHUNK:::{}".format(MAC.decode('utf-8'), log_file.get_chunk(requested_chunk)).encode()
+			if not log_file.first_sent:
+				t_file(log_file, True)	# Reading new file
 			#pycom.rgbled(0x007f00) # green
 			#time.sleep(1)
 			#pycom.rgbled(0x000000)
-
+		else:
+			print("Error, not file to send...")
+	#print(response)
 	socket.send(response)
 
 
@@ -125,22 +128,8 @@ def listen_receiver():
 		handle_command(data, "chunk-")
 
 
-'''
-Function for generating realistic JSON
-'''
-def generate_file(file_counter):
-	dissolved_oxygen = uos.urandom(1)[0] % 8 + 8
-	chlorophyll = uos.urandom(1)[0] % 20
-	ph = uos.urandom(1)[0] % 3 + 7
-	temperature = uos.urandom(1)[0] % 30 + 1
-	json = '{"dissolved_oxygen":' + str(dissolved_oxygen) + ', "chlorophyll":' + str(chlorophyll) + ', "pH":' + str(ph) + ', "temperature":' + str(temperature) +'}'
-	if DEBUG == True:
-		print(json)
-	file = File('{}.json'.format(file_counter), json, 200)
-	return file
-
 # For testing
-def read_file(file_counter, chunk_size):
+def generate_file(file_counter, chunk_size):
 	global DEBUG
 	global sizes
 	global len_list
@@ -155,14 +144,16 @@ def read_file(file_counter, chunk_size):
 	if DEBUG == True:
 		print("Going to send {} kb file...".format(size))
 
-	if file:
+	try:
 		del(file)
 		gc.collect()
-	file = File('{}.json'.format(size), content, chunk_size)
+	except:
+		pass
 
-	del(content)
-	gc.collect()
-	#print("150kb")
+	file = File('{}.json'.format(size), content, chunk_size)
+	#del(content)
+	#gc.collect()
+
 	return file
 
 def t_file(file, t0_tf):
@@ -173,52 +164,20 @@ def t_file(file, t0_tf):
 	test_log = open('log.txt', "ab")
 	if t0_tf:
 		file.first_sent = t
-		txt = "{};t0;{};".format(file.get_name(), t)
-		test_log.write(txt)
-		if DEBUG == True:
-			print(txt)
 	else:
 		if file.first_sent is not None:
 			file.last_sent = t
-			txt = "tf;{};SST;{};Retransmission;{};[{}]\n".format(t, t - file.first_sent, file.retransmission, file.get_name())
+			txt = "{};t0;{};tf;{};SST;{};Retransmission;{};[{}]\n".format(file.get_name(), file.first_sent, t, t - file.first_sent, file.retransmission, file.get_name())
 			test_log.write(txt)
-			if DEBUG == True:
-				print(txt)
+			#if DEBUG == True:
+			print(txt)
 	test_log.close()
-	return t
+	#return t
 
 def clean_t_file():
 	test_log = open('log.txt', "wb")
 	test_log.write("")
 	test_log.close()
-
-
-
-'''
-This function mocks up an existing datalogger
-'''
-def read_datalogger():
-	global THREAD_EXIT
-	global READ_NEW_LOG_FILE
-	global log_file
-	global DEBUG
-
-	file_counter = 0
-	chunk_size = 200	# Variable
-	while (True):
-		if THREAD_EXIT == True:
-			break
-
-		if READ_NEW_LOG_FILE == True:
-			if DEBUG == True:
-				print("new log_file")
-			log_file = read_file(file_counter, chunk_size)	#generate_file
-			READ_NEW_LOG_FILE = False
-
-			file_counter += 1
-		#time.sleep(60)	# Esto estaba molestando muchas cosas
-
-
 
 
 '''
