@@ -3,11 +3,11 @@ This class eases the use of a File divided in chunks
 '''
 import gc
 import math
+import time
 
 gc.enable()
 
 class File:
-
 
     def __init__(self, name: str, content:bytes, chunk_size: int):
         self.__name = name
@@ -17,6 +17,9 @@ class File:
         #self.__chunks = []
 
         self.chunk_counter = math.ceil(self.__length/self.__chunk_size)     #0
+
+        self.sent = False
+        self.metadata_sent = False
 
         # For testing
         self.retransmission = 0
@@ -34,11 +37,13 @@ class File:
     def get_content(self):
         return self.__content
 
-
     #Block length not characters
     def get_length(self):
-        return self.chunk_counter   #len(self.__chunks)
+        return self.chunk_counter   #len(self.__chunks)\
 
+    def sent_ok(self):
+        self.report_SST(False)
+        self.sent = True
 
     def get_chunk(self, position: int):
         #print(self.__content)
@@ -48,25 +53,7 @@ class File:
                 gc.collect()
         else:
             self.last_chunk_sent = position
-        return self.__content[:self.__chunk_size]  #self.__chunks[position]
-
-
-    def __chunkify(self, content):
-        #chunk_counter = 0
-        while content:
-            self.__chunks.append(content[:self.__chunk_size])
-            content = content[self.__chunk_size:]
-            gc.collect()
-            self.chunk_counter += 1
-        """
-        for i in range(0, self.__length, self.__chunk_size):
-            if i == self.__length:
-                break
-            self.__chunks[chunk_counter] = content[i:(i + self.__chunk_size)]
-            chunk_counter += 1
-        self.chunk_counter = chunk_counter
-        """
-
+        return self.__content[:self.__chunk_size]
 
     ## For testing:
     def check_retransmission(self, requested_chunk):
@@ -76,3 +63,19 @@ class File:
             retransmission = True
         self.last_chunk_sent = requested_chunk
         return retransmission
+
+    def report_SST(self, t0_tf):
+        file_name = self.get_name()
+    	t = time.time()
+
+    	test_log = open('log.txt', "ab")
+    	if t0_tf:
+    		self.first_sent = t
+    	else:
+    		if self.first_sent is not None:
+    			self.last_sent = t
+    			txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.retransmission)
+    			test_log.write(txt)
+    			#if DEBUG == True:
+    			print(txt)
+    	test_log.close()
