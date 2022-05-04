@@ -24,7 +24,13 @@ def client_thread(clientsocket):
 		global DEBUG
 
 	    # Receive maximum of 4096 bytes from the client (nothing special with this number)
-		r = clientsocket.recv(4096)
+		r = b''
+		aux = clientsocket.recv(32)
+		while True:
+			if aux == b'':
+				break
+			r += aux
+			aux = clientsocket.recv(32)
 
 		# If recv() returns with 0 the other end closed the connection
 		if len(r) == 0:
@@ -72,6 +78,7 @@ while True:
 			break
 		# Accept the connection of the clients
 		(clientsocket, address) = serversocket.accept()
+		clientsocket.settimeout(0)
 		gc.collect()
 		client_thread(clientsocket)
 	except KeyboardInterrupt as e:

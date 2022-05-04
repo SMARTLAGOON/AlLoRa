@@ -48,12 +48,13 @@ class File:
     def get_chunk(self, position: int):
         #print(self.__content)
         if self.last_chunk_sent is not None:
-            if not self.check_retransmission(position):
-                self.__content = self.__content[self.__chunk_size:]   # Se borra la data que ya se envió
-                gc.collect()
+            self.check_retransmission(position)
+            #if not self.check_retransmission(position):
+                #self.__content = self.__content[self.__chunk_size:]   # Se borra la data que ya se envió
+                #gc.collect()
         else:
             self.last_chunk_sent = position
-        return self.__content[:self.__chunk_size]
+        return self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]
 
     ## For testing:
     def check_retransmission(self, requested_chunk):

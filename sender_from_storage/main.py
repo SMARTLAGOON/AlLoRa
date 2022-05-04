@@ -16,7 +16,7 @@ THREAD_EXIT = False
 
 
 # For testing
-sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]	#, 1024
 #sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
 len_list = len(sizes)
 file_counter = 0
@@ -34,13 +34,20 @@ This function starts the datalogger mockup and keeps a loop waiting for messages
 '''
 if __name__ == "__main__":
 	lora_node = Node(sf = 7, chunk_size = 200, debug = False)
+	print("Testing sender")
 	try:
 		clean_t_file()
 		success = lora_node.stablish_connection()
 		if success:
+			print("Connected to LoRa")
 			for size in sizes:
 				n = file_counter%len_list
-				lora_node.send_file('{}.json'.format(size), '{}'.format(n%10)*(1024 * size))
+				lora_node.send_file(name = '{}.json'.format(size), content = '{}'.format(n%10)*(1024 * size))	#( )).encode("UTF-8")
 				file_counter += 1
+
+				#test_log = open('log.txt', "rb")
+				#results = '{}'.format(test_log.readlines())
+				#test_log.close()
+				#lora_node.send_file("results", results)
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")

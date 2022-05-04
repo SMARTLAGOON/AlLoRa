@@ -12,7 +12,7 @@ class Node:
 
     def __init__(self, sf, chunk_size, debug = False):
         gc.enable()
-        self.lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
+        self.lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.lora_socket.setblocking(False)
 
@@ -73,8 +73,6 @@ class Node:
         data = self.lora_socket.recv(256)
     	if self.DEBUG:
     		self.rssi_calc()
-
-        if self.DEBUG:
     		print('LISTEN_RECEIVER() || received_content', data)
     		print("my mac:", self.MAC)
 
@@ -89,7 +87,7 @@ class Node:
                 return True
             elif self.file.metadata_sent:
                 self.file.retransmission += 1
-                if self.DEBUG == True:
+                if self.DEBUG:
                     print("asked again for data_info")
             else:
                 self.file.metadata_sent = True
@@ -107,5 +105,6 @@ class Node:
 
         if response:
             self.lora_socket.send(response)
+            del(response)
         gc.collect()
         time.sleep(0.1)
