@@ -24,13 +24,7 @@ def client_thread(clientsocket):
 		global DEBUG
 
 	    # Receive maximum of 4096 bytes from the client (nothing special with this number)
-		r = b''
-		aux = clientsocket.recv(32)
-		while True:
-			if aux == b'':
-				break
-			r += aux
-			aux = clientsocket.recv(32)
+		r = clientsocket.recv(256)
 
 		# If recv() returns with 0 the other end closed the connection
 		if len(r) == 0:

@@ -3,7 +3,7 @@ import socket
 import time
 
 # Creation of LoRa socket
-lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
+lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = 7)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 10

@@ -4,7 +4,7 @@ import network
 from network import LoRa
 import socket
 import binascii
-import time
+from time import sleep, ticks_ms, sleep_ms
 
 from lora_ctp.File import File
 
@@ -45,6 +45,8 @@ class Node:
 
     def send_file(self, name, content):
         self.file = File(name, content, self.chunk_size)
+        del(content)
+        gc.collect()
         self.handle_command("request-data-info")
         while not self.file.sent:
             data = self.listen_receiver()
@@ -66,10 +68,13 @@ class Node:
             if data.startswith(self.request_data_info_command):
                 try_connect = False
                 return True
+            else:
+                if self.DEBUG:
+                    print("ERROR: Asked for other than data info {}".format(data))
             gc.collect()
-            time.sleep(0.1)
 
     def listen_receiver(self):
+        #self.lora_socket.setblocking(True)
         data = self.lora_socket.recv(256)
     	if self.DEBUG:
     		self.rssi_calc()
@@ -77,7 +82,6 @@ class Node:
     		print("my mac:", self.MAC)
 
         return data
-
 
     def handle_command(self, type):
         response = None
@@ -101,10 +105,15 @@ class Node:
                 print("RC: {}".format(requested_chunk))
             response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
             if not self.file.first_sent:
-                self.file.report_SST(True)	# Reading new file
+                self.file.report_SST(True)	#Registering new file t0
 
         if response:
             self.lora_socket.send(response)
             del(response)
-        gc.collect()
-        time.sleep(0.1)
+            gc.collect()
+        sleep(0.1)
+                #print(dt)
+            #else:
+            #    print("awake...loading chunk for {} ms".format(dt))
+
+            #print("awake")
