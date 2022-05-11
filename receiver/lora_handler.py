@@ -11,7 +11,6 @@ DEBUG = False
 
 def print_rssi_quality_percentage():
 	global lora
-	global DEBUG
 
 	percentage = 0
 	rssi = lora.stats()[1]
@@ -21,8 +20,7 @@ def print_rssi_quality_percentage():
 		percentage = 2 * (rssi + 100)
 	elif (rssi < 100):
 		percentage = 0
-	if DEBUG == True:
-		print('SIGNAL STRENGTH', percentage, '%')
+	print('SIGNAL STRENGTH', percentage, '%')
 
 
 '''
@@ -36,18 +34,18 @@ def wait_sender_data(buoy_mac_address):
 	received_data = b''
 
 	while(timeout > 0):
-		if DEBUG == True:
+		if DEBUG:
 			print("WAIT_SENDER_DATA() || quedan {} segundos timeout ({})".format(timeout, buoy_mac_address))
 		received_data = socket.recv(256)
-		print_rssi_quality_percentage()
-		if DEBUG == True:
+		if DEBUG:
+			print_rssi_quality_percentage()
 			print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
 		if received_data.startswith(b'MAC:::'):
 			source_mac_address = received_data.decode('utf-8').split(";;;")[0].split(":::")[1]
 			if source_mac_address == buoy_mac_address:
 				received = True
 				break
-		time.sleep(0.1)	# Reducir
+		time.sleep(0.1)		#	Checkear
 		timeout = timeout - 1
 
 	return received_data
@@ -60,7 +58,7 @@ def send_command(command, buoy_mac_address):
 	global DEBUG
 
 	socket.setblocking(False)
-	if DEBUG == True:
+	if DEBUG:
 		print("SEND_COMMAND() || command: {}".format(command))
 	socket.send(command.encode())
 	return wait_sender_data(buoy_mac_address)
