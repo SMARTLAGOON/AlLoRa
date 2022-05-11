@@ -14,6 +14,7 @@ import uos
 
 
 #We enable the Lora connection socket and garbage collector
+'''
 gc.enable()
 lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
@@ -31,6 +32,7 @@ THREAD_EXIT = False
 #datalogger mockup
 READ_NEW_LOG_FILE = True
 log_file = None
+'''
 
 '''
 This function prints the signal strength of the last received package over LoRa
@@ -139,6 +141,50 @@ if __name__ == "__main__":
 			listen_receiver()
 			gc.collect()
 			time.sleep(1)
+	except KeyboardInterrupt as e:
+		print("THREAD_EXIT")
+		THREAD_EXIT = True
+
+#################################################################
+
+from lora_ctp.ctp_node import Node
+
+#Controls logging messages
+DEBUG = False
+
+#Thread exit flag
+THREAD_EXIT = False
+
+# For testing
+sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]	#, 1024
+#sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
+len_list = len(sizes)
+file_counter = 0
+
+
+def clean_timing_file():
+	test_log = open('log.txt', "wb")
+	test_log.write("")
+	test_log.close()
+
+
+if __name__ == "__main__":
+
+	lora_node = Node(sf = 7, chunk_size = 200, debug = False)
+	try:
+		clean_timing_file()
+		success = lora_node.stablish_connection()
+		if success:
+			for size in sizes:
+				n = file_counter % len_list
+				lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n % 10) * (1024 * size)))
+				#lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))	#( )).encode("UTF-8") '{}'.format(n%10)*(1024 * size)	#('{}'.format(n%10)*(1024 * size)).encode("UTF-8")
+				file_counter += 1
+
+				#test_log = open('log.txt', "rb")
+				#results = '{}'.format(test_log.readlines())
+				#test_log.close()
+				#lora_node.send_file("results", results)
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")
 		THREAD_EXIT = True

@@ -3,11 +3,11 @@ import socket
 import time
 
 # Creation of LoRa socket
-lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = 7)
+lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf=7)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 10
-DEBUG = False
+DEBUG = True
 
 def print_rssi_quality_percentage():
 	global lora
@@ -34,18 +34,25 @@ def wait_sender_data(buoy_mac_address):
 	received_data = b''
 
 	while(timeout > 0):
-		if DEBUG:
-			print("WAIT_SENDER_DATA() || quedan {} segundos timeout ({})".format(timeout, buoy_mac_address))
+		if DEBUG == True:
+			print_rssi_quality_percentage()
+			print("WAIT_SENDER_DATA() || quedan {} segundos timeout".format(timeout))
 		received_data = socket.recv(256)
 		if DEBUG:
 			print_rssi_quality_percentage()
 			print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
-		if received_data.startswith(b'MAC:::'):
-			source_mac_address = received_data.decode('utf-8').split(";;;")[0].split(":::")[1]
-			if source_mac_address == buoy_mac_address:
-				received = True
-				break
-		time.sleep(0.1)		#	Checkear
+		if received_data.startswith(b'S:::'):
+			try:
+				response_packet = Packet()
+				response_packet.load(received_data.decode('utf-8'))
+				if response_packet.get_source() == packet.get_destination():
+					received = True
+					break
+				else:
+					response_packet = Packet()
+			except Exception as e:
+				print("Corrupted packet received", e)
+		time.sleep(0.1) #MERGE
 		timeout = timeout - 1
 
 	return received_data
