@@ -34,38 +34,6 @@ This function starts the datalogger mockup and keeps a loop waiting for messages
 '''
 if __name__ == "__main__":
 
-	"""
-	from lora_ctp.File import File
-	from time import time, sleep
-	import gc
-	gc.enable()
-
-	for size in sizes:
-		n = file_counter%len_list
-		content = bytearray('{}'.format(n%10)*(1024 * size))	#.encode("UTF-8")
-		#content = ('{}'.format(n%10)*(1024 * size)).encode("UTF-8")
-		file = File(str(size), content, 200)
-		c = 0
-		ts = 0
-		l = 0
-		for i in range(file.get_length()):
-			t0 = time()
-			x = file.get_chunk(i)
-			file.load_next = True
-			ts += (time() - t0)
-			c += 1
-			l += len(x)
-			#print("Sleeping")
-			sleep(0.1)
-			#print("Awake")
-
-		print(file.get_name(), ": ", ts/c, l)
-		file.sent_ok()
-		del(file)
-		del(content)
-		gc.collect()"""
-
-
 	lora_node = Node(sf = 7, chunk_size = 200, debug = False)
 	print("Testing sender")
 	try:
