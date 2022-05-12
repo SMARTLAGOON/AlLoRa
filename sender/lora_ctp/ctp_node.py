@@ -6,7 +6,7 @@ import binascii
 from time import sleep, ticks_ms, sleep_ms
 from uos import urandom
 from lora_ctp.File import File
-
+from lora_ctp.Packet import Packet
 
 
 class Node:
@@ -35,12 +35,9 @@ class Node:
         self.__LAST_IDS = list()
 
 
-    #MERGE
     def __is_for_me(self, packet: Packet):
-        return packet.get_destination() == self.__MAC:
+        return packet.get_destination() == self.__MAC
 
-
-    #MERGE
     def __forward(self, packet: Packet):
         try:
             if packet.get_part("ID") not in LAST_SENT_IDS:
@@ -56,14 +53,13 @@ class Node:
             print("JAMMING FORWARDING", e)
 
 
-    #MERGE
     def stablish_connection(self):
         try_connect = True
         while try_connect:
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet):
-                    if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                    if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO:
                         try_connect = False
                         return True
                     else:
@@ -77,7 +73,6 @@ class Node:
     '''
     This function ensures that a received message matches the criteria of any expected message.
     '''
-    #MERGE
     def __listen_receiver(self):
         packet = Packet()
     	data = self.__lora_socket.recv(256)
@@ -94,7 +89,6 @@ class Node:
     '''
     This function prints the signal strength of the last received package over LoRa
     '''
-    #MERGE
     def __rssi_calc(self):
         percentage = 0
     	rssi = self.__lora.stats()[1]
@@ -107,7 +101,6 @@ class Node:
     	print('SIGNAL STRENGTH', percentage, '%')
 
 
-    #MERGE
     def send_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)
         del(content)
@@ -117,9 +110,9 @@ class Node:
             packet = self.__listen_receiver()
             if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                 command = packet.get_part('COMMAND')
-                if command.startswith(Node.CHUNK)):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
                     self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
-                elif command.startswith(Node.REQUEST_DATA_INFO)):
+                elif command.startswith(Node.REQUEST_DATA_INFO):
                     self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
             else:
                 self.__forward(packet=packet)
@@ -127,7 +120,6 @@ class Node:
         gc.collect()
         self.__file = None
 
-    # MERGE (check)
     def __handle_command(self, command: str, type: str):
         response_packet = None
         if type == Node.REQUEST_DATA_INFO:    # handle for new file
@@ -141,10 +133,9 @@ class Node:
             else:
                 self.__file.metadata_sent = True
 
-            #response = self.metadata_new_file.format(self.MAC, self.file.get_length(), self.file.get_name()).encode()
             response_packet = Packet()
-    		response_packet.set_part("LENGTH", self.__file.get_length())
-    		response_packet.set_part("FILENAME", self.__file.get_name())
+            response_packet.set_part("LENGTH", self.__file.get_length())
+            response_packet.set_part("FILENAME", self.__file.get_name())
 
         elif type == Node.CHUNK:
             requested_chunk = int(command.split('-')[1])
@@ -153,7 +144,7 @@ class Node:
                 print("RC: {}".format(requested_chunk))
             #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
             response_packet = Packet()
-    		response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
+            response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
 
             if not self.__file.first_sent:
                 self.__file.report_SST(True)	#Registering new file t0
@@ -170,7 +161,6 @@ class Node:
             del(response_packet)
             gc.collect()
 
-    # MERGE (Check)
     def generate_id(self):
     	global LAST_IDS
     	id = -1
