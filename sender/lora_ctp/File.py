@@ -53,7 +53,7 @@ class File:
 
     def __check_retransmission(self, requested_chunk):
         if requested_chunk == self.__last_chunk_sent:
-            self.__retransmission += 1
+            self.retransmission += 1
             return True
         return False
 
@@ -68,7 +68,7 @@ class File:
     	else:
     		if self.first_sent is not None:
     			self.last_sent = t
-    			txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.__retransmission)
+    			txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.retransmission)
     			test_log.write(txt)
     			#if DEBUG:
     			print(txt)
