@@ -4,7 +4,9 @@ from network import LoRa
 import socket
 import binascii
 from time import sleep, ticks_ms, sleep_ms
+from uos import urandom
 from lora_ctp.File import File
+
 
 
 class Node:
@@ -43,7 +45,7 @@ class Node:
         try:
             if packet.get_part("ID") not in LAST_SENT_IDS:
                 print("FORWARDED", packet.get_content())
-                sleep(uos.urandom(1)[0] % 5 + 1)
+                sleep(urandom(1)[0] % 5 + 1)
                 self.__lora_socket.send(data)
                 self.__LAST_SENT_IDS.append(packet.get_part("ID"))
                 self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-5:]
@@ -114,19 +116,72 @@ class Node:
         while not self.__file.sent:
             packet = self.__listen_receiver()
             if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
-                if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                    self.__handle_command(packet=packet, type=Node.REQUEST_DATA_INFO) #TODO Sacar a variable global los String de comandos
-                elif packet.get_part("COMMAND") is Node.CHUNK):
-                    self.__handle_command(packet=packet, type=Node.CHUNK)
+                command = packet.get_part('COMMAND')
+                if command.startswith(Node.CHUNK)):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                    self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                elif command.startswith(Node.REQUEST_DATA_INFO)):
+                    self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
             else:
                 self.__forward(packet=packet)
         del(self.__file)
         gc.collect()
         self.__file = None
 
+    # MERGE (check)
+    def __handle_command(self, command: command, type: str):
+        response_packet = None
+        if type == "request-data-info":    # handle for new file
+            if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
+                self.file.sent_ok()
+                return True
+            elif self.__file.metadata_sent:
+                self.__file.retransmission += 1
+                if self.__DEBUG:
+                    print("asked again for data_info")
+            else:
+                self.__file.metadata_sent = True
 
-    def __handle_command(self, packet: Packet, type: str):
-        pass
+            #response = self.metadata_new_file.format(self.MAC, self.file.get_length(), self.file.get_name()).encode()
+            response_packet = Packet()
+    		response_packet.set_part("LENGTH", self.__file.get_length())
+    		response_packet.set_part("FILENAME", self.__file.get_name())
+
+        elif type == "chunk-":
+            requested_chunk = int(command.split('-')[1])
+            #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
+            if self.__DEBUG:
+                print("RC: {}".format(requested_chunk))
+            #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
+            response_packet = Packet()
+    		response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
+
+            if not self.__file.first_sent:
+                self.__file.report_SST(True)	#Registering new file t0
+
+        if response:
+            if self.__mesh:
+                response_packet.set_part("ID", str(generate_id()))
+            	sleep(urandom(1)[0] % 5 + 1)
+            	self.__lora_socket.send(response_packet.get_content().encode())
+            	print("SENT FINAL RESPONSE", response_packet.get_content())
+            else:
+                self.__lora_socket.send(response_packet.get_content().encode())
+            sleep(0.1)
+            del(response_packet)
+            gc.collect()
+
+    # MERGE (Check)
+    def generate_id(self):
+    	global LAST_IDS
+    	id = -1
+    	while (id in LAST_IDS) or (id == -1):
+    		id = urandom(1)[0] % 999 + 0
+    	LAST_IDS.append(id)
+    	LAST_IDS = LAST_IDS[-5:]
+    	return id
+
+
+
 
 ###########################################################################
      def __2handle_command(self, type):

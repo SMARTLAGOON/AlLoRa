@@ -170,7 +170,7 @@ def clean_timing_file():
 
 if __name__ == "__main__":
 
-	lora_node = Node(sf = 7, chunk_size = 200, debug = False)
+	lora_node = Node(sf = 7, chunk_size = 200, mesh = False, debug = False)
 	try:
 		clean_timing_file()
 		success = lora_node.stablish_connection()
