@@ -128,9 +128,9 @@ class Node:
         self.__file = None
 
     # MERGE (check)
-    def __handle_command(self, command: command, type: str):
+    def __handle_command(self, command: str, type: str):
         response_packet = None
-        if type == "request-data-info":    # handle for new file
+        if type == Node.REQUEST_DATA_INFO:    # handle for new file
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.file.sent_ok()
                 return True
@@ -146,7 +146,7 @@ class Node:
     		response_packet.set_part("LENGTH", self.__file.get_length())
     		response_packet.set_part("FILENAME", self.__file.get_name())
 
-        elif type == "chunk-":
+        elif type == Node.CHUNK:
             requested_chunk = int(command.split('-')[1])
             #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
             if self.__DEBUG:
@@ -158,7 +158,7 @@ class Node:
             if not self.__file.first_sent:
                 self.__file.report_SST(True)	#Registering new file t0
 
-        if response:
+        if response_packet:
             if self.__mesh:
                 response_packet.set_part("ID", str(generate_id()))
             	sleep(urandom(1)[0] % 5 + 1)
@@ -179,100 +179,3 @@ class Node:
     	LAST_IDS.append(id)
     	LAST_IDS = LAST_IDS[-5:]
     	return id
-
-
-
-
-###########################################################################
-     def __2handle_command(self, type):
-            response = None
-        	if type == "request-data-info":    # handle for new file
-                if self.file.first_sent and not self.file.last_sent:	# If some chunks are already sent...
-                    self.file.sent_ok()
-                    return True
-                elif self.file.metadata_sent:
-                    self.file.retransmission += 1
-                    if self.DEBUG:
-                        print("asked again for data_info")
-                else:
-                    self.file.metadata_sent = True
-
-        		#READ_NEW_LOG_FILE = True #It allows to load the next one
-        		response = self.metadata_new_file.format(self.MAC, self.file.get_length(), self.file.get_name()).encode()
-
-            elif type == "chunk-":
-                requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
-                if self.DEBUG:
-                    print("RC: {}".format(requested_chunk))
-                response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
-                if not self.file.first_sent:
-                    self.file.report_SST(True)	#Registering new file t0
-
-            if response:
-                self.lora_socket.send(response)
-                del(response)
-                gc.collect()
-            sleep(0.1)
-
-    def generate_id(self):
-    	global LAST_IDS
-    	id = -1
-    	while (id in LAST_IDS) or (id == -1):
-    		id = uos.urandom(1)[0] % 999 + 0
-    	LAST_IDS.append(id)
-    	LAST_IDS = LAST_IDS[-5:]
-    	return id
-    '''
-    This function sends a response depending on which command was received
-    '''
-    def handle_command(command, type):
-    	global socket
-    	global DEBUG
-    	global MAC
-    	global log_file
-    	global READ_NEW_LOG_FILE
-
-    	response = None
-    	if type == "request-data-info":
-    		READ_NEW_LOG_FILE = True #It allows to load the next one
-    		#response = "MAC:::{};;;LENGTH:::{};;;FILENAME:::{}".format(MAC.decode('utf-8'), log_file.get_length(), log_file.get_name()).encode()
-    		response_packet = Packet()
-    		response_packet.set_part("LENGTH", log_file.get_length())
-    		response_packet.set_part("FILENAME", log_file.get_name())
-    	elif type == "chunk-":
-    		print("COMMAND", command)
-    		requested_chunk = int(command.split('-')[1])
-    		#response = "MAC:::{};;;CHUNK:::{}".format(MAC.decode('utf-8'), log_file.get_chunk(requested_chunk)).encode()
-    		response_packet = Packet()
-    		response_packet.set_part("CHUNK", log_file.get_chunk(requested_chunk))
-
-    	response_packet.set_part("ID", str(generate_id()))
-    	time.sleep(uos.urandom(1)[0] % 5 + 1)
-    	socket.send(response_packet.get_content().encode())
-    	print("SENT FINAL RESPONSE", response_packet.get_content())
-
-
-    '''
-    This function ensures that a received message matches the criteria of any expected message.
-    '''
-
-    def __listen_receiver():
-
-
-
-
-    				if DEBUG == True:
-    					print('LISTEN_RECEIVER() || received_content', packet.get_content())
-    					print("my mac:", MAC.decode('utf-8'))
-    				try:
-    					if packet.get_part("ID") not in LAST_SENT_IDS:
-    						command = packet.get_part('COMMAND')
-    						if command.startswith('request-data-info'):
-    							handle_command(command, "request-data-info") #TODO Sacar a variable global los String de comandos
-    						elif command.startswith('chunk-'):
-    							handle_command(command, "chunk-")
-    						LAST_SENT_IDS.append(packet.get_part("ID"))
-    						LAST_SENT_IDS = LAST_SENT_IDS[-5:]
-    				except KeyError as e:
-    					# If packet was corrupted along the way, won't read the COMMAND part
-    					print("JAMMING RECEIVED", e)

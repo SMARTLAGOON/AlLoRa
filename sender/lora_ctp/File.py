@@ -17,7 +17,7 @@ class File:
         self.__chunk_counter = ceil(self.__length/self.__chunk_size)
         #self.__chunkify()
 
-        self.__retransmission = 0
+        self.retransmission = 0
         self.__last_chunk_sent = None
 
         self.sent = False
@@ -38,21 +38,25 @@ class File:
     def get_length(self):
         return self.chunk_counter   #len(self.__chunks)
 
+
     def sent_ok(self):
         self.report_SST(False)
         self.sent = True
+
 
     def get_chunk(self, position: int):
         if self.__last_chunk_sent:
             self.__check_retransmission(position)
         self.__last_chunk_sent = position
-        return  (bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size])).decode()
+        return  bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]).decode()
+
 
     def __check_retransmission(self, requested_chunk):
         if requested_chunk == self.__last_chunk_sent:
             self.__retransmission += 1
             return True
         return False
+
 
     def report_SST(self, t0_tf):
         file_name = self.get_name()
