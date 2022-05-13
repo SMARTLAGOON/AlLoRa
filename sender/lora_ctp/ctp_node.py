@@ -15,19 +15,24 @@ class Node:
     CHUNK = "chunk-"
 
     #MERGE
-    def __init__(self, sf, chunk_size, mesh = True, debug = False):
+    def __init__(self, sf, chunk_size = 200, mesh = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.__lora_socket.setblocking(False)
 
         self.__mesh = mesh
+        self.__DEBUG = debug
 
         self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
-        print(self.__MAC)
-        self.__chunk_size = chunk_size
+        if self.__DEBUG:
+            print(self.__MAC)
 
-        self.__DEBUG = debug
+        self.__chunk_size = chunk_size
+        if self.__mesh and self.__chunk_size > 173:   # Packet size less than 230 (with Spread Factor 7)
+            self.__chunk_size = 173
+            if self.__DEBUG:
+                print("Chunk size force down to {}".format(self.__chunk_size))
 
         self.__file = None
 
@@ -160,8 +165,11 @@ class Node:
             if self.__mesh:
                 response_packet.set_part("ID", str(self.__generate_id()))
             	sleep(urandom(1)[0] % 5 + 1)
+                #print(response_packet.get_content().encode())
+                #print(len(response_packet.get_content().encode()))
             	self.__lora_socket.send(response_packet.get_content().encode())
-            	print("SENT FINAL RESPONSE", response_packet.get_content())
+                if self.__DEBUG:
+            	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
                 self.__lora_socket.send(response_packet.get_content().encode())
             sleep(0.1)

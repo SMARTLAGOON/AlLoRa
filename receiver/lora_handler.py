@@ -8,7 +8,7 @@ lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 10
-DEBUG = True
+DEBUG = False
 
 def print_rssi_quality_percentage():
 	global lora
@@ -56,7 +56,7 @@ def wait_sender_data(packet):
 					response_packet = Packet()
 			except Exception as e:
 				print("Corrupted packet received", e)
-		time.sleep(1)
+		time.sleep(0.1)
 		timeout = timeout - 1
 
 	return response_packet
