@@ -34,15 +34,12 @@ if __name__ == "__main__":
     utils.logger_info.info("BuoySoftware RPI_RECEIVER")
     utils.load_config()
 
-    buoys = []
-
     for buoy in utils.load_buoys_json():
         aux_buoy = restore_backup(buoy)
-        buoys.append(aux_buoy)
-        #buoys[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
-        # Comentado para testing
+        utils.BUOYS.append(aux_buoy)
+        utils.BUOYS[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
 
     while (True):
-        for buoy in buoys:
+        for buoy in utils.BUOYS:
             buoy.do_next_action()
             time.sleep(utils.NEXT_ACTION_TIME_SLEEP)

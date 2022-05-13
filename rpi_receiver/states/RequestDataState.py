@@ -1,7 +1,8 @@
 import utils
 from File import File
+from network import router
 from states.State import State
-from utils import send_command
+from network.Packet import Packet
 
 '''
 This command is the first one to be sent:
@@ -12,20 +13,28 @@ class RequestDataState(State):
 
 
     def __init__(self):
-        self.__command = "MAC:::{};;;COMMAND:::request-data-info"
+        pass
 
 
     def do_action(self, buoy) -> str:
-        utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__command))
-        mac_address = buoy.get_mac_address()
-        response = send_command(command=self.__command.format(mac_address), buoy=buoy)
-        if response != "":
-            utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response))
-            filename = response.split(";;;")[2].split(":::")[1]
-            length = int(response.split(";;;")[1].split(":::")[1])
-            new_file = File(filename, length)
-            buoy.set_current_file(new_file)
-            utils.logger_debug.debug("Buoy {} File {} has been set".format(buoy.get_name(), filename))
-            return State.PROCESS_CHUNK_STATE  # If all went well, continue
+        self.__packet = Packet()
+        self.__packet.set_destination(buoy.get_mac_address())
+        self.__packet.set_part("COMMAND", "request-data-info")
+
+        utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__packet.get_content()))
+        response_packet = router.send_packet(packet=self.__packet)
+
+        if response_packet.is_empty() is False:
+            utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response_packet.get_content()))
+            try:
+                filename = response_packet.get_part("FILENAME")
+                length = int(response_packet.get_part("LENGTH"))
+                new_file = File(filename, length)
+                buoy.set_current_file(new_file)
+                utils.logger_debug.debug("Buoy {} File {} has been set".format(buoy.get_name(), filename))
+                return State.PROCESS_CHUNK_STATE  # If all went well, continue
+                #If message is corrupted...
+            except KeyError as e:
+                return State.REQUEST_DATA_STATE
         else:
             return State.REQUEST_DATA_STATE  # If not, the process is repeated (it may bring the next File because sender buoy is not taking note whether the last was received or not, because it is moking up datalogger)
