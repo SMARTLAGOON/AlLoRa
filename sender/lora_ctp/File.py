@@ -3,7 +3,7 @@ This class eases the use of a File divided in chunks
 '''
 import gc
 from  math import ceil
-
+from time import time
 gc.enable()
 
 class File:
@@ -36,7 +36,7 @@ class File:
 
     #Block length not characters
     def get_length(self):
-        return self.chunk_counter   #len(self.__chunks)
+        return self.__chunk_counter   #len(self.__chunks)
 
 
     def sent_ok(self):

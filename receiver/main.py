@@ -6,6 +6,7 @@ import pycom
 import lora_handler
 import gc
 import ujson
+from Packet import Packet
 
 #Enable garbage collector
 gc.enable()
@@ -14,7 +15,7 @@ gc.enable()
 THREAD_EXIT = False
 
 #Debug flag
-DEBUG = False
+DEBUG = True
 
 '''
 This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
@@ -23,8 +24,8 @@ def client_thread(clientsocket):
 	try:
 		global DEBUG
 
-		r = clientsocket.recv(256) #MERGE
-
+	    # Receive maximum of 4096 bytes from the client (nothing special with this number)
+		r = clientsocket.recv(256)
 		# If recv() returns with 0 the other end closed the connection
 		if len(r) == 0:
 		    clientsocket.close()
@@ -35,13 +36,15 @@ def client_thread(clientsocket):
 
 		http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
 
-		if "POST /send-command "in str(r):
+		if "POST /send-packet "in str(r):
 			response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
 
 			#Response to the sender (buoy)
-			buoy_response = lora_handler.send_command(response_json['command'], response_json['buoy_mac_address'])
+			packet = Packet()
+			packet.load(response_json['packet'])
+			buoy_response_packet = lora_handler.send_packet(packet)
 
-			json_buoy_response = ujson.dumps({"command_response": buoy_response})
+			json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_content()})
 			if DEBUG == True:
 				print("HTTP", json_buoy_response)
 			clientsocket.send(http + json_buoy_response)
@@ -71,8 +74,8 @@ while True:
 			break
 		# Accept the connection of the clients
 		(clientsocket, address) = serversocket.accept()
-		clientsocket.settimeout(0) #MERGE
 		gc.collect()
+		clientsocket.settimeout(0)
 		client_thread(clientsocket)
 	except KeyboardInterrupt as e:
 		THREAD_EXIT = True

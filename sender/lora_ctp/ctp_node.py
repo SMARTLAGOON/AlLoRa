@@ -11,7 +11,7 @@ from lora_ctp.Packet import Packet
 
 class Node:
 
-    REQUEST_DATA_INFO = "request_data_info"
+    REQUEST_DATA_INFO = "request-data-info"
     CHUNK = "chunk-"
 
     #MERGE
@@ -24,7 +24,7 @@ class Node:
         self.__mesh = mesh
 
         self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
-
+        print(self.__MAC)
         self.__chunk_size = chunk_size
 
         self.__DEBUG = debug
@@ -40,10 +40,10 @@ class Node:
 
     def __forward(self, packet: Packet):
         try:
-            if packet.get_part("ID") not in LAST_SENT_IDS:
+            if packet.get_part("ID") not in self.__LAST_SENT_IDS:
                 print("FORWARDED", packet.get_content())
                 sleep(urandom(1)[0] % 5 + 1)
-                self.__lora_socket.send(data)
+                self.__lora_socket.send(packet.get_content().encode())
                 self.__LAST_SENT_IDS.append(packet.get_part("ID"))
                 self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-5:]
             else:
@@ -59,12 +59,12 @@ class Node:
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet):
-                    if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO:
+                    if packet.get_part("COMMAND") == Node.REQUEST_DATA_INFO:
                         try_connect = False
                         return True
                     else:
-                        if self.DEBUG:
-                            print("ERROR: Asked for other than data info {}".format(data))
+                        if self.__DEBUG:
+                            print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
                 else:
                     self.__forward(packet=packet)
             gc.collect()
@@ -75,8 +75,13 @@ class Node:
     '''
     def __listen_receiver(self):
         packet = Packet()
-    	data = self.__lora_socket.recv(256)
-        if not packet.load(data.decode('utf-8')):
+        data = self.__lora_socket.recv(256)
+
+        try:
+            if not packet.load(data.decode('utf-8')):
+                return None
+        except Exception as e:
+            print(e)
             return None
 
     	if self.__DEBUG:
@@ -105,26 +110,28 @@ class Node:
         self.__file = File(name, content, self.__chunk_size)
         del(content)
         gc.collect()
-        self.__handle_command(packet=packet, type=Node.REQUEST_DATA_INFO)
+        self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
         while not self.__file.sent:
             packet = self.__listen_receiver()
-            if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
-                command = packet.get_part('COMMAND')
-                if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                    self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
-                elif command.startswith(Node.REQUEST_DATA_INFO):
-                    self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
-            else:
-                self.__forward(packet=packet)
+            if packet:
+                if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
+                    command = packet.get_part('COMMAND')
+                    if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                        self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                    elif command.startswith(Node.REQUEST_DATA_INFO):
+                        self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+                else:
+                    self.__forward(packet=packet)
         del(self.__file)
         gc.collect()
         self.__file = None
+
 
     def __handle_command(self, command: str, type: str):
         response_packet = None
         if type == Node.REQUEST_DATA_INFO:    # handle for new file
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
-                self.file.sent_ok()
+                self.__file.sent_ok()
                 return True
             elif self.__file.metadata_sent:
                 self.__file.retransmission += 1
@@ -151,7 +158,7 @@ class Node:
 
         if response_packet:
             if self.__mesh:
-                response_packet.set_part("ID", str(generate_id()))
+                response_packet.set_part("ID", str(self.__generate_id()))
             	sleep(urandom(1)[0] % 5 + 1)
             	self.__lora_socket.send(response_packet.get_content().encode())
             	print("SENT FINAL RESPONSE", response_packet.get_content())
@@ -161,11 +168,11 @@ class Node:
             del(response_packet)
             gc.collect()
 
-    def generate_id(self):
-    	global LAST_IDS
+
+    def __generate_id(self):
     	id = -1
-    	while (id in LAST_IDS) or (id == -1):
+    	while (id in self.__LAST_IDS) or (id == -1):
     		id = urandom(1)[0] % 999 + 0
-    	LAST_IDS.append(id)
-    	LAST_IDS = LAST_IDS[-5:]
+    	self.__LAST_IDS.append(id)
+    	self.__LAST_IDS = self.__LAST_IDS[-5:]
     	return id
