@@ -44,7 +44,7 @@ class Node:
         return packet.get_destination() == self.__MAC
 
     def __forward(self, packet: Packet):
-        try:
+        try:    # Revisar si no lo envié yo mismo antes
             if packet.get_part("ID") not in self.__LAST_SENT_IDS:
                 print("FORWARDED", packet.get_content())
                 sleep(urandom(1)[0] % 5 + 1)
