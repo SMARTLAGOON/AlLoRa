@@ -3,7 +3,7 @@ import network
 from network import LoRa
 import socket
 import binascii
-from time import sleep, ticks_ms, sleep_ms
+from time import sleep, time()
 from uos import urandom
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
@@ -129,7 +129,7 @@ class Node:
 
     def restore_file(self, name, content):
         self.set_file(name, content)
-        self.__file.first_sent = True
+        self.__file.first_sent = time()
         self.__file.metadata_sent = True
 
     def send_file(self):
