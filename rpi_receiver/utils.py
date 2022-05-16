@@ -5,11 +5,11 @@ import time
 from configparser import ConfigParser
 
 logger_info = logging.getLogger('info')
-logger_info.setLevel(logging.INFO)
+#logger_info.setLevel(logging.INFO)
 logger_debug = logging.getLogger('debug')
-logger_debug.setLevel(logging.DEBUG)
+#logger_debug.setLevel(logging.DEBUG)
 logger_error = logging.getLogger('error')
-logger_error.setLevel(logging.ERROR)
+#logger_error.setLevel(logging.ERROR)
 
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - PROCESS( %(process)d ) FILENAME( %(filename)s ) LINE( %(lineno)s ) MESSAGE( %(message)s )')
 
