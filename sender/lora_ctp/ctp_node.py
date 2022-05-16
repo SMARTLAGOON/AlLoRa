@@ -43,9 +43,6 @@ class Node:
     def __is_for_me(self, packet: Packet):
         return packet.get_destination() == self.__MAC
 
-    def __was_from_me(self, packet: Packet):
-        return packet.get_source() == self.__MAC
-
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
             if packet.get_part("ID") not in self.__LAST_SENT_IDS:
@@ -74,8 +71,7 @@ class Node:
                         if self.__DEBUG:
                             print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
                 else:
-                    if not self.__was_from_me():
-                        self.__forward(packet=packet)
+                    self.__forward(packet=packet)
             gc.collect()
 
 
@@ -130,8 +126,7 @@ class Node:
                     elif command.startswith(Node.REQUEST_DATA_INFO):
                         self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
                 else:
-                    if not self.__was_from_me():
-                        self.__forward(packet=packet)
+                    self.__forward(packet=packet)
         del(self.__file)
         gc.collect()
         self.__file = None
@@ -187,5 +182,5 @@ class Node:
     	while (id in self.__LAST_IDS) or (id == -1):
     		id = urandom(1)[0] % 999 + 0
     	self.__LAST_IDS.append(id)
-    	self.__LAST_IDS = self.__LAST_IDS[-5:]
+    	self.__LAST_IDS = self.__LAST_IDS[-30:]
     	return id
