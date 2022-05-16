@@ -63,12 +63,11 @@ class File:
     	t = time()
     	if t0_tf:
     		self.first_sent = t
-    	else:
-    		if self.first_sent is not None:
-    			self.last_sent = t
-                test_log = open('log.txt', "ab")
-    			txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.retransmission)
-    			test_log.write(txt)
-    			#if DEBUG:
-    			print(txt)
-    	test_log.close()
+    	elif self.first_sent is not None:
+            self.last_sent = t
+            test_log = open('log.txt', "ab")
+            txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.retransmission)
+            test_log.write(txt)
+            #if DEBUG:
+            print(txt)
+            test_log.close()

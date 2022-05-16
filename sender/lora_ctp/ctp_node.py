@@ -43,6 +43,9 @@ class Node:
     def __is_for_me(self, packet: Packet):
         return packet.get_destination() == self.__MAC
 
+    def got_file(self):     # Check if I have a file to send
+        return self.__file is not None
+
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
             if packet.get_part("ID") not in self.__LAST_SENT_IDS:
@@ -64,9 +67,13 @@ class Node:
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet):
-                    if packet.get_part("COMMAND") == Node.REQUEST_DATA_INFO:
+                    command = packet.get_part('COMMAND')
+                    if command.startswith(Node.REQUEST_DATA_INFO):
                         try_connect = False
-                        return True
+                        return True, None
+                    elif command.startswith(Node.CHUNK):
+                        try_connect = False
+                        return True, self.__restore_backup()
                     else:
                         if self.__DEBUG:
                             print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
@@ -110,12 +117,22 @@ class Node:
     		percentage = 0
     	print('SIGNAL STRENGTH', percentage, '%')
 
-
-    def send_file(self, name, content):
+    def set_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)
+        self.__backup_sending_file()
         del(content)
         gc.collect()
+
+    def set_new_file(self, name, content):
+        self.set_file(name, content)
         self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
+
+    def restore_file(self, name, content):
+        self.set_file(name, content)
+        self.__file.first_sent = True
+        self.__file.metadata_sent = True
+
+    def send_file(self):
         while not self.__file.sent:
             packet = self.__listen_receiver()
             if packet:
@@ -184,3 +201,19 @@ class Node:
     	self.__LAST_IDS.append(id)
     	self.__LAST_IDS = self.__LAST_IDS[-30:]
     	return id
+
+    def __clean_backup(self):
+        backup = open('backup.txt', "wb")
+        backup.write("")
+        backup.close()
+
+    def __backup_sending_file(self):
+        backup = open('backup.txt', "wb")
+        backup.write(self.__file.get_name())
+        backup.close()
+
+    def __restore_backup(self):
+        backup = open('backup.txt', "rb")
+        name = backup.readline().decode("utf-8")
+        backup.close()
+        return name
