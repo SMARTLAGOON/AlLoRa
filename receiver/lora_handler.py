@@ -7,8 +7,8 @@ from Packet import Packet
 lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
-WAIT_MAX_TIMEOUT = 10
-DEBUG = False
+WAIT_MAX_TIMEOUT = 100
+DEBUG = True
 
 def print_rssi_quality_percentage():
 	global lora
@@ -34,11 +34,13 @@ def wait_sender_data(packet):
 	global DEBUG
 
 	timeout = WAIT_MAX_TIMEOUT
+	received = False
 	received_data = b''
 
 	socket.send(packet.get_content().encode())
 	response_packet = Packet()
-	while(timeout > 0):
+	while(timeout > 0 or received is True):
+
 		if DEBUG == True:
 			print("WAIT_SENDER_DATA() || quedan {} segundos timeout".format(timeout))
 		received_data = socket.recv(256)
@@ -56,7 +58,7 @@ def wait_sender_data(packet):
 					response_packet = Packet()
 			except Exception as e:
 				print("Corrupted packet received", e)
-		time.sleep(0.1)
+		time.sleep(0.01)
 		timeout = timeout - 1
 
 	return response_packet

@@ -3,7 +3,7 @@ import network
 from network import LoRa
 import socket
 import binascii
-from time import sleep, time()
+from time import sleep, time
 from uos import urandom
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
@@ -49,16 +49,19 @@ class Node:
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
             if packet.get_part("ID") not in self.__LAST_SENT_IDS:
-                print("FORWARDED", packet.get_content())
-                sleep(urandom(1)[0] % 5 + 1)
+                if self.__DEBUG:
+                    print("FORWARDED", packet.get_content())
+                sleep((urandom(1)[0] % 5 + 1) * 0.1)
                 self.__lora_socket.send(packet.get_content().encode())
                 self.__LAST_SENT_IDS.append(packet.get_part("ID"))
-                self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-5:]
+                self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-30:]
             else:
-                print("ALREADY_FORWARDED", self.__LAST_SENT_IDS)
+                if self.__DEBUG:
+                    print("ALREADY_FORWARDED", self.__LAST_SENT_IDS)
         except KeyError as e:
             # If packet was corrupted along the way, won't read the COMMAND part
-            print("JAMMING FORWARDING", e)
+            if self.__DEBUG:
+                print("JAMMING FORWARDING", e)
 
 
     def stablish_connection(self):
@@ -93,7 +96,8 @@ class Node:
             if not packet.load(data.decode('utf-8')):
                 return None
         except Exception as e:
-            print(e)
+            if self.__DEBUG:
+                print(e)
             return None
 
     	if self.__DEBUG:
@@ -181,7 +185,7 @@ class Node:
         if response_packet:
             if self.__mesh:
                 response_packet.set_part("ID", str(self.__generate_id()))
-            	sleep(urandom(1)[0] % 5 + 1)
+            	sleep((urandom(1)[0] % 10 + 1) * 0.1)
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
             	self.__lora_socket.send(response_packet.get_content().encode())

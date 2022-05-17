@@ -41,5 +41,9 @@ if __name__ == "__main__":
 
     while (True):
         for buoy in utils.BUOYS:
-            buoy.do_next_action()
-            time.sleep(utils.NEXT_ACTION_TIME_SLEEP)
+            t0 = time.time()
+            in_time = True
+            while (in_time):
+                buoy.do_next_action()
+                in_time = True if time.time() - t0 < 10  else False
+                time.sleep(utils.NEXT_ACTION_TIME_SLEEP)

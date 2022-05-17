@@ -1,12 +1,14 @@
 import usocket
 import _thread
 import time
-from network import WLAN
+from network import WLAN, LoRa
 import pycom
 import lora_handler
 import gc
 import ujson
 from Packet import Packet
+import binascii
+
 
 #Enable garbage collector
 gc.enable()
@@ -16,6 +18,8 @@ THREAD_EXIT = False
 
 #Debug flag
 DEBUG = False
+
+print(binascii.hexlify(LoRa().mac()).decode('utf-8'))
 
 '''
 This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it

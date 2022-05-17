@@ -25,7 +25,7 @@ def clean_timing_file():
 
 if __name__ == "__main__":
 
-	lora_node = Node(sf = 7, chunk_size = 200, mesh = False, debug = False)
+	lora_node = Node(sf = 7, chunk_size = 200, mesh = True, debug = True)
 	try:
 		clean_timing_file()
 		success, backup = lora_node.stablish_connection()

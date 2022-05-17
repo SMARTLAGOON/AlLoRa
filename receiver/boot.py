@@ -4,7 +4,6 @@ import pycom
 
 #Stop the blinking led
 pycom.heartbeat(False)
-pycom.wifi_on_boot(False)
 
 wlan = WLAN()
 wlan.init(mode=WLAN.AP, ssid="smartlagoon_land_receiver", auth=(WLAN.WPA2, "smartlagoonX98ASasd00de2l"))
