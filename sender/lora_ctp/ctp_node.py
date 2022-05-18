@@ -46,24 +46,6 @@ class Node:
     def got_file(self):     # Check if I have a file to send
         return self.__file is not None
 
-    def __forward(self, packet: Packet):
-        try:    # Revisar si no lo envié yo mismo antes
-            if packet.get_part("ID") not in self.__LAST_SENT_IDS:
-                if self.__DEBUG:
-                    print("FORWARDED", packet.get_content())
-                sleep((urandom(1)[0] % 5 + 1) * 0.1)
-                self.__lora_socket.send(packet.get_content().encode())
-                self.__LAST_SENT_IDS.append(packet.get_part("ID"))
-                self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-30:]
-            else:
-                if self.__DEBUG:
-                    print("ALREADY_FORWARDED", self.__LAST_SENT_IDS)
-        except KeyError as e:
-            # If packet was corrupted along the way, won't read the COMMAND part
-            if self.__DEBUG:
-                print("JAMMING FORWARDING", e)
-
-
     def stablish_connection(self):
         try_connect = True
         while try_connect:
@@ -101,18 +83,34 @@ class Node:
             return None
 
     	if self.__DEBUG:
-    		self.__rssi_calc()
+    		self.__signal_estimation()
     		print('LISTEN_RECEIVER() || received_content', packet.get_content())
 
         return packet
 
+    def __forward(self, packet: Packet):
+        try:    # Revisar si no lo envié yo mismo antes
+            if packet.get_part("ID") not in self.__LAST_SENT_IDS:
+                if self.__DEBUG:
+                    print("FORWARDED", packet.get_content())
+                sleep((urandom(1)[0] % 5 + 1) * 0.1)
+                self.__lora_socket.send(packet.get_content().encode())
+                self.__LAST_SENT_IDS.append(packet.get_part("ID"))
+                self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-30:]
+            else:
+                if self.__DEBUG:
+                    print("ALREADY_FORWARDED", self.__LAST_SENT_IDS)
+        except KeyError as e:
+            # If packet was corrupted along the way, won't read the COMMAND part
+            if self.__DEBUG:
+                print("JAMMING FORWARDING", e)
 
     '''
-    This function prints the signal strength of the last received package over LoRa
+    This function prints the aproximated signal strength of the last received package over LoRa
     '''
-    def __rssi_calc(self):
+    def __signal_estimation(self):
         percentage = 0
-    	rssi = self.__lora.stats()[1]
+    	rssi = self.__raw_rssi()
     	if (rssi >= -50):
     		percentage = 100
     	elif (rssi <= -50) and (rssi >= -100):
@@ -120,6 +118,10 @@ class Node:
     	elif (rssi < 100):
     		percentage = 0
     	print('SIGNAL STRENGTH', percentage, '%')
+
+    """ This function returns the RSSI of the last received packet"""
+    def __raw_rssi(self):
+        return self.__lora.stats()[1]
 
     def set_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)

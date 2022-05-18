@@ -14,7 +14,7 @@ def get_next_file(sizes, file_counter):
 	n = file_counter % len(sizes)
 	file_counter += 1
 	size = sizes[n]
-	return '{}.json'.format(size), bytearray('{}'.format(n % 10) * (1024 * size)), file_counter
+	return n, size, file_counter
 
 
 def clean_timing_file():
@@ -34,12 +34,12 @@ if __name__ == "__main__":
 				print(backup)
 				size = int(backup.split(".")[0])
 				file_counter = sizes.index(size)
-				name, content, file_counter = get_next_file(sizes, file_counter)
-				lora_node.restore_file(name = name, content = content)
+				n, size, file_counter = get_next_file(sizes, file_counter)
+				lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
 			while True:
 				if not lora_node.got_file():
-					name, content, file_counter = get_next_file(sizes, file_counter)
-					lora_node.set_new_file(name = name, content = content)
+					n, size, file_counter = get_next_file(sizes, file_counter)
+					lora_node.set_new_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
 
 				lora_node.send_file()
 					#lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))	#( )).encode("UTF-8") '{}'.format(n%10)*(1024 * size)	#('{}'.format(n%10)*(1024 * size)).encode("UTF-8")
