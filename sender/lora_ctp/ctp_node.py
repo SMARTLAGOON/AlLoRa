@@ -29,8 +29,8 @@ class Node:
             print(self.__MAC)
 
         self.__chunk_size = chunk_size
-        if self.__mesh and self.__chunk_size > 193:   # Packet size less than 230 (with Spread Factor 7)
-            self.__chunk_size = 193
+        if self.__mesh and self.__chunk_size > 183:   # Packet size less than 255 (with Spreading Factor 7)
+            self.__chunk_size = 183
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
 
@@ -174,9 +174,9 @@ class Node:
                         response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
                     elif command.startswith(Node.REQUEST_DATA_INFO):
                         response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
-
-                    if packet.get_part("M") == "1":
-                        response_packet.enable_mesh()
+                    if self.__mesh:
+                        if packet.get_part("M") == "1":
+                            response_packet.enable_mesh()
                     self.__send(response_packet)
                 else:
                     self.__forward(packet=packet)

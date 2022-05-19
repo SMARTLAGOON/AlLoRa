@@ -36,8 +36,8 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
             addr = socket.getaddrinfo(utils.RECEIVER_API_HOST, utils.RECEIVER_API_PORT)[0][-1]
             s.settimeout(utils.SOCKET_TIMEOUT)
             s.connect(addr)
-
-            packet.set_part("ID", str(generate_id()))
+            if mesh_mode:
+                packet.set_part("ID", str(generate_id()))
             content = json.dumps({"packet": packet.get_content()})
 
             httpreq = 'POST {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}'.format(
