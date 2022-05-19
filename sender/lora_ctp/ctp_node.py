@@ -38,7 +38,7 @@ class Node:
 
         self.__LAST_SEEN_IDS = list()
         self.__LAST_IDS = list()
-        self.__max_length_lists = 30
+        self.__MAX_IDS_CACHED = 30
 
 
     def __is_for_me(self, packet: Packet):
@@ -88,8 +88,8 @@ class Node:
                 print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
             return None
 
-    	if self.__DEBUG:
-    		self.__signal_estimation()
+        if self.__DEBUG:
+            self.__signal_estimation()
             print('LISTEN_RECEIVER() || received_content', packet.get_content())
 
         return packet
@@ -98,15 +98,16 @@ class Node:
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
             #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
-            if self.__DEBUG:
-                print("FORWARDED", packet.get_content())
-            sleep((urandom(1)[0] % 5 + 1) * 0.1)
-            self.__lora_socket.send(packet.get_content().encode())
-            self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
-            self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__max_length_lists:]
-            #else:
-            #    if self.__DEBUG:
-            #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
+            if packet.get_part("M") == "1":
+                if self.__DEBUG:
+                    print("FORWARDED", packet.get_content())
+                sleep((urandom(1)[0] % 5 + 1) * 0.1)
+                self.__lora_socket.send(packet.get_content().encode())
+                self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
+                self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
+                #else:
+                #    if self.__DEBUG:
+                #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
         except KeyError as e:
             # If packet was corrupted along the way, won't read the COMMAND part
             if self.__DEBUG:
@@ -145,16 +146,37 @@ class Node:
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
 
+    def __send(self, response_packet: Packet):
+        if response_packet:
+            if self.__mesh:
+                response_packet.set_part("ID", str(self.__generate_id()))
+            	sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
+                #print(response_packet.get_content().encode())
+                #print(len(response_packet.get_content().encode()))
+            	self.__lora_socket.send(response_packet.get_content().encode())
+                if self.__DEBUG:
+            	       print("SENT FINAL RESPONSE", response_packet.get_content())
+            else:
+                self.__lora_socket.send(response_packet.get_content().encode())
+            sleep(0.1)
+            del(response_packet)
+            gc.collect()
+
     def send_file(self):
         while not self.__file.sent:
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                     command = packet.get_part('COMMAND')
+                    response_packet = None
                     if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                        self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                        response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
                     elif command.startswith(Node.REQUEST_DATA_INFO):
-                        self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+                        response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+
+                    if packet.get_part("M") == "1":
+                        response_packet.enable_mesh()
+                    self.__send(response_packet)
                 else:
                     self.__forward(packet=packet)
         del(self.__file)
@@ -191,20 +213,7 @@ class Node:
             if not self.__file.first_sent:
                 self.__file.report_SST(True)	#Registering new file t0
 
-        if response_packet:
-            if self.__mesh:
-                response_packet.set_part("ID", str(self.__generate_id()))
-            	sleep((urandom(1)[0] % 10 + 1) * 0.1)
-                #print(response_packet.get_content().encode())
-                #print(len(response_packet.get_content().encode()))
-            	self.__lora_socket.send(response_packet.get_content().encode())
-                if self.__DEBUG:
-            	       print("SENT FINAL RESPONSE", response_packet.get_content())
-            else:
-                self.__lora_socket.send(response_packet.get_content().encode())
-            sleep(0.1)
-            del(response_packet)
-            gc.collect()
+        return response_packet
 
 
     def __generate_id(self):
@@ -212,7 +221,7 @@ class Node:
     	while (id in self.__LAST_IDS) or (id == -1):
     		id = urandom(1)[0] % 999 + 0
     	self.__LAST_IDS.append(id)
-    	self.__LAST_IDS = self.__LAST_IDS[-self.__max_length_lists:]
+    	self.__LAST_IDS = self.__LAST_IDS[-self.__MAX_IDS_CACHED:]
     	return id
 
     def __clean_backup(self):

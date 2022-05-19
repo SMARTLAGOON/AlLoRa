@@ -12,7 +12,7 @@ from states.RequestDataState import RequestDataState
 
 '''
 This class helps to handle senders (buoys) in a handy way.
-It mounts a basic State pattern helping with communication protocol, also saves its state just in case of a blackout or whatever. 
+It mounts a basic State pattern helping with communication protocol, also saves its state just in case of a blackout or whatever.
 '''
 class Buoy:
 
@@ -30,19 +30,46 @@ class Buoy:
         self.__next_state = RequestDataState()
         self.__current_file = None
 
+        self.__mesh = False
+        self.__retransmission_counter = 0
+        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 5  # MRBM
+        self.__mesh_t0 = None
+        self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
+
 
     def get_name(self):
         return self.__name
 
-
     def get_mac_address(self):
         return self.__mac_address
 
+    def get_mesh(self):
+        return self.__mesh
+
+    def enable_mesh(self):
+        self.__mesh = True
+        self.__mesh_t0 = time.time()
+
+    def disable_mesh(self):
+        self.__mesh = False
+        self.__mesh_t0 = None
+        self.__retransmission_counter = 0
+
+    def check_mesh(self):
+        if self.__mesh:
+            if (time.time() - self.mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
+                self.disable_mesh()
+
+    def count_retransmission(self):
+        print("BUOY {}: retransmission + 1".format(self.__name))
+        self.__retransmission_counter += 1
+        if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
+            print("BUOY {}: ENABLING MESH".format(self.__name))
+            self.enable_mesh()
 
     def set_current_file(self, file: File):
         self.__current_file = file
         self.__backup()
-
 
     def get_current_file(self):
         return self.__current_file
@@ -50,12 +77,13 @@ class Buoy:
 
     def do_next_action(self):
         self.__next_state = self.__getattribute__(self.__next_state.do_action(self))
+        self.check_mesh()
         self.__backup()
 
 
     '''
     This function saves the state of the application serializing itself.
-    
+
     It also saves the data received from buoys in their specific folders.
     '''
     def __backup(self):
@@ -95,7 +123,7 @@ class Buoy:
 
 
     '''
-    This function looks for content in a constant loop. 
+    This function looks for content in a constant loop.
     '''
     def sync_remote(self):
 

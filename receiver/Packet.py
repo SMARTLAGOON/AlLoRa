@@ -39,7 +39,7 @@ class Packet:
         return self.__mesh
 
 
-    def set_mesh(self):
+    def enable_mesh(self):
         self.__mesh = "1"
 
     def disable_mesh(self):

@@ -5,7 +5,7 @@ from network.Packet import Packet
 
 '''
 This command is sent:
-    - As a first chunk request after the first RequestDataState was sent and replied, 
+    - As a first chunk request after the first RequestDataState was sent and replied,
 in fact the returned data is needed to make up the ProcessChunkState command.
 
     - After a previous ProcessChunkState, until the last chunk of the current File is received.
@@ -21,6 +21,8 @@ class ProcessChunkState(State):
         self.__packet = Packet()
         self.__packet.set_destination(buoy.get_mac_address())
         self.__packet.set_part("COMMAND")
+        if buoy.get_mesh():
+            self.__packet.enable_mesh()
 
         file = buoy.get_current_file()
         utils.logger_debug.debug("Buoy {} Missing chunks: {}".format(buoy.get_name(), file.get_missing_chunks()))
@@ -43,11 +45,13 @@ class ProcessChunkState(State):
                     #If corrupted message..
                 except KeyError as e:
                     pass
+            else:
+                buoy.count_retransmission()
 
-                
+
             # If this chunk was the last one, the cycle is reset
             if len(file.get_missing_chunks()) <= 0:
                 return State.REQUEST_DATA_STATE
-            
+
             # While chunks are left.
             return State.PROCESS_CHUNK_STATE

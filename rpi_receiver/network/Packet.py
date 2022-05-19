@@ -38,7 +38,7 @@ class Packet:
         return self.__mesh
 
 
-    def set_mesh(self):
+    def enable_mesh(self):
         self.__mesh = "1"
 
     def disable_mesh(self):
@@ -95,7 +95,7 @@ class Packet:
             for part in all_parts[3:]:
                 self.set_part(part.split(self.__name_separator)[0], part.split(self.__name_separator)[1])
             self.__empty = False
-        except IndexError as e:
+        except Exception as e: #IndexError
             # This exception may raise when the packet has no parts so no more than the basics S,D,F
             print(e)
             self.__empty = True

@@ -43,13 +43,11 @@ class Packet:
     def get_mesh(self):
         return self.__mesh
 
-
-    def set_mesh(self):
+    def enable_mesh(self):
         self.__mesh = "1"
 
     def disable_mesh(self):
         self.__mesh = "0"
-
 
     def set_part(self, name, content="-"):
         self.__parts[name] = content

@@ -20,6 +20,8 @@ class RequestDataState(State):
         self.__packet = Packet()
         self.__packet.set_destination(buoy.get_mac_address())
         self.__packet.set_part("COMMAND", "request-data-info")
+        if buoy.get_mesh():
+            self.__packet.enable_mesh()
 
         utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__packet.get_content()))
         response_packet = router.send_packet(packet=self.__packet)
@@ -37,4 +39,5 @@ class RequestDataState(State):
             except KeyError as e:
                 return State.REQUEST_DATA_STATE
         else:
-            return State.REQUEST_DATA_STATE  # If not, the process is repeated (it may bring the next File because sender buoy is not taking note whether the last was received or not, because it is moking up datalogger)
+            buoy.count_retransmission()
+            return State.REQUEST_DATA_STATE
