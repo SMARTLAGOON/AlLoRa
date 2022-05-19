@@ -48,7 +48,6 @@ class ProcessChunkState(State):
             else:
                 buoy.count_retransmission()
 
-
             # If this chunk was the last one, the cycle is reset
             if len(file.get_missing_chunks()) <= 0:
                 return State.REQUEST_DATA_STATE

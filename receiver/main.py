@@ -47,7 +47,7 @@ def client_thread(clientsocket):
 			packet = Packet()
 			packet.load(response_json['packet'])
 			buoy_response_packet = lora_handler.send_packet(packet)
-			print(buoy_response_packet.get_content())
+			#print(buoy_response_packet.get_content())
 
 			json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_content()})
 			if DEBUG == True:

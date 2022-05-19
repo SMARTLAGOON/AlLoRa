@@ -79,7 +79,6 @@ class Buoy:
     def get_current_file(self):
         return self.__current_file
 
-
     def do_next_action(self):
         self.__next_state = self.__getattribute__(self.__next_state.do_action(self))
         self.check_mesh()
