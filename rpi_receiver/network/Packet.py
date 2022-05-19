@@ -66,7 +66,7 @@ class Packet:
 
     def get_content(self):
         packet = Packet.SOURCE_HEADER + self.__name_separator + self.__source + self.__part_separator + \
-                 Packet.DESTINATION_HEADER + self.__name_separator + self.__destination + self.__part_separator
+                    Packet.DESTINATION_HEADER + self.__name_separator + self.__destination + self.__part_separator
         if self.__mesh_mode:
             packet += Packet.MESH_HEADER + self.__name_separator + self.__mesh + self.__part_separator
 
