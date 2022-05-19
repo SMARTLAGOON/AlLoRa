@@ -61,7 +61,7 @@ class Buoy:
 
     def check_mesh(self):
         if self.__mesh_mode and self.__mesh:
-            if (time.time() - self.mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
+            if (time.time() - self.__mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
                 self.disable_mesh()
 
     def count_retransmission(self):

@@ -27,6 +27,7 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
     json_response = None
     retry = True
     max_retries = 1
+    print(packet.get_content())
     response_packet = Packet(mesh_mode = mesh_mode)
 
     while max_retries > 0 and retry is True:
