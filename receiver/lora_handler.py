@@ -9,6 +9,7 @@ socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 100
 DEBUG = True
+mesh_mode = False
 
 def print_rssi_quality_percentage():
 	global lora
@@ -38,7 +39,7 @@ def wait_sender_data(packet):
 	received_data = b''
 
 	socket.send(packet.get_content().encode())
-	response_packet = Packet()
+	response_packet = Packet(mesh_mode = mesh_mode)
 	while(timeout > 0 or received is True):
 
 		if DEBUG == True:
@@ -49,13 +50,13 @@ def wait_sender_data(packet):
 			print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
 		if received_data.startswith(b'S:::'):
 			try:
-				response_packet = Packet()
+				response_packet = Packet(mesh_mode = mesh_mode)
 				response_packet.load(received_data.decode('utf-8'))
 				if response_packet.get_source() == packet.get_destination():
 					received = True
 					break
 				else:
-					response_packet = Packet()
+					response_packet = Packet(mesh_mode = mesh_mode)
 			except Exception as e:
 				print("Corrupted packet received", e)
 		time.sleep(0.01)

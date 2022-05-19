@@ -18,7 +18,7 @@ class ProcessChunkState(State):
         pass
 
     def do_action(self, buoy) -> str:
-        self.__packet = Packet()
+        self.__packet = Packet(buoy.get_mesh_mode())
         self.__packet.set_destination(buoy.get_mac_address())
         self.__packet.set_part("COMMAND")
         if buoy.get_mesh():
@@ -35,7 +35,7 @@ class ProcessChunkState(State):
             utils.logger_debug.debug(
                 "Buoy {} Next chunk command: {}".format(buoy.get_name(), self.__packet.get_content()))
 
-            response_packet = router.send_packet(packet=self.__packet)
+            response_packet = router.send_packet(packet=self.__packet, mesh_mode = buoy.get_mesh_mode())
             utils.logger_debug.debug("Buoy {} Response: {}".format(buoy.get_name(), response_packet.get_content()))
 
             if response_packet.is_empty() is False:

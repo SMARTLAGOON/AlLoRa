@@ -21,7 +21,7 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
 
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, mesh_mode = False):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address
@@ -30,6 +30,7 @@ class Buoy:
         self.__next_state = RequestDataState()
         self.__current_file = None
 
+        self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
         self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 5  # MRBM
@@ -42,6 +43,9 @@ class Buoy:
 
     def get_mac_address(self):
         return self.__mac_address
+
+    def get_mesh_mode(self):
+        return self.__mesh_mode
 
     def get_mesh(self):
         return self.__mesh
@@ -56,16 +60,17 @@ class Buoy:
         self.__retransmission_counter = 0
 
     def check_mesh(self):
-        if self.__mesh:
+        if self.__mesh_mode and self.__mesh:
             if (time.time() - self.mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
                 self.disable_mesh()
 
     def count_retransmission(self):
-        print("BUOY {}: retransmission + 1".format(self.__name))
-        self.__retransmission_counter += 1
-        if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
-            print("BUOY {}: ENABLING MESH".format(self.__name))
-            self.enable_mesh()
+        if self.__mesh_mode:
+            print("BUOY {}: retransmission + 1".format(self.__name))
+            self.__retransmission_counter += 1
+            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
+                print("BUOY {}: ENABLING MESH".format(self.__name))
+                self.enable_mesh()
 
     def set_current_file(self, file: File):
         self.__current_file = file

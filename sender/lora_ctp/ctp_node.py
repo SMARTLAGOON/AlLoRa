@@ -15,7 +15,7 @@ class Node:
     CHUNK = "chunk-"
 
     #MERGE
-    def __init__(self, sf, chunk_size = 200, mesh = False, debug = False):
+    def __init__(self, sf, chunk_size = 201, mesh = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
@@ -29,8 +29,8 @@ class Node:
             print(self.__MAC)
 
         self.__chunk_size = chunk_size
-        if self.__mesh and self.__chunk_size > 173:   # Packet size less than 230 (with Spread Factor 7)
-            self.__chunk_size = 173
+        if self.__mesh and self.__chunk_size > 193:   # Packet size less than 230 (with Spread Factor 7)
+            self.__chunk_size = 193
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
 
@@ -72,7 +72,7 @@ class Node:
     This function ensures that a received message matches the criteria of any expected message.
     '''
     def __listen_receiver(self):
-        packet = Packet()
+        packet = Packet(mesh_mode = self.__mesh)
         data = self.__lora_socket.recv(256)
 
         try:
@@ -197,7 +197,7 @@ class Node:
             else:
                 self.__file.metadata_sent = True
 
-            response_packet = Packet()
+            response_packet = Packet(mesh_mode = self.__mesh)
             response_packet.set_part("LENGTH", self.__file.get_length())
             response_packet.set_part("FILENAME", self.__file.get_name())
 
@@ -207,7 +207,7 @@ class Node:
             if self.__DEBUG:
                 print("RC: {}".format(requested_chunk))
             #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
-            response_packet = Packet()
+            response_packet = Packet(mesh_mode = self.__mesh)
             response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
 
             if not self.__file.first_sent:

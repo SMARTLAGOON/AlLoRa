@@ -8,7 +8,7 @@ from random import randint
 import utils
 from network.Packet import Packet
 
-LAST_IDS = collections.deque(maxlen=5)
+LAST_IDS = collections.deque(maxlen=30)
 
 
 def generate_id():
@@ -23,12 +23,12 @@ def generate_id():
     return id
 
 
-def send_packet(packet: Packet) -> Packet:
+def send_packet(packet: Packet, mesh_mode = False) -> Packet:
     json_response = None
     retry = True
     max_retries = 1
-    response_packet = Packet()
-    
+    response_packet = Packet(mesh_mode = mesh_mode)
+
     while max_retries > 0 and retry is True:
         try:
             s = socket.socket()
@@ -64,5 +64,5 @@ def send_packet(packet: Packet) -> Packet:
             retry = True
         finally:
             max_retries -= 1
-    
+
     return response_packet

@@ -25,12 +25,17 @@ def clean_timing_file():
 
 if __name__ == "__main__":
 
-	lora_node = Node(sf = 7, chunk_size = 200, mesh = True, debug = True)
+	lora_node = Node(sf = 7, chunk_size = 201, mesh = False, debug = True)
 	from lora_ctp.Packet import Packet
 
-	p = Packet()
-	p.set_part("CHUNK", "HOLAAAAAAA")
+	p = Packet(mesh_mode = lora_node.__mesh)
+	cs = 201
+	p.set_part("CHUNK", "{}".format(0)*cs)
+	p.set_destination(lora_node.__MAC)
 	print(p.get_content())
+	print(len(p.get_content()))
+	lora_node.__lora_socket.send(p.get_content().encode())
+	print("sent")
 
 	try:
 		clean_timing_file()

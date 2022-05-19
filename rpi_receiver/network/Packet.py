@@ -7,7 +7,7 @@ class Packet:
     DESTINATION_HEADER = "D"
     MESH_HEADER = "M"
 
-    def __init__(self, part_separator=";;;", name_separator=":::"):
+    def __init__(self, part_separator=";;;", name_separator=":::", mesh_mode = False):
         self.__source = utils.RECEIVER_MAC_ADDRESS
         self.__destination ="-"
         self.__mesh = "0"
@@ -20,6 +20,7 @@ class Packet:
         self.__order = list()
 
         self.__empty = True
+        self.__mesh_mode = mesh_mode
 
 
     def get_source(self):
@@ -33,10 +34,8 @@ class Packet:
     def set_destination(self, destination: str):
         self.__destination = destination
 
-
     def get_mesh(self):
         return self.__mesh
-
 
     def enable_mesh(self):
         self.__mesh = "1"
@@ -67,8 +66,9 @@ class Packet:
 
     def get_content(self):
         packet = Packet.SOURCE_HEADER + self.__name_separator + self.__source + self.__part_separator + \
-                 Packet.DESTINATION_HEADER + self.__name_separator + self.__destination + self.__part_separator + \
-                 Packet.MESH_HEADER + self.__name_separator + self.__mesh + self.__part_separator
+                 Packet.DESTINATION_HEADER + self.__name_separator + self.__destination + self.__part_separator
+        if self.__mesh_mode:
+            packet += Packet.MESH_HEADER + self.__name_separator + self.__mesh + self.__part_separator
 
         for i in range(len(self.__order)):
             packet += self.__order[i] + self.__name_separator + self.__parts[self.__order[i]]
@@ -89,7 +89,8 @@ class Packet:
         #Always the first three parts are source, destination and mesh
         self.__source = all_parts[0].split(self.__name_separator)[1]
         self.__destination = all_parts[1].split(self.__name_separator)[1]
-        self.__mesh = all_parts[2].split(self.__name_separator)[1]
+        if self.__mesh_mode:
+            self.__mesh = all_parts[2].split(self.__name_separator)[1]
 
         try:
             for part in all_parts[3:]:

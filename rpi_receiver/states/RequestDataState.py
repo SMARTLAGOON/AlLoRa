@@ -17,14 +17,14 @@ class RequestDataState(State):
 
 
     def do_action(self, buoy) -> str:
-        self.__packet = Packet()
+        self.__packet = Packet(buoy.get_mesh_mode())
         self.__packet.set_destination(buoy.get_mac_address())
         self.__packet.set_part("COMMAND", "request-data-info")
         if buoy.get_mesh():
             self.__packet.enable_mesh()
 
         utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__packet.get_content()))
-        response_packet = router.send_packet(packet=self.__packet)
+        response_packet = router.send_packet(packet=self.__packet, mesh_mode = buoy.get_mesh_mode())
 
         if response_packet.is_empty() is False:
             utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response_packet.get_content()))

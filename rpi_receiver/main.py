@@ -17,7 +17,8 @@ def restore_backup(buoy: dict):
     restored_buoy = Buoy(name=name,
                          coordinates=coordinates,
                          mac_address=mac_address,
-                         uploading_endpoint=uploading_endpoint)
+                         uploading_endpoint=uploading_endpoint,
+                         mesh_mode = False)
 
     try:
         with open('application_backup/buoy_{}.pickle.bak'.format(mac_address), 'rb') as fp:
