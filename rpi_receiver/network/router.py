@@ -57,8 +57,11 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
             retry = False
             try:
                 extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
+                print(extracted_response)
                 json_response = json.loads(extracted_response)
+                print(json_response)
                 response_packet.load(json_response['response_packet'])
+                print(response_packet.get_content())
             except Exception as e:
                 print("ERROR here for some reason")
         except Exception as e:
