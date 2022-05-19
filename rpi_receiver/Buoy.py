@@ -65,10 +65,10 @@ class Buoy:
                 self.disable_mesh()
 
     def count_retransmission(self):
-        if self.__mesh_mode:
-            print("BUOY {}: retransmission + 1".format(self.__name))
+        if self.__mesh_mode and not self.get_mesh():
+            #print("BUOY {}: retransmission + 1".format(self.__name))
             self.__retransmission_counter += 1
-            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH and not self.get_mesh():
+            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
                 print("BUOY {}: ENABLING MESH".format(self.__name))
                 self.enable_mesh()
 
