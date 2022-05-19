@@ -18,7 +18,7 @@ class ProcessChunkState(State):
         pass
 
     def do_action(self, buoy) -> str:
-        self.__packet = Packet(buoy.get_mesh_mode())
+        self.__packet = Packet(mesh_mode = buoy.get_mesh_mode())
         self.__packet.set_destination(buoy.get_mac_address())
         self.__packet.set_part("COMMAND")
         if buoy.get_mesh():
