@@ -26,6 +26,12 @@ def clean_timing_file():
 if __name__ == "__main__":
 
 	lora_node = Node(sf = 7, chunk_size = 200, mesh = True, debug = True)
+	from lora_ctp.Packet import Packet
+
+	p = Packet()
+	p.set_part("CHUNK", "HOLAAAAAAA")
+	print(p.get_content())
+
 	try:
 		clean_timing_file()
 		success, backup = lora_node.stablish_connection()

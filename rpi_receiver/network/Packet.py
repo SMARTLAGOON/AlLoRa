@@ -5,12 +5,12 @@ class Packet:
 
     SOURCE_HEADER = "S"
     DESTINATION_HEADER = "D"
-    FORWARD_TO_HEADER = "F"
+    MESH_HEADER = "M"
 
     def __init__(self, part_separator=";;;", name_separator=":::"):
         self.__source = utils.RECEIVER_MAC_ADDRESS
         self.__destination ="-"
-        self.__forward_to = "-"
+        self.__mesh = "0"
 
         self.__part_separator = part_separator
         self.__name_separator = name_separator
@@ -34,13 +34,15 @@ class Packet:
         self.__destination = destination
 
 
-    def get_forward_to(self):
-        return self.__forward_to
+    def get_mesh(self):
+        return self.__mesh
 
 
-    def set_forward_to(self, forward_to: str):
-        self.__forward_to = forward_to
+    def set_mesh(self):
+        self.__mesh = "1"
 
+    def disable_mesh(self):
+        self.__mesh = "0"
 
     def set_part(self, name, content:str ="-"):
         self.__parts[name] = content
@@ -66,7 +68,7 @@ class Packet:
     def get_content(self):
         packet = Packet.SOURCE_HEADER + self.__name_separator + self.__source + self.__part_separator + \
                  Packet.DESTINATION_HEADER + self.__name_separator + self.__destination + self.__part_separator + \
-                 Packet.FORWARD_TO_HEADER + self.__name_separator + self.__forward_to + self.__part_separator
+                 Packet.MESH_HEADER + self.__name_separator + self.__mesh + self.__part_separator
 
         for i in range(len(self.__order)):
             packet += self.__order[i] + self.__name_separator + self.__parts[self.__order[i]]
@@ -84,10 +86,10 @@ class Packet:
 
         all_parts = packet.split(self.__part_separator)
 
-        #Always the first three parts are source, destination and forward_to
+        #Always the first three parts are source, destination and mesh
         self.__source = all_parts[0].split(self.__name_separator)[1]
         self.__destination = all_parts[1].split(self.__name_separator)[1]
-        self.__forward_to = all_parts[2].split(self.__name_separator)[1]
+        self.__mesh = all_parts[2].split(self.__name_separator)[1]
 
         try:
             for part in all_parts[3:]:

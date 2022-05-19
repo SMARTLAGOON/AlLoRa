@@ -36,8 +36,9 @@ class Node:
 
         self.__file = None
 
-        self.__LAST_SENT_IDS = list()
+        self.__LAST_SEEN_IDS = list()
         self.__LAST_IDS = list()
+        self.__max_length_lists = 30
 
 
     def __is_for_me(self, packet: Packet):
@@ -82,24 +83,30 @@ class Node:
                 print(e)
             return None
 
+        if packet.get_part("ID") in self.__LAST_SEEN_IDS:
+            if self.__DEBUG:
+                print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
+            return None
+
     	if self.__DEBUG:
     		self.__signal_estimation()
-    		print('LISTEN_RECEIVER() || received_content', packet.get_content())
+            print('LISTEN_RECEIVER() || received_content', packet.get_content())
 
         return packet
 
+
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
-            if packet.get_part("ID") not in self.__LAST_SENT_IDS:
-                if self.__DEBUG:
-                    print("FORWARDED", packet.get_content())
-                sleep((urandom(1)[0] % 5 + 1) * 0.1)
-                self.__lora_socket.send(packet.get_content().encode())
-                self.__LAST_SENT_IDS.append(packet.get_part("ID"))
-                self.__LAST_SENT_IDS = self.__LAST_SENT_IDS[-30:]
-            else:
-                if self.__DEBUG:
-                    print("ALREADY_FORWARDED", self.__LAST_SENT_IDS)
+            #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
+            if self.__DEBUG:
+                print("FORWARDED", packet.get_content())
+            sleep((urandom(1)[0] % 5 + 1) * 0.1)
+            self.__lora_socket.send(packet.get_content().encode())
+            self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
+            self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__max_length_lists:]
+            #else:
+            #    if self.__DEBUG:
+            #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
         except KeyError as e:
             # If packet was corrupted along the way, won't read the COMMAND part
             if self.__DEBUG:
@@ -205,7 +212,7 @@ class Node:
     	while (id in self.__LAST_IDS) or (id == -1):
     		id = urandom(1)[0] % 999 + 0
     	self.__LAST_IDS.append(id)
-    	self.__LAST_IDS = self.__LAST_IDS[-30:]
+    	self.__LAST_IDS = self.__LAST_IDS[-self.__max_length_lists:]
     	return id
 
     def __clean_backup(self):
