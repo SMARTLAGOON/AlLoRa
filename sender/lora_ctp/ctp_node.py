@@ -83,10 +83,11 @@ class Node:
                 print(e)
             return None
 
-        if packet.get_part("ID") in self.__LAST_SEEN_IDS:
-            if self.__DEBUG:
-                print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
-            return None
+        if self.__mesh:
+            if packet.get_part("ID") in self.__LAST_SEEN_IDS:
+                if self.__DEBUG:
+                    print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
+                return None
 
         if self.__DEBUG:
             self.__signal_estimation()

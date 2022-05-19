@@ -91,9 +91,12 @@ class Packet:
         self.__destination = all_parts[1].split(self.__name_separator)[1]
         if self.__mesh_mode:
             self.__mesh = all_parts[2].split(self.__name_separator)[1]
+            next = 3
+        else:
+            next = 2
 
         try:
-            for part in all_parts[3:]:
+            for part in all_parts[next:]:
                 self.set_part(part.split(self.__name_separator)[0], part.split(self.__name_separator)[1])
             self.__empty = False
         except Exception as e: #IndexError
