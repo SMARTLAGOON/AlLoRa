@@ -68,7 +68,7 @@ class Buoy:
         if self.__mesh_mode:
             print("BUOY {}: retransmission + 1".format(self.__name))
             self.__retransmission_counter += 1
-            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
+            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH and not self.get_mesh():
                 print("BUOY {}: ENABLING MESH".format(self.__name))
                 self.enable_mesh()
 

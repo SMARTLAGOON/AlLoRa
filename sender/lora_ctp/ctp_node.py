@@ -150,6 +150,8 @@ class Node:
     def __send(self, response_packet: Packet):
         if response_packet:
             if self.__mesh:
+                if packet.get_mesh() == "1":
+                    response_packet.enable_mesh()
                 response_packet.set_part("ID", str(self.__generate_id()))
             	sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
                 #print(response_packet.get_content().encode())
@@ -174,9 +176,7 @@ class Node:
                         response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
                     elif command.startswith(Node.REQUEST_DATA_INFO):
                         response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
-                    if self.__mesh:
-                        if packet.get_part("M") == "1":
-                            response_packet.enable_mesh()
+
                     self.__send(response_packet)
                 else:
                     self.__forward(packet=packet)
