@@ -70,7 +70,7 @@ def load_config():
     RECEIVER_API_HOST = config.get('receiver', 'RECEIVER_API_HOST')
     RECEIVER_API_PORT = config.getint('receiver', 'RECEIVER_API_PORT')
     SOCKET_TIMEOUT = config.getint('receiver', 'SOCKET_TIMEOUT')
-    PACKET_RETRY_SLEEP = config.getint('receiver', 'PACKET_RETRY_SLEEP')
+    PACKET_RETRY_SLEEP = config.getfloat('receiver', 'PACKET_RETRY_SLEEP')
     SOCKET_RECV_SIZE = config.getint('receiver', 'SOCKET_RECV_SIZE')
     SYNC_REMOTE_FILE_SENDING_TIME_SLEEP = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_TIME_SLEEP')
     SYNC_REMOTE_FILE_SENDING_MAX_RETRIES = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_MAX_RETRIES')
