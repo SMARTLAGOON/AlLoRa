@@ -61,7 +61,6 @@ def wait_sender_data(packet):
 				print("Corrupted packet received", e)
 		time.sleep(0.01)
 		timeout = timeout - 1
-
 	return response_packet
 
 

@@ -55,10 +55,12 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
             response = s.recv(utils.SOCKET_RECV_SIZE)
 
             retry = False
-
-            extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
-            json_response = json.loads(extracted_response)
-            response_packet.load(json_response['response_packet'])
+            try:
+                extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
+                json_response = json.loads(extracted_response)
+                response_packet.load(json_response['response_packet'])
+            except:
+                pass    # It fails when response is empty
 
         except Exception as e:
             utils.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
