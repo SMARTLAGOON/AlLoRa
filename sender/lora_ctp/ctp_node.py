@@ -190,7 +190,7 @@ class Node:
         if type == Node.REQUEST_DATA_INFO:    # handle for new file
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
-                return True
+                return None
             elif self.__file.metadata_sent:
                 self.__file.retransmission += 1
                 if self.__DEBUG:

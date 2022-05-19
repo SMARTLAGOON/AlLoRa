@@ -8,7 +8,7 @@ lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
 socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 100
-DEBUG = True
+DEBUG = False
 mesh_mode = False
 
 def print_rssi_quality_percentage():
