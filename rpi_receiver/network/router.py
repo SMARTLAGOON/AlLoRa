@@ -55,15 +55,11 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
             response = s.recv(utils.SOCKET_RECV_SIZE)
 
             retry = False
-            try:
-                extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
-                print(extracted_response)
-                json_response = json.loads(extracted_response)
-                print(json_response)
-                response_packet.load(json_response['response_packet'])
-                print(response_packet.get_content())
-            except Exception as e:
-                print("ERROR here for some reason")
+
+            extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
+            json_response = json.loads(extracted_response)
+            response_packet.load(json_response['response_packet'])
+
         except Exception as e:
             utils.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
             time.sleep(utils.PACKET_RETRY_SLEEP)
