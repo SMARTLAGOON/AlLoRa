@@ -33,7 +33,7 @@ class Buoy:
         self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
-        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 5  # MRBM
+        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 20  # MRBM
         self.__mesh_t0 = None
         self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
 
