@@ -25,7 +25,7 @@ def clean_timing_file():
 
 if __name__ == "__main__":
 
-	lora_node = Node(sf = 7, chunk_size = 201, mesh = True, debug = False)
+	lora_node = Node(sf = 7, chunk_size = 201, mesh = False, debug = False)
 	from lora_ctp.Packet import Packet
 	"""
 	p = Packet(mesh_mode = lora_node.__mesh)

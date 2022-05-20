@@ -9,7 +9,7 @@ socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 WAIT_MAX_TIMEOUT = 100
 DEBUG = False
-mesh_mode = True
+mesh_mode = False
 
 def print_rssi_quality_percentage():
 	global lora

@@ -25,8 +25,8 @@ class Node:
         self.__DEBUG = debug
 
         self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
-        if self.__DEBUG:
-            print(self.__MAC)
+        #if self.__DEBUG:
+        print(self.__MAC)
 
         self.__chunk_size = chunk_size
         if self.__mesh and self.__chunk_size > 183:   # Packet size less than 255 (with Spreading Factor 7)
