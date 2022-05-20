@@ -151,7 +151,8 @@ class Node:
         if response_packet:
             if self.__mesh:
                 response_packet.set_part("ID", str(self.__generate_id()))
-            	sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
+                if response_packet.get_part("M") == "1":    # To-Do enable/disable_mesh en load
+                    sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
             	self.__lora_socket.send(response_packet.get_content().encode())
