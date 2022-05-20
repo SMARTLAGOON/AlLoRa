@@ -41,13 +41,15 @@ class Packet:
 
     def enable_mesh(self):
         self.__mesh = "1"
+        self.set_part("M", self.__mesh)
 
     def disable_mesh(self):
         self.__mesh = "0"
+        self.__parts["M"] = self.__mesh
 
     def set_part(self, name, content="-"):
         self.__parts[name] = content
-        self.__order.append(name)
+        self.__order.append(name)   #FIX ME hacer idempotente
 
     def fill_part(self, name, content):
         self.__parts[name] = content

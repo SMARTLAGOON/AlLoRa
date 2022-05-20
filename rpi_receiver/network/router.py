@@ -60,7 +60,8 @@ def send_packet(packet: Packet, mesh_mode = False) -> Packet:
                 extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
                 json_response = json.loads(extracted_response)
                 response_packet.load(json_response['response_packet'])
-            except:
+            except Exception as e:
+                #print(e)
                 pass    # It fails when response is empty
 
         except Exception as e:
