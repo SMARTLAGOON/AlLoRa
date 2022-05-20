@@ -72,6 +72,10 @@ class Buoy:
                 print("BUOY {}: ENABLING MESH".format(self.__name))
                 self.enable_mesh()
 
+    def reset_retransmission_counter(self):
+        if self.__mesh_mode not self.get_mesh():
+            self.__retransmission_counter = 0
+
     def set_current_file(self, file: File):
         self.__current_file = file
         self.__backup()
