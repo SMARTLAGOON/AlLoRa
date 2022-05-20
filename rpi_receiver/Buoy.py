@@ -73,7 +73,7 @@ class Buoy:
                 self.enable_mesh()
 
     def reset_retransmission_counter(self):
-        if self.__mesh_mode not self.get_mesh():
+        if self.__mesh_mode and not self.get_mesh():
             self.__retransmission_counter = 0
 
     def set_current_file(self, file: File):
