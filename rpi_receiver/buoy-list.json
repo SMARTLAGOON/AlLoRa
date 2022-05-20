@@ -6,5 +6,13 @@
     "alt":0,
     "mac_address": "70b3d5499a76ba3f",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data"
+  },
+  {
+    "name": "Boya C",
+    "lat": 37.6996,
+    "lon": -0.7858,
+    "alt":0,
+    "mac_address": "70b3d549922f4240",
+    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data"
   }
 ]
