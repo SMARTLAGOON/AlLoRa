@@ -21,7 +21,7 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
 
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active = True, mesh_mode = False):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active: bool, mesh_mode = False):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address
