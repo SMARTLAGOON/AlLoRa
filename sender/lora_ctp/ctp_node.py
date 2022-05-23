@@ -7,12 +7,14 @@ from time import sleep, time
 from uos import urandom
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
+import pycom
 
 
 class Node:
 
     REQUEST_DATA_INFO = "request-data-info"
     CHUNK = "chunk-"
+    MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
     #MERGE
     def __init__(self, sf, chunk_size = 201, mesh = False, debug = False):
@@ -39,7 +41,27 @@ class Node:
         self.__LAST_SEEN_IDS = list()
         self.__LAST_IDS = list()
         self.__MAX_IDS_CACHED = 30
+        pycom.rgbled(0x1aa7ec) # Picton Blue
+        sleep(1)
+        pycom.rgbled(0) # off
 
+    '''
+    This function prints the aproximated signal strength of the last received package over LoRa
+    '''
+    def __signal_estimation(self):
+        percentage = 0
+    	rssi = self.__raw_rssi()
+    	if (rssi >= -50):
+    		percentage = 100
+    	elif (rssi <= -50) and (rssi >= -100):
+    		percentage = 2 * (rssi + 100)
+    	elif (rssi < 100):
+    		percentage = 0
+    	print('SIGNAL STRENGTH', percentage, '%')
+
+    """ This function returns the RSSI of the last received packet"""
+    def __raw_rssi(self):
+        return self.__lora.stats()[1]
 
     def __is_for_me(self, packet: Packet):
         return packet.get_destination() == self.__MAC
@@ -55,9 +77,11 @@ class Node:
                 if self.__is_for_me(packet=packet):
                     command = packet.get_part('COMMAND')
                     if command.startswith(Node.REQUEST_DATA_INFO):
+                        pycom.rgbled(0x007f00) # green
                         try_connect = False
                         return True, None
                     elif command.startswith(Node.CHUNK):
+                        pycom.rgbled(0x007f00) # green
                         try_connect = False
                         return True, self.__restore_backup()
                     else:
@@ -66,7 +90,6 @@ class Node:
                 else:
                     self.__forward(packet=packet)
             gc.collect()
-
 
     '''
     This function ensures that a received message matches the criteria of any expected message.
@@ -102,7 +125,13 @@ class Node:
             if packet.get_part("M") == "1":
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
-                sleep((urandom(1)[0] % 5 + 1) * 0.1)
+                random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
+
+                packet.add_hop(self.__MAC, self.__raw_rssi(), random_sleep)
+                pycom.rgbled(0x7f0000) # red
+                sleep(random_sleep)  # Revisar
+                pycom.rgbled(0)        # off
+
                 self.__lora_socket.send(packet.get_content().encode())
                 self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
                 self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
@@ -113,24 +142,6 @@ class Node:
             # If packet was corrupted along the way, won't read the COMMAND part
             if self.__DEBUG:
                 print("JAMMING FORWARDING", e)
-
-    '''
-    This function prints the aproximated signal strength of the last received package over LoRa
-    '''
-    def __signal_estimation(self):
-        percentage = 0
-    	rssi = self.__raw_rssi()
-    	if (rssi >= -50):
-    		percentage = 100
-    	elif (rssi <= -50) and (rssi >= -100):
-    		percentage = 2 * (rssi + 100)
-    	elif (rssi < 100):
-    		percentage = 0
-    	print('SIGNAL STRENGTH', percentage, '%')
-
-    """ This function returns the RSSI of the last received packet"""
-    def __raw_rssi(self):
-        return self.__lora.stats()[1]
 
     def set_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)
@@ -151,18 +162,22 @@ class Node:
         if response_packet:
             if self.__mesh:
                 response_packet.set_part("ID", str(self.__generate_id()))
+                t_sleep = 0
                 if response_packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
-                    sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
+                    t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
+                    pycom.rgbled(0x7f0000) # red
+                    sleep(t_sleep)  # Revisar
+                    pycom.rgbled(0)        # off
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
+                packet.add_hop(self.__MAC, self.__raw_rssi(), t_sleep)
             	self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
+                packet.add_hop(self.__MAC, self.__raw_rssi(), 0)
                 self.__lora_socket.send(response_packet.get_content().encode())
-            sleep(0.1)
-            del(response_packet)
-            gc.collect()
+
 
     def send_file(self):
         while not self.__file.sent:
@@ -180,6 +195,12 @@ class Node:
                     self.__send(response_packet)
                 else:
                     self.__forward(packet=packet)
+                if response_packet:
+                    pycom.rgbled(0x7f7f00) # yellow
+                    sleep(0.1)
+                    pycom.rgbled(0)        # off
+                    del(response_packet)
+                    gc.collect()
         del(self.__file)
         gc.collect()
         self.__file = None

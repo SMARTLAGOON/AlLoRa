@@ -26,8 +26,8 @@ def clean_timing_file():
 if __name__ == "__main__":
 
 	lora_node = Node(sf = 7, chunk_size = 201, mesh = True, debug = False)
-	from lora_ctp.Packet import Packet
 	"""
+	from lora_ctp.Packet import Packet
 	p = Packet(mesh_mode = lora_node.__mesh)
 	cs = 193
 	p.set_part("CHUNK", "{}".format(0)*cs)
@@ -46,11 +46,12 @@ if __name__ == "__main__":
 				size = int(backup.split(".")[0])
 				file_counter = sizes.index(size)
 				n, size, file_counter = get_next_file(sizes, file_counter)
-				lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
+				lora_node.restore_file(name = '{}.json'.format(n%100), content = bytearray('{}'.format(n%100)))
+				#lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
 			while True:
 				if not lora_node.got_file():
 					n, size, file_counter = get_next_file(sizes, file_counter)
-					lora_node.set_new_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
+					lora_node.set_new_file(name = '{}.json'.format(n%100), content = bytearray('{}'.format(n%100)))
 
 				lora_node.send_file()
 					#lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))	#( )).encode("UTF-8") '{}'.format(n%10)*(1024 * size)	#('{}'.format(n%10)*(1024 * size)).encode("UTF-8")

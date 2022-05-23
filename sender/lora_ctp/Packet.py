@@ -1,5 +1,6 @@
 import network
 import binascii
+from ujson import dumps, loads
 
 class Packet:
 
@@ -50,6 +51,14 @@ class Packet:
     def set_part(self, name, content="-"):
         self.__parts[name] = content
         self.__order.append(name)   #FIX ME hacer idempotente
+
+    def add_hop(self, mac, rssi, time_sleep):
+        metadata = {"MAC" : mac, "R": rssi, "T": time_sleep}
+        if "H" in self.__order:
+            hops = loads(self.__parts["H"])
+            metadata = hops.append(metadata)
+        self.set_part("H", dumps(metadata))
+        
 
     def fill_part(self, name, content):
         self.__parts[name] = content

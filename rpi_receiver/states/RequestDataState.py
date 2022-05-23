@@ -29,6 +29,7 @@ class RequestDataState(State):
         if response_packet.is_empty() is False:
             utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response_packet.get_content()))
             try:
+                self.write_metadata(response_packet)
                 filename = response_packet.get_part("FILENAME")
                 length = int(response_packet.get_part("LENGTH"))
                 new_file = File(filename, length)
