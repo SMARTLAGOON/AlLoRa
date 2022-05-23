@@ -6,7 +6,7 @@
     "alt":0,
     "mac_address": "70b3d5499a76ba3f",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
-    "active": true
+    "active": True
   },
   {
     "name": "Boya B",
@@ -15,7 +15,7 @@
     "alt":0,
     "mac_address": "70b3d54993a5bb9c",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
-    "active": false
+    "active": False
   },
   {
     "name": "Boya C",
@@ -24,7 +24,7 @@
     "alt":0,
     "mac_address": "70b3d549922f4240",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
-    "active": false
+    "active": False
   },
   {
     "name": "Boya Ethernet",
@@ -33,6 +33,6 @@
     "alt":0,
     "mac_address": "70b3d5499973b469",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data".
-    "active": false
+    "active": False
   },
 ]
