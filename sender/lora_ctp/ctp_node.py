@@ -76,14 +76,17 @@ class Node:
             if packet:
                 if self.__is_for_me(packet=packet):
                     command = packet.get_part('COMMAND')
+                    mesh_flag = False
+                    if self.__mesh and packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
+                        mesh_flag = True
                     if command.startswith(Node.REQUEST_DATA_INFO):
                         pycom.rgbled(0x007f00) # green
                         try_connect = False
-                        return True, None
+                        return True, None, mesh_flag
                     elif command.startswith(Node.CHUNK):
                         pycom.rgbled(0x007f00) # green
                         try_connect = False
-                        return True, self.__restore_backup()
+                        return True, self.__restore_backup(), mesh_flag
                     else:
                         if self.__DEBUG:
                             print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
@@ -149,9 +152,17 @@ class Node:
         del(content)
         gc.collect()
 
-    def set_new_file(self, name, content):
+    def set_new_file(self, name, content, mesh_flag):
         self.set_file(name, content)
-        self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
+        response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
+        if self.__mesh and mesh_flag and response_packet:
+            response_packet.enable_mesh()
+        self.__send(response_packet)
+        pycom.rgbled(0x007f00) # green
+        sleep(0.1)
+        pycom.rgbled(0)        # off
+        del(response_packet)
+        gc.collect()
 
     def restore_file(self, name, content):
         self.set_file(name, content)
@@ -165,22 +176,23 @@ class Node:
                 t_sleep = 0
                 if response_packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
                     t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
-                    pycom.rgbled(0x7f0000) # red
+                    pycom.rgbled(0xb19cd8) # purple
                     sleep(t_sleep)  # Revisar
                     pycom.rgbled(0)        # off
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
                 response_packet.add_hop(self.__MAC, self.__raw_rssi(), t_sleep)
-            	self.__lora_socket.send(response_packet.get_content().encode())
+            	#self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
                 response_packet.add_hop(self.__MAC, self.__raw_rssi(), 0)
-                self.__lora_socket.send(response_packet.get_content().encode())
+            self.__lora_socket.send(response_packet.get_content().encode())
 
 
     def send_file(self):
         while not self.__file.sent:
+            mesh_flag = False
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
@@ -192,11 +204,12 @@ class Node:
                         response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
                     if packet.get_mesh() == "1" and response_packet:
                         response_packet.enable_mesh()
+                        mesh_flag = True
                     self.__send(response_packet)
                 else:
                     self.__forward(packet=packet)
                 if response_packet:
-                    pycom.rgbled(0x7f7f00) # yellow
+                    pycom.rgbled(0x007f00) # green
                     sleep(0.1)
                     pycom.rgbled(0)        # off
                     del(response_packet)
@@ -204,6 +217,7 @@ class Node:
         del(self.__file)
         gc.collect()
         self.__file = None
+        return mesh_flag
 
 
     def __handle_command(self, command: str, type: str):

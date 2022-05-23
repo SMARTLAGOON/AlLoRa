@@ -39,21 +39,21 @@ if __name__ == "__main__":
 
 	try:
 		clean_timing_file()
-		success, backup = lora_node.stablish_connection()
+		success, backup, mesh_flag = lora_node.stablish_connection()
 		if success:
 			if backup:
 				print(backup)
 				size = int(backup.split(".")[0])
 				file_counter = sizes.index(size)
 				n, size, file_counter = get_next_file(sizes, file_counter)
-				lora_node.restore_file(name = '{}.json'.format(n%100), content = bytearray('{}'.format(n%100)))
+				lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%100)))
 				#lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
 			while True:
 				if not lora_node.got_file():
 					n, size, file_counter = get_next_file(sizes, file_counter)
-					lora_node.set_new_file(name = '{}.json'.format(n%100), content = bytearray('{}'.format(n%100)))
+					lora_node.set_new_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%100)), mesh_flag = mesh_flag)
 
-				lora_node.send_file()
+				mesh_flag = lora_node.send_file()
 					#lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))	#( )).encode("UTF-8") '{}'.format(n%10)*(1024 * size)	#('{}'.format(n%10)*(1024 * size)).encode("UTF-8")
 					#file_counter += 1
 
