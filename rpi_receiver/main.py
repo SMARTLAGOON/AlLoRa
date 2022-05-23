@@ -12,12 +12,14 @@ def restore_backup(buoy: dict):
     coordinates = (buoy['lat'], buoy['lon'], buoy['alt'])
     mac_address = buoy['mac_address']
     uploading_endpoint = buoy['uploading_endpoint']
+    active = buoy["active"]
 
     utils.logger_info.info("Restoring buoy: {}".format(buoy))
     restored_buoy = Buoy(name=name,
                          coordinates=coordinates,
                          mac_address=mac_address,
                          uploading_endpoint=uploading_endpoint,
+                         active=active,
                          mesh_mode = True)
 
     try:
@@ -42,9 +44,10 @@ if __name__ == "__main__":
 
     while (True):
         for buoy in utils.BUOYS:
-            t0 = time.time()
-            in_time = True
-            while (in_time):
-                buoy.do_next_action()
-                in_time = True if time.time() - t0 < 10  else False
-                time.sleep(utils.NEXT_ACTION_TIME_SLEEP)
+            if buoy.is_active():
+                t0 = time.time()
+                in_time = True
+                while (in_time):
+                    buoy.do_next_action()
+                    in_time = True if time.time() - t0 < 10  else False
+                    time.sleep(utils.NEXT_ACTION_TIME_SLEEP)

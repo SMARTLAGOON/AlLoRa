@@ -21,11 +21,12 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
 
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, mesh_mode = False):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active = True, mesh_mode = False):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address
         self.__uploading_endpoint = uploading_endpoint
+        self.__active = active
 
         self.__next_state = RequestDataState()
         self.__current_file = None
@@ -49,6 +50,9 @@ class Buoy:
 
     def get_mesh(self):
         return self.__mesh
+
+    def is_active(self):
+        return self.__active
 
     def enable_mesh(self):
         self.__mesh = True
