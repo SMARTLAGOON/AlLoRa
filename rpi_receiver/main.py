@@ -13,6 +13,7 @@ def restore_backup(buoy: dict):
     mac_address = buoy['mac_address']
     uploading_endpoint = buoy['uploading_endpoint']
     active = buoy["active"]
+    print(active)
 
     utils.logger_info.info("Restoring buoy: {}".format(buoy))
     restored_buoy = Buoy(name=name,
