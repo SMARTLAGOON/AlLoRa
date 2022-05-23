@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 import json
+import time
 
 '''
 Parent class for every communication state.

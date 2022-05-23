@@ -170,12 +170,12 @@ class Node:
                     pycom.rgbled(0)        # off
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
-                packet.add_hop(self.__MAC, self.__raw_rssi(), t_sleep)
+                response_packet.add_hop(self.__MAC, self.__raw_rssi(), t_sleep)
             	self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
-                packet.add_hop(self.__MAC, self.__raw_rssi(), 0)
+                response_packet.add_hop(self.__MAC, self.__raw_rssi(), 0)
                 self.__lora_socket.send(response_packet.get_content().encode())
 
 
