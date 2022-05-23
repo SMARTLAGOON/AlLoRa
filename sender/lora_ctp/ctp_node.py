@@ -115,8 +115,8 @@ class Node:
                     if self.__DEBUG:
                         print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
                     return None
-                except Exception as e:
-                    print(e)
+            except Exception as e:
+                print(e)
 
         if self.__DEBUG:
             self.__signal_estimation()
