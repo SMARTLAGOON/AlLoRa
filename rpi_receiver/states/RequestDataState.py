@@ -35,7 +35,7 @@ class RequestDataState(State):
                 new_file = File(filename, length)
                 buoy.set_current_file(new_file)
                 utils.logger_debug.debug("Buoy {} File {} has been set".format(buoy.get_name(), filename))
-                buoy.reset_retransmission_counter()
+                buoy.reset_retransmission_counter(response_packet)
                 return State.PROCESS_CHUNK_STATE  # If all went well, continue
                 #If message is corrupted...
             except KeyError as e:

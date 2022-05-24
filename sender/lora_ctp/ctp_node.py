@@ -209,14 +209,15 @@ class Node:
                         response_packet.enable_mesh()
                         mesh_flag = True
                     self.__send(response_packet)
+                    if response_packet:
+                        pycom.rgbled(0x007f00) # green
+                        sleep(0.1)
+                        pycom.rgbled(0)        # off
+                        del(response_packet)
+                        gc.collect()
                 else:
                     self.__forward(packet=packet)
-                if response_packet:
-                    pycom.rgbled(0x007f00) # green
-                    sleep(0.1)
-                    pycom.rgbled(0)        # off
-                    del(response_packet)
-                    gc.collect()
+
         del(self.__file)
         gc.collect()
         self.__file = None

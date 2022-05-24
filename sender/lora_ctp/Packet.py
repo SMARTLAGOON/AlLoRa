@@ -57,9 +57,11 @@ class Packet:
         print(rssi)
         if "H" in self.__order:
             hops = loads(self.__parts["H"])
-            metadata = hops.append(metadata)
-        self.set_part("H", dumps(metadata))
-
+            hops.append(metadata)
+        else:
+            hops = []
+            hops.append(metadata)
+        self.set_part("H", dumps(hops))
 
     def fill_part(self, name, content):
         self.__parts[name] = content

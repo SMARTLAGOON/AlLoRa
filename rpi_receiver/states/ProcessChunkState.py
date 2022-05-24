@@ -43,7 +43,7 @@ class ProcessChunkState(State):
                     self.write_metadata(response_packet)
                     new_chunk = response_packet.get_part("CHUNK").encode()
                     file.add_chunk(next_chunk, new_chunk)
-                    buoy.reset_retransmission_counter()
+                    buoy.reset_retransmission_counter(response_packet)
                     #If corrupted message..
                 except KeyError as e:
                     pass
