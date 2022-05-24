@@ -22,3 +22,4 @@ class State(ABC):
         line = "{}:{}\n".format(t, hops)
         with open('log_rssi.txt', 'a') as log:
             log.write(line)
+            print(line)

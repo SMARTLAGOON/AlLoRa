@@ -54,11 +54,12 @@ class Packet:
 
     def add_hop(self, mac, rssi, time_sleep):
         metadata = {"MAC" : mac, "R": rssi, "T": time_sleep}
+        print(rssi)
         if "H" in self.__order:
             hops = loads(self.__parts["H"])
             metadata = hops.append(metadata)
         self.set_part("H", dumps(metadata))
-        
+
 
     def fill_part(self, name, content):
         self.__parts[name] = content
@@ -94,7 +95,7 @@ class Packet:
                 return
 
             all_parts = packet.split(self.__part_separator)
-
+            #print(all_parts)
             #Always the first three parts are source, destination and mesh
             self.__source = all_parts[0].split(self.__name_separator)[1]
             self.__destination = all_parts[1].split(self.__name_separator)[1]
