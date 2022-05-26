@@ -54,7 +54,7 @@ class Packet:
 
     def add_hop(self, name, rssi, time_sleep):
         metadata = {"N" : name, "R": rssi, "T": time_sleep}
-        print(rssi)
+        #print(rssi)
         if "H" in self.__order:
             hops = loads(self.__parts["H"])
             hops.append(metadata)
