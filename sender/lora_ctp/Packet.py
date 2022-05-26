@@ -7,7 +7,7 @@ class Packet:
     SOURCE_HEADER = "S"
     DESTINATION_HEADER = "D"
     MESH_HEADER = "M"
-    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
+    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
 
     def __init__(self, part_separator=";;;", name_separator=":::", mesh_mode = False):
         self.__source = Packet.MY_LORA_MAC
@@ -58,10 +58,12 @@ class Packet:
         if "H" in self.__order:
             hops = loads(self.__parts["H"])
             hops.append(metadata)
+            self.__parts["H"] = dumps(hops)
         else:
             hops = []
             hops.append(metadata)
-        self.set_part("H", dumps(hops))
+            self.set_part("H", dumps(hops))
+
 
     def fill_part(self, name, content):
         self.__parts[name] = content
@@ -88,7 +90,7 @@ class Packet:
                 break
             else:
                 packet += self.__part_separator
-        print(len(packet))
+        print("LEN packet to send: ",len(packet), packet)
         return packet
 
     def load(self, packet: str):

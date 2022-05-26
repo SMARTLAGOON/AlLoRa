@@ -24,7 +24,7 @@ class Buoy:
     def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active: bool, mesh_mode: bool):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
-        self.__mac_address = mac_address
+        self.__mac_address = mac_address[8:]
         self.__uploading_endpoint = uploading_endpoint
         self.__active = active
 

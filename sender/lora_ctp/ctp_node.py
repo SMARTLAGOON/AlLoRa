@@ -27,7 +27,7 @@ class Node:
         self.__DEBUG = debug
 
         self.__name = name
-        self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
+        self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
         #if self.__DEBUG:
         print(self.__MAC)
 

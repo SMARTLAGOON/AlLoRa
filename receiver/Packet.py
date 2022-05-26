@@ -6,7 +6,7 @@ class Packet:
     SOURCE_HEADER = "S"
     DESTINATION_HEADER = "D"
     MESH_HEADER = "M"
-    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
+    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
 
     def __init__(self, part_separator=";;;", name_separator=":::", mesh_mode = False):
         self.__source = Packet.MY_LORA_MAC
