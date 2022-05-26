@@ -52,8 +52,8 @@ class Packet:
         self.__parts[name] = content
         self.__order.append(name)   #FIX ME hacer idempotente
 
-    def add_hop(self, mac, rssi, time_sleep):
-        metadata = {"MAC" : mac, "R": rssi, "T": time_sleep}
+    def add_hop(self, name, rssi, time_sleep):
+        metadata = {"N" : name, "R": rssi, "T": time_sleep}
         print(rssi)
         if "H" in self.__order:
             hops = loads(self.__parts["H"])
@@ -88,6 +88,7 @@ class Packet:
                 break
             else:
                 packet += self.__part_separator
+        print(len(packet))
         return packet
 
     def load(self, packet: str):

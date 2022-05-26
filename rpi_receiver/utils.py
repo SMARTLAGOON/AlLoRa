@@ -27,13 +27,13 @@ handler.setFormatter(formatter)
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(formatter)
 
-logger_info.addHandler(console_handler)
-logger_debug.addHandler(console_handler)
-logger_error.addHandler(console_handler)
+#logger_info.addHandler(console_handler)
+#logger_debug.addHandler(console_handler)
+#logger_error.addHandler(console_handler)
 
-logger_info.addHandler(handler)
-logger_debug.addHandler(handler)
-logger_error.addHandler(handler)
+#logger_info.addHandler(handler)
+#logger_debug.addHandler(handler)
+#logger_error.addHandler(handler)
 
 RECEIVER_MAC_ADDRESS = ""
 RECEIVER_API_HOST = "192.168.4.1"

@@ -17,7 +17,7 @@ class Node:
     MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
     #MERGE
-    def __init__(self, sf, chunk_size = 201, mesh = False, debug = False):
+    def __init__(self, name, sf, chunk_size = 201, mesh = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
@@ -26,6 +26,7 @@ class Node:
         self.__mesh = mesh
         self.__DEBUG = debug
 
+        self.__name = name
         self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
         #if self.__DEBUG:
         print(self.__MAC)
@@ -133,7 +134,7 @@ class Node:
                     print("FORWARDED", packet.get_content())
                 random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
 
-                packet.add_hop(self.__MAC, self.__raw_rssi(), random_sleep)
+                packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
                 pycom.rgbled(0x7f0000) # red
                 sleep(random_sleep)  # Revisar
                 pycom.rgbled(0)        # off
@@ -184,12 +185,12 @@ class Node:
                     pycom.rgbled(0)        # off
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
-                response_packet.add_hop(self.__MAC, self.__raw_rssi(), t_sleep)
+                response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
             	#self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
-                response_packet.add_hop(self.__MAC, self.__raw_rssi(), 0)
+                response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
             self.__lora_socket.send(response_packet.get_content().encode())
 
 

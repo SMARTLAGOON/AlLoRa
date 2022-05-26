@@ -34,7 +34,7 @@ class Buoy:
         self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
-        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 20  # MRBM
+        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 10  # MRBM
         self.__mesh_t0 = None
         self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
 
@@ -62,6 +62,7 @@ class Buoy:
         self.__mesh = False
         self.__mesh_t0 = None
         self.__retransmission_counter = 0
+        print("BUOY {}: DISABLING MESH".format(self.__name))
 
     def check_mesh(self):
         if self.__mesh_mode and self.__mesh:
@@ -78,11 +79,11 @@ class Buoy:
 
     def reset_retransmission_counter(self, packet):
         if self.__mesh_mode:
-            if  not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
+            if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
                 self.__retransmission_counter = 0           # Reset counter, going well...
             else:
                 hops = json.loads(packet.get_part("H"))
-                if hops[-1]['MAC'] == self.__mac_address:   # If last hop was from this buoy...
+                if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
                     self.disable_mesh()                     # No need for mesh mode
 
     def set_current_file(self, file: File):

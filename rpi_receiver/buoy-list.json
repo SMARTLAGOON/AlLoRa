@@ -1,6 +1,6 @@
 [
   {
-    "name": "Boya A",
+    "name": "A",
     "lat": 37.6996,
     "lon": -0.7858,
     "alt":0,
@@ -9,7 +9,7 @@
     "active": true
   },
   {
-    "name": "Boya B",
+    "name": "B",
     "lat": 37.6996,
     "lon": -0.7858,
     "alt":0,
@@ -18,7 +18,7 @@
     "active": false
   },
   {
-    "name": "Boya C",
+    "name": "C",
     "lat": 37.6996,
     "lon": -0.7858,
     "alt":0,
@@ -27,12 +27,12 @@
     "active": false
   },
   {
-    "name": "Boya Ethernet",
+    "name": "E",
     "lat": 37.6996,
     "lon": -0.7858,
     "alt":0,
     "mac_address": "70b3d5499973b469",
     "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
-    "active": false
+    "active": true
   }
 ]
