@@ -69,7 +69,8 @@ class Packet:
         self.__parts[name] = content
 
     def get_part(self, name):
-        return self.__parts[name]
+        if name in self.__order:
+            return self.__parts[name]
 
     def order(self, name_list):
         self.__order = name_list

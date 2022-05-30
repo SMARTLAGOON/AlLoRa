@@ -77,20 +77,21 @@ class Node:
             if packet:
                 if self.__is_for_me(packet=packet):
                     command = packet.get_part('COMMAND')
-                    mesh_flag = False
-                    if self.__mesh and packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
-                        mesh_flag = True
-                    if command.startswith(Node.REQUEST_DATA_INFO):
-                        pycom.rgbled(0x007f00) # green
-                        try_connect = False
-                        return True, None, mesh_flag
-                    elif command.startswith(Node.CHUNK):
-                        pycom.rgbled(0x007f00) # green
-                        try_connect = False
-                        return True, self.__restore_backup(), mesh_flag
-                    else:
-                        if self.__DEBUG:
-                            print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
+                    if command:
+                        mesh_flag = False
+                        if self.__mesh and packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
+                            mesh_flag = True
+                        if command.startswith(Node.REQUEST_DATA_INFO):
+                            pycom.rgbled(0x007f00) # green
+                            try_connect = False
+                            return True, None, mesh_flag
+                        elif command.startswith(Node.CHUNK):
+                            pycom.rgbled(0x007f00) # green
+                            try_connect = False
+                            return True, self.__restore_backup(), mesh_flag
+                        else:
+                            if self.__DEBUG:
+                                print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
                 else:
                     self.__forward(packet=packet)
             gc.collect()
@@ -201,21 +202,22 @@ class Node:
             if packet:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                     command = packet.get_part('COMMAND')
-                    response_packet = None
-                    if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                        response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
-                    elif command.startswith(Node.REQUEST_DATA_INFO):
-                        response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
-                    if packet.get_mesh() == "1" and response_packet:
-                        response_packet.enable_mesh()
-                        mesh_flag = True
-                    self.__send(response_packet)
-                    if response_packet:
-                        pycom.rgbled(0x007f00) # green
-                        sleep(0.1)
-                        pycom.rgbled(0)        # off
-                        del(response_packet)
-                        gc.collect()
+                    if command:
+                        response_packet = None
+                        if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                            response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                        elif command.startswith(Node.REQUEST_DATA_INFO):
+                            response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+                        if packet.get_mesh() == "1" and response_packet:
+                            response_packet.enable_mesh()
+                            mesh_flag = True
+                        self.__send(response_packet)
+                        if response_packet:
+                            pycom.rgbled(0x007f00) # green
+                            sleep(0.1)
+                            pycom.rgbled(0)        # off
+                            del(response_packet)
+                            gc.collect()
                 else:
                     self.__forward(packet=packet)
 
