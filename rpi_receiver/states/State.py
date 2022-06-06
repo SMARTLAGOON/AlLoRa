@@ -17,9 +17,11 @@ class State(ABC):
         pass
 
     def write_metadata(self, packet):
+        pass
+        """
         hops = json.loads(packet.get_part("H"))
         t = time.strftime("%Y-%m-%d_%H:%M:%S")
         line = "{}:{}\n".format(t, hops)
         with open('log_rssi.txt', 'a') as log:
             log.write(line)
-            print(line)
+            print(line)"""

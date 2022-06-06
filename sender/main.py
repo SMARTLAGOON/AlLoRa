@@ -41,6 +41,7 @@ if __name__ == "__main__":
 		clean_timing_file()
 		success, backup, mesh_flag = lora_node.stablish_connection()
 		if success:
+			print("Connected!")
 			if backup:
 				print(backup)
 				size = int(backup.split(".")[0])

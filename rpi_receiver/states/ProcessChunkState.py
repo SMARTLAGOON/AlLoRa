@@ -1,7 +1,7 @@
 import utils
 from network import router
 from states.State import State
-from network.Packet import Packet
+from network.newPacket import Packet
 
 '''
 This command is sent:
@@ -18,9 +18,9 @@ class ProcessChunkState(State):
         pass
 
     def do_action(self, buoy) -> str:
-        self.__packet = Packet(mesh_mode = buoy.get_mesh_mode())
+        self.__packet = Packet(buoy.get_mesh_mode())    #mesh_mode = 
         self.__packet.set_destination(buoy.get_mac_address())
-        self.__packet.set_part("COMMAND")
+        #self.__packet.set_part("COMMAND")
         if buoy.get_mesh():
             self.__packet.enable_mesh()
 
@@ -31,7 +31,8 @@ class ProcessChunkState(State):
         if len(file.get_missing_chunks()) > 0:
             # It may be any, but we keep an order, so not.
             next_chunk = file.get_missing_chunks()[0]
-            self.__packet.fill_part("COMMAND", "chunk-{}".format(next_chunk))
+            #self.__packet.fill_part("COMMAND", "chunk-{}".format(next_chunk))
+            self.__packet.ask_data(next_chunk)
             utils.logger_debug.debug(
                 "Buoy {} Next chunk command: {}".format(buoy.get_name(), self.__packet.get_content()))
 
@@ -41,7 +42,7 @@ class ProcessChunkState(State):
             if response_packet.is_empty() is False:
                 try:
                     self.write_metadata(response_packet)
-                    new_chunk = response_packet.get_part("CHUNK").encode()
+                    new_chunk = response_packet.get_payload() #.get_part("CHUNK").encode()
                     file.add_chunk(next_chunk, new_chunk)
                     buoy.reset_retransmission_counter(response_packet)
                     #If corrupted message..

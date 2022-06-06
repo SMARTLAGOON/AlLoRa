@@ -82,9 +82,11 @@ class Buoy:
             if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
                 self.__retransmission_counter = 0           # Reset counter, going well...
             else:
-                hops = json.loads(packet.get_part("H"))
-                if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
-                    self.disable_mesh()                     # No need for mesh mode
+                #hops = json.loads(packet.get_part("H"))
+                #if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
+                    #self.disable_mesh()                     # No need for mesh mode
+                if not packet.get_hop():
+                    self.disable_mesh()
 
     def set_current_file(self, file: File):
         self.__current_file = file

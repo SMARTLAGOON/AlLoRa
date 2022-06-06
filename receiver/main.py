@@ -6,7 +6,7 @@ import pycom
 import lora_handler
 import gc
 import ujson
-from Packet import Packet
+from newPacket import Packet
 import binascii
 
 
@@ -29,7 +29,7 @@ def client_thread(clientsocket):
 		global DEBUG
 
 	    # Receive maximum of 4096 bytes from the client (nothing special with this number)
-		r = clientsocket.recv(256)
+		r = clientsocket.recv(1024)	#256	#512
 		# If recv() returns with 0 the other end closed the connection
 		if len(r) == 0:
 		    clientsocket.close()
@@ -41,20 +41,22 @@ def client_thread(clientsocket):
 		http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
 
 		if "POST /send-packet "in str(r):
+			print(r)
 			response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
-
 			#Response to the sender (buoy)
-			packet = Packet()
-			packet.load(response_json['packet'])
+			print(response_json['packet'])
+			packet = Packet(mesh_mode = True)	# FIX
+			packet.load_dict(response_json['packet'])	#response_json['packet']
 			buoy_response_packet = lora_handler.send_packet(packet)
-			#print(buoy_response_packet.get_content())
+			if buoy_response_packet.get_command():
+				print(buoy_response_packet.get_content())
 
-			json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_content()})
-			if DEBUG == True:
-				print("HTTP", json_buoy_response)
-			clientsocket.send(http + json_buoy_response)
+				json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_content()})
+				if DEBUG == True:
+					print("HTTP", json_buoy_response)
+				clientsocket.send(http + json_buoy_response)
 	except Exception as e:
-		print(e)
+		print("Error:", e)
 	# Close the socket and terminate the thread
 	clientsocket.close()
 
