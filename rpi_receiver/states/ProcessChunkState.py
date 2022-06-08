@@ -33,19 +33,23 @@ class ProcessChunkState(State):
             next_chunk = file.get_missing_chunks()[0]
             #self.__packet.fill_part("COMMAND", "chunk-{}".format(next_chunk))
             self.__packet.ask_data(next_chunk)
-            utils.logger_debug.debug(
-                "Buoy {} Next chunk command: {}".format(buoy.get_name(), self.__packet.get_content()))
+            #utils.logger_debug.debug(
+            #    "Buoy {} Next chunk command: {}".format(buoy.get_name(), self.__packet.get_content()))
 
             response_packet = router.send_packet(packet=self.__packet, mesh_mode = buoy.get_mesh_mode())
-            utils.logger_debug.debug("Buoy {} Response: {}".format(buoy.get_name(), response_packet.get_content()))
+            #utils.logger_debug.debug("Buoy {} Response: {}".format(buoy.get_name(), response_packet.get_content()))
 
             if response_packet.is_empty() is False:
                 try:
-                    self.write_metadata(response_packet)
-                    new_chunk = response_packet.get_payload() #.get_part("CHUNK").encode()
-                    file.add_chunk(next_chunk, new_chunk)
-                    buoy.reset_retransmission_counter(response_packet)
-                    #If corrupted message..
+                    if response_packet.get_command() == "DATA":
+                        self.write_metadata(response_packet)
+                        new_chunk = response_packet.get_payload() #.get_part("CHUNK").encode()
+                        file.add_chunk(next_chunk, new_chunk)
+                        buoy.reset_retransmission_counter(response_packet)
+                        #If corrupted message..
+                    else:
+                        buoy.count_retransmission()
+                        pass    # Solo hacer cosas cuando recibo chunks
                 except KeyError as e:
                     pass
             else:

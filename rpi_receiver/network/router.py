@@ -41,7 +41,6 @@ def send_packet(packet: Packet, mesh_mode: bool) -> Packet:
                 packet.set_id(generate_id())    #_part("ID", str(generate_id()))
 
             content_str = packet.get_dict()
-            print("CONTENT: ", content_str)
             content = json.dumps({"packet": content_str})
 
             httpreq = 'POST {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}'.format(
@@ -60,12 +59,11 @@ def send_packet(packet: Packet, mesh_mode: bool) -> Packet:
 
             retry = False
             try:
-                print("RESPONSE: ", response)
                 extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
                 json_response = json.loads(extracted_response)
-                response_packet.load(json_response['response_packet'])
+                response_packet.load_dict(json_response['response_packet'])
             except Exception as e:
-                print("Error in load: ", e)
+                #print("Error in load: ", e)
                 pass    # It fails when response is empty
 
         except Exception as e:

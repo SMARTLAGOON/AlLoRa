@@ -23,8 +23,8 @@ class Packet:
             self.HEADER_SIZE = self.HEADER_SIZE_MESH
             self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
 
-        self.__source = b''            # 8 Bytes mac address of the source
-        self.__destination = b''       # 8 Bytes mac address of the destination
+        self.__source = ''            # 8 Bytes mac address of the source
+        self.__destination = ''       # 8 Bytes mac address of the destination
         self.__command = None           # Type of command / or Data
         self.__retransmission = False     # True if already sent one or more times
         self.__checksum = None          # Checksum
@@ -40,13 +40,13 @@ class Packet:
         self.__hops = None
 
     def set_source(self, source: str):
-        self.__source = source.encode()
+        self.__source = source
 
     def get_source(self):
         return self.__source
 
     def set_destination(self, destination: str):
-        self.__destination = destination.encode()
+        self.__destination = destination
 
     def get_destination(self):
         return self.__destination
@@ -60,7 +60,7 @@ class Packet:
     def set_metadata(self, length, name):
         self.__command = "METADATA"
         metadata = {"LENGTH" : length, "FILENAME": name}
-        self.__payload = dumps(metadata)
+        self.__payload = dumps(metadata).encode()
 
     def get_payload(self):
         return self.__payload
@@ -117,7 +117,6 @@ class Packet:
         self.__hops = dumps(hops)
 
     def set_id(self, id):
-        print(id)
         if id < 65535:
             self.__id = id
 
@@ -139,7 +138,6 @@ class Packet:
         return (ha[-3:])
 
     def get_content(self):
-        print("COMMAND: ", self.__command)
         if self.__command in self.COMMAND:
             command_bits = self.COMMAND[self.__command]
 
@@ -160,12 +158,13 @@ class Packet:
                 #p = b''
             p = self.__payload
             self.__checksum = self.__get_checksum(p)
+
             if self.__mesh_mode:
                 id_bytes = self.__id.to_bytes(2, 'little')
-                print(self.__source, self.__destination, flags, id_bytes, self.__checksum)  # Check if this (encode) works...
+                #print(self.__source, self.__destination, flags, id_bytes, self.__checksum, p)
                 h = struct.pack(self.HEADER_FORMAT,self.__source.encode(), self.__destination.encode(), flags, id_bytes, self.__checksum)
             else:
-                print(self.__source, self.__destination, flags,  self.__checksum)
+                #print(self.__source, self.__destination, flags,  self.__checksum, p)
                 h = struct.pack(self.HEADER_FORMAT,  self.__source.encode(), self.__destination.encode(), flags,  self.__checksum)
 
             return h+p
@@ -177,13 +176,11 @@ class Packet:
         if self.__mesh_mode:
             self.__source, self.__destination, flags,  id, self.__checksum = struct.unpack(self.HEADER_FORMAT, header)
             self.__id = int.from_bytes(id, "little")
-            print("id -> ", self.__id)
         else:
              self.__source, self.__destination, flags, self.__checksum = struct.unpack(self.HEADER_FORMAT, header)
 
         self.__source = self.__source.decode()
         self.__destination = self.__destination.decode()
-        self.__checksum = self.__checksum
 
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
         c1 = "1" if (flags >> 1) & 1 == 1 else "0"
@@ -196,15 +193,15 @@ class Packet:
         #   self.__payload = b''
         #else:
         self.__payload = content
-        self.__check = self.__checksum == self.__get_checksum(self.__payload)
 
+        self.__check = self.__checksum == self.__get_checksum(self.__payload)
         return self.__check
 
     def get_dict(self):
         p = self.__payload
         self.__checksum = self.__get_checksum(p)
-        d = {"source" : self.__source.decode(),
-            "destination" : self.__destination.decode(),
+        d = {"source" : self.__source,
+            "destination" : self.__destination,
             "command" : self.__command,
             "retransmission" : self.__retransmission,
             "checksum" : self.__checksum.decode(),
@@ -213,12 +210,11 @@ class Packet:
             "hop" : self.__hop,
             "id" :self.__id,
             }
-        print(d)
         return d
 
     def load_dict(self, d):
-        self.__source = d["source"].encode()
-        self.__destination = d["destination"].encode()
+        self.__source = d["source"]
+        self.__destination = d["destination"]
         self.__command = d["command"]
         self.__retransmission = d["retransmission"]
         self.__checksum = d["checksum"].encode()
@@ -234,14 +230,14 @@ if __name__ == "__main__":
     mac_address_A = "70b3d5499a76ba3f"[8:]
     mac_address_B = "70b3d54993a5bb9c"[8:]
 
-    mesh_mode = False
+    mesh_mode = True
 
     content = b"TEST..."
 
     s_addr = mac_address_A
     d_addr = mac_address_B
 
-
+    print("P1: ")
     p = Packet(mesh_mode)
     p.set_source(s_addr)
     p.set_destination(d_addr)
@@ -254,22 +250,29 @@ if __name__ == "__main__":
         p.set_id(id)
 
     #p.ask_data(1500)
-    p.set_data(content)
+    #p.set_data(content)
+    p.set_metadata(5, "test")
     packet = p.get_content()
     print("Packet: {}".format(packet))
     print(p.get_payload())
 
+    print("\nP2: ")
     p2 = Packet(mesh_mode)
     successfull = p2.load(packet)
     packet2 = p2.get_content()
     print("Packet loaded: {}".format(packet2))
     print(p2.get_payload())
-    js = p2.get_json()
+    js = p2.get_dict()
     print(js)
 
+    print("\nP3: ")
     p3 = Packet(mesh_mode)
-    success = p3.load_json(js)
+    success = p3.load_dict(js)
     print(success)
     packet = p3.get_content()
     print("Packet: {}".format(packet))
-    print(p3.get_payload())
+    #print(p3.get_payload())
+    metadata = p3.get_metadata()
+    length = metadata["LENGTH"]
+    filename = metadata["FILENAME"]
+    print(length, filename)

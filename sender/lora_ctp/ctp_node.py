@@ -74,13 +74,9 @@ class Node:
         try_connect = True
         while try_connect:
             packet = self.__listen_receiver()
-            print(packet)
             if packet:
-                print("packet!")
                 if self.__is_for_me(packet):
-                    print("is for me...")
                     command = packet.get_command()  #get_part('COMMAND')
-                    print(command)
                     if command:
                         mesh_flag = False
                         if self.__mesh and packet.get_mesh():    # To-Do enable/disable_mesh en load
@@ -164,7 +160,6 @@ class Node:
     def set_new_file(self, name, content, mesh_flag):
         self.set_file(name, content)
         response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
-        print(response_packet)
         if self.__mesh and mesh_flag and response_packet:
             response_packet.enable_mesh()
         self.__send(response_packet)
@@ -199,9 +194,7 @@ class Node:
             #else:
                 #response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
                 #response_packet.enable_hop()
-            print("send packet")
             self.__lora_socket.send(response_packet.get_content())  #.encode()
-            print("packet sent")
 
 
     def send_file(self):
@@ -214,8 +207,9 @@ class Node:
                     if command:
                         response_packet = None
                         if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                            chunk_num = response_packet.get_payload().decode()
-                            response_packet = self.__handle_command(command=command, type=Node.CHUNK+"-"+chunk_num) #TODO Sacar a variable global los String de comandos
+                            chunk_num = packet.get_payload().decode()
+                            ti = Node.CHUNK+"-"+chunk_num
+                            response_packet = self.__handle_command(command=ti, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
                         elif command.startswith(Node.REQUEST_DATA_INFO):
                             response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
                         if packet.get_mesh() and response_packet:   # == "1"
@@ -263,6 +257,7 @@ class Node:
                 print("RC: {}".format(requested_chunk))
             #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
             response_packet = Packet(mesh_mode = self.__mesh)
+            response_packet.set_source(self.__MAC)
             #response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
             response_packet.set_data(self.__file.get_chunk(requested_chunk))
 

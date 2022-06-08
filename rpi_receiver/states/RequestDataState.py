@@ -42,6 +42,7 @@ class RequestDataState(State):
                 return State.PROCESS_CHUNK_STATE  # If all went well, continue
                 #If message is corrupted...
             except Exception as e:   #KeyError
+                buoy.count_retransmission()
                 return State.REQUEST_DATA_STATE
         else:
             buoy.count_retransmission()

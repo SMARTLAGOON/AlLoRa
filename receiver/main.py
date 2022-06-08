@@ -41,17 +41,15 @@ def client_thread(clientsocket):
 		http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
 
 		if "POST /send-packet "in str(r):
-			print(r)
 			response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
 			#Response to the sender (buoy)
-			print(response_json['packet'])
 			packet = Packet(mesh_mode = True)	# FIX
 			packet.load_dict(response_json['packet'])	#response_json['packet']
 			buoy_response_packet = lora_handler.send_packet(packet)
 			if buoy_response_packet.get_command():
-				print(buoy_response_packet.get_content())
+				#print(buoy_response_packet.get_content())
 
-				json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_content()})
+				json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_dict()})	#get_content()
 				if DEBUG == True:
 					print("HTTP", json_buoy_response)
 				clientsocket.send(http + json_buoy_response)

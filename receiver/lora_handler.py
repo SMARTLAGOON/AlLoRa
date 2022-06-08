@@ -51,12 +51,9 @@ def wait_sender_data(packet):
 				print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
 			#if received_data.startswith(b'S:::'):
 			try:
-				print("RECEIVED")
 				response_packet = Packet(mesh_mode)	# = mesh_mode
 				response_packet.load(received_data)	#.decode('utf-8')
-				print(response_packet.get_source(), packet.get_destination())
 				if response_packet.get_source() == packet.get_destination():
-
 					received = True
 					break
 				else:
