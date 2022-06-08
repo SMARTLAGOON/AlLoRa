@@ -2,7 +2,7 @@ import utils
 from File import File
 from network import router
 from states.State import State
-from network.newPacket import Packet
+from network.Packet import Packet
 
 '''
 This command is the first one to be sent:
@@ -26,7 +26,7 @@ class RequestDataState(State):
         #utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__packet.get_content()))
         response_packet = router.send_packet(packet=self.__packet, mesh_mode = buoy.get_mesh_mode())
 
-        if not response_packet.is_empty():
+        if response_packet.get_command() == "METADATA":
             #utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response_packet.get_content()))
             try:
                 self.write_metadata(response_packet)

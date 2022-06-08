@@ -1,12 +1,11 @@
 import gc
-import network
 from network import LoRa
 import socket
 import binascii
 from time import sleep, time
 from uos import urandom
 from lora_ctp.File import File
-from lora_ctp.newPacket import Packet
+from lora_ctp.Packet import Packet
 import pycom
 
 
@@ -16,7 +15,6 @@ class Node:
     CHUNK = "CHUNK"                 #"chunk-"
     MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
-    #MERGE
     def __init__(self, name, sf, chunk_size = 201, mesh = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
@@ -27,7 +25,7 @@ class Node:
         self.__DEBUG = debug
 
         self.__name = name
-        self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
+        self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[8:]
         #if self.__DEBUG:
         print(self.__MAC)
 

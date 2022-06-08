@@ -1,7 +1,7 @@
 import utils
 from network import router
 from states.State import State
-from network.newPacket import Packet
+from network.Packet import Packet
 
 '''
 This command is sent:
@@ -39,19 +39,15 @@ class ProcessChunkState(State):
             response_packet = router.send_packet(packet=self.__packet, mesh_mode = buoy.get_mesh_mode())
             #utils.logger_debug.debug("Buoy {} Response: {}".format(buoy.get_name(), response_packet.get_content()))
 
-            if response_packet.is_empty() is False:
+            if response_packet.get_command() == "DATA":
                 try:
-                    if response_packet.get_command() == "DATA":
-                        self.write_metadata(response_packet)
-                        new_chunk = response_packet.get_payload() #.get_part("CHUNK").encode()
-                        file.add_chunk(next_chunk, new_chunk)
-                        buoy.reset_retransmission_counter(response_packet)
-                        #If corrupted message..
-                    else:
-                        buoy.count_retransmission()
-                        pass    # Solo hacer cosas cuando recibo chunks
+                    self.write_metadata(response_packet)
+                    new_chunk = response_packet.get_payload() #.get_part("CHUNK").encode()
+                    file.add_chunk(next_chunk, new_chunk)
+                    buoy.reset_retransmission_counter(response_packet)
+                    #If corrupted message..
                 except KeyError as e:
-                    pass
+                    buoy.count_retransmission()
             else:
                 buoy.count_retransmission()
 

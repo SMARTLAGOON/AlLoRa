@@ -6,7 +6,7 @@ import time
 from random import randint
 
 import utils
-from network.newPacket import Packet
+from network.Packet import Packet
 
 LAST_IDS = collections.deque(maxlen=30)
 

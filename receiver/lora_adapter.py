@@ -1,0 +1,144 @@
+import socket
+import time
+import gc
+import ujson
+import binascii
+import usocket
+import time
+from network import WLAN, LoRa
+
+from Packet import Packet
+
+class AdapterNode:
+
+	MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
+
+	def __init__(self, ssid, password, max_timeout = 100, mesh_mode = False, debug = False):
+		#Enable garbage collector
+		gc.enable()
+		# Creation of LoRa socket
+		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
+		self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
+
+		self.__WAIT_MAX_TIMEOUT = max_timeout
+		self.__mesh_mode = mesh_mode
+		self.__DEBUG = debug
+
+		self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[8:]
+		#if self.__DEBUG:
+		print(self.__MAC)
+
+		wlan = WLAN()
+		wlan.init(mode=WLAN.AP, ssid=ssid, auth=(WLAN.WPA2, password))
+		#print(wlan.ifconfig(id=1)) #id =1 signifies the AP interface
+		time.sleep(1)
+
+		# Set up server socket
+		self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
+		self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
+		self.serversocket.bind(("192.168.4.1", 80))
+
+		# Accept maximum of 1 connection at the same time.
+		self.serversocket.listen(1)		#We only need one connection thread since
+										#it is just an rpi_receiver connected,
+										#plus, otherwise also threading memory
+										#problems may arise, so, as a preventive
+										#fix, threading was removed.
+
+	# LoRa methods
+	""" This function returns the RSSI of the last received packet"""
+	def __raw_rssi(self):
+		return self.__lora.stats()[1]
+
+	def __signal_estimation(self):
+		percentage = 0
+		rssi = self.__raw_rssi()
+		if (rssi >= -50):
+			percentage = 100
+		elif (rssi <= -50) and (rssi >= -100):
+			percentage = 2 * (rssi + 100)
+		elif (rssi < 100):
+			percentage = 0
+		print('SIGNAL STRENGTH', percentage, '%')
+
+	'''
+	This function waits for a message to be received from a sender.
+	'''
+	def wait_sender_data(self, packet):
+		timeout = self.__WAIT_MAX_TIMEOUT
+		received = False
+		received_data = b''
+
+		self.__lora_socket.send(packet.get_content())	#.encode()
+		response_packet = Packet(self.__mesh_mode)	# = mesh_mode
+		while(timeout > 0 or received is True):
+			if self.__DEBUG:
+				print("WAIT_SENDER_DATA() || quedan {} segundos timeout".format(timeout))
+			received_data = self.__lora_socket.recv(256)
+			if received_data:
+				if self.__DEBUG:
+					self.__signal_estimation()
+					print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
+				#if received_data.startswith(b'S:::'):
+				try:
+					response_packet = Packet(self.__mesh_mode)	# = mesh_mode
+					response_packet.load(received_data)	#.decode('utf-8')
+					if response_packet.get_source() == packet.get_destination():
+						received = True
+						break
+					else:
+						response_packet = Packet(self.__mesh_mode)	# = mesh_mode
+				except Exception as e:
+					print("Corrupted packet received", e)
+			time.sleep(0.01)
+			timeout = timeout - 1
+		return response_packet
+
+	'''
+	This function broadcasts a message
+	'''
+	def send_packet(self, packet):
+		self.__lora_socket.setblocking(False)
+		if self.__DEBUG:
+			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
+
+		return self.wait_sender_data(packet)
+
+	'''
+	This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
+	'''
+	def client_API(self):
+		# Accept the connection of the clients
+		(clientsocket, address) = self.serversocket.accept()
+		gc.collect()
+		clientsocket.settimeout(0)
+		try:
+			# Receive maximum of 4096 bytes from the client (nothing special with this number)
+			r = clientsocket.recv(1024)	#256	#512
+			# If recv() returns with 0 the other end closed the connection
+			if len(r) == 0:
+			    clientsocket.close()
+			    return
+			else:
+				if self.__DEBUG:
+					print("Received: {}".format(str(r)))
+
+			http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n" #HTTP response
+
+			if "POST /send-packet "in str(r):
+				response_json = ujson.loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
+				#Response to the sender (buoy)
+				packet = Packet(self.__mesh_mode)
+				packet.load_dict(response_json['packet'])	#response_json['packet']
+				packet.set_source(self.__MAC)		# Adding mac address to packet
+				buoy_response_packet = self.send_packet(packet)
+				if buoy_response_packet.get_command():
+					#print(buoy_response_packet.get_content())
+					json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_dict()})	#get_content()
+					if self.__DEBUG == True:
+						print("HTTP", json_buoy_response)
+					clientsocket.send(http + json_buoy_response)
+		except Exception as e:
+			print("Error:", e)
+		# Close the socket and terminate the thread
+		clientsocket.close()

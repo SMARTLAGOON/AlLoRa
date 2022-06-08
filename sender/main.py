@@ -16,7 +16,6 @@ def get_next_file(sizes, file_counter):
 	size = sizes[n]
 	return n, size, file_counter
 
-
 def clean_timing_file():
 	test_log = open('log.txt', "wb")
 	test_log.write("")
