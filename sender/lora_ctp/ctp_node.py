@@ -7,15 +7,17 @@ from time import sleep, time
 from uos import urandom
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
+import pycom
 
 
 class Node:
 
     REQUEST_DATA_INFO = "request-data-info"
     CHUNK = "chunk-"
+    MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
     #MERGE
-    def __init__(self, sf, chunk_size = 201, mesh = False, debug = False):
+    def __init__(self, name, sf, chunk_size = 201, mesh = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
@@ -24,7 +26,8 @@ class Node:
         self.__mesh = mesh
         self.__DEBUG = debug
 
-        self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
+        self.__name = name
+        self.__MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
         #if self.__DEBUG:
         print(self.__MAC)
 
@@ -39,80 +42,9 @@ class Node:
         self.__LAST_SEEN_IDS = list()
         self.__LAST_IDS = list()
         self.__MAX_IDS_CACHED = 30
-
-
-    def __is_for_me(self, packet: Packet):
-        return packet.get_destination() == self.__MAC
-
-    def got_file(self):     # Check if I have a file to send
-        return self.__file is not None
-
-    def stablish_connection(self):
-        try_connect = True
-        while try_connect:
-            packet = self.__listen_receiver()
-            if packet:
-                if self.__is_for_me(packet=packet):
-                    command = packet.get_part('COMMAND')
-                    if command.startswith(Node.REQUEST_DATA_INFO):
-                        try_connect = False
-                        return True, None
-                    elif command.startswith(Node.CHUNK):
-                        try_connect = False
-                        return True, self.__restore_backup()
-                    else:
-                        if self.__DEBUG:
-                            print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
-                else:
-                    self.__forward(packet=packet)
-            gc.collect()
-
-
-    '''
-    This function ensures that a received message matches the criteria of any expected message.
-    '''
-    def __listen_receiver(self):
-        packet = Packet(mesh_mode = self.__mesh)
-        data = self.__lora_socket.recv(256)
-
-        try:
-            if not packet.load(data.decode('utf-8')):
-                return None
-        except Exception as e:
-            if self.__DEBUG:
-                print(e)
-            return None
-
-        if self.__mesh:
-            if packet.get_part("ID") in self.__LAST_SEEN_IDS:
-                if self.__DEBUG:
-                    print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
-                return None
-
-        if self.__DEBUG:
-            self.__signal_estimation()
-            print('LISTEN_RECEIVER() || received_content', packet.get_content())
-
-        return packet
-
-
-    def __forward(self, packet: Packet):
-        try:    # Revisar si no lo envié yo mismo antes
-            #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
-            if packet.get_part("M") == "1":
-                if self.__DEBUG:
-                    print("FORWARDED", packet.get_content())
-                sleep((urandom(1)[0] % 5 + 1) * 0.1)
-                self.__lora_socket.send(packet.get_content().encode())
-                self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
-                self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
-                #else:
-                #    if self.__DEBUG:
-                #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
-        except KeyError as e:
-            # If packet was corrupted along the way, won't read the COMMAND part
-            if self.__DEBUG:
-                print("JAMMING FORWARDING", e)
+        pycom.rgbled(0x1aa7ec) # Picton Blue
+        sleep(1)
+        pycom.rgbled(0) # off
 
     '''
     This function prints the aproximated signal strength of the last received package over LoRa
@@ -132,15 +64,110 @@ class Node:
     def __raw_rssi(self):
         return self.__lora.stats()[1]
 
+    def __is_for_me(self, packet: Packet):
+        return packet.get_destination() == self.__MAC
+
+    def got_file(self):     # Check if I have a file to send
+        return self.__file is not None
+
+    def stablish_connection(self):
+        try_connect = True
+        while try_connect:
+            packet = self.__listen_receiver()
+            if packet:
+                if self.__is_for_me(packet=packet):
+                    command = packet.get_part('COMMAND')
+                    if command:
+                        mesh_flag = False
+                        if self.__mesh and packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
+                            mesh_flag = True
+                        if command.startswith(Node.REQUEST_DATA_INFO):
+                            pycom.rgbled(0x007f00) # green
+                            try_connect = False
+                            return True, None, mesh_flag
+                        elif command.startswith(Node.CHUNK):
+                            pycom.rgbled(0x007f00) # green
+                            try_connect = False
+                            return True, self.__restore_backup(), mesh_flag
+                        else:
+                            if self.__DEBUG:
+                                print("ERROR: Asked for other than data info {}".format(packet.get_part("COMMAND")))
+                else:
+                    self.__forward(packet=packet)
+            gc.collect()
+
+    '''
+    This function ensures that a received message matches the criteria of any expected message.
+    '''
+    def __listen_receiver(self):
+        packet = Packet(mesh_mode = self.__mesh)
+        data = self.__lora_socket.recv(256)
+
+        try:
+            if not packet.load(data.decode('utf-8')):
+                return None
+        except Exception as e:
+            if self.__DEBUG:
+                print(e)
+            return None
+
+        if self.__mesh:
+            try:
+                if packet.get_part("ID") in self.__LAST_SEEN_IDS:
+                    if self.__DEBUG:
+                        print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
+                    return None
+            except Exception as e:
+                print(e)
+
+        if self.__DEBUG:
+            self.__signal_estimation()
+            print('LISTEN_RECEIVER() || received_content', packet.get_content())
+
+        return packet
+
+
+    def __forward(self, packet: Packet):
+        try:    # Revisar si no lo envié yo mismo antes
+            #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
+            if packet.get_part("M") == "1":
+                if self.__DEBUG:
+                    print("FORWARDED", packet.get_content())
+                random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
+
+                packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
+                pycom.rgbled(0x7f0000) # red
+                sleep(random_sleep)  # Revisar
+                pycom.rgbled(0)        # off
+
+                self.__lora_socket.send(packet.get_content().encode())
+                self.__LAST_SEEN_IDS.append(packet.get_part("ID"))
+                self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
+                #else:
+                #    if self.__DEBUG:
+                #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
+        except KeyError as e:
+            # If packet was corrupted along the way, won't read the COMMAND part
+            if self.__DEBUG:
+                print("JAMMING FORWARDING", e)
+
     def set_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)
         self.__backup_sending_file()
         del(content)
         gc.collect()
 
-    def set_new_file(self, name, content):
+    def set_new_file(self, name, content, mesh_flag):
         self.set_file(name, content)
-        self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
+        response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
+        if self.__mesh and mesh_flag and response_packet:
+            response_packet.enable_mesh()
+        self.__send(response_packet)
+        pycom.rgbled(0x007f00) # green
+        sleep(0.1)
+        pycom.rgbled(0)        # off
+        del(response_packet)
+        gc.collect()
 
     def restore_file(self, name, content):
         self.set_file(name, content)
@@ -151,38 +178,53 @@ class Node:
         if response_packet:
             if self.__mesh:
                 response_packet.set_part("ID", str(self.__generate_id()))
+                t_sleep = 0
                 if response_packet.get_mesh() == "1":    # To-Do enable/disable_mesh en load
-                    sleep((urandom(1)[0] % 10 + 1) * 0.1)  # Revisar
+                    t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
+                    pycom.rgbled(0xb19cd8) # purple
+                    sleep(t_sleep)  # Revisar
+                    pycom.rgbled(0)        # off
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
-            	self.__lora_socket.send(response_packet.get_content().encode())
+                response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
+            	#self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             else:
-                self.__lora_socket.send(response_packet.get_content().encode())
-            sleep(0.1)
-            del(response_packet)
-            gc.collect()
+                response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
+            self.__lora_socket.send(response_packet.get_content().encode())
+
 
     def send_file(self):
         while not self.__file.sent:
+            mesh_flag = False
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                     command = packet.get_part('COMMAND')
-                    response_packet = None
-                    if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                        response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
-                    elif command.startswith(Node.REQUEST_DATA_INFO):
-                        response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
-                    if packet.get_mesh() == "1" and response_packet:
-                        response_packet.enable_mesh()
-                    self.__send(response_packet)
+                    if command:
+                        response_packet = None
+                        if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                            response_packet = self.__handle_command(command=command, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                        elif command.startswith(Node.REQUEST_DATA_INFO):
+                            response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+                        if packet.get_mesh() == "1" and response_packet:
+                            response_packet.enable_mesh()
+                            mesh_flag = True
+                        self.__send(response_packet)
+                        if response_packet:
+                            pycom.rgbled(0x007f00) # green
+                            sleep(0.1)
+                            pycom.rgbled(0)        # off
+                            del(response_packet)
+                            gc.collect()
                 else:
                     self.__forward(packet=packet)
+
         del(self.__file)
         gc.collect()
         self.__file = None
+        return mesh_flag
 
 
     def __handle_command(self, command: str, type: str):

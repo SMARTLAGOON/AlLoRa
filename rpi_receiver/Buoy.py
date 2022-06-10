@@ -21,11 +21,12 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
 
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, mesh_mode = False):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active: bool, mesh_mode: bool):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
-        self.__mac_address = mac_address
+        self.__mac_address = mac_address[8:]
         self.__uploading_endpoint = uploading_endpoint
+        self.__active = active
 
         self.__next_state = RequestDataState()
         self.__current_file = None
@@ -33,7 +34,7 @@ class Buoy:
         self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
-        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 20  # MRBM
+        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 10  # MRBM
         self.__mesh_t0 = None
         self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
 
@@ -50,6 +51,9 @@ class Buoy:
     def get_mesh(self):
         return self.__mesh
 
+    def is_active(self):
+        return self.__active
+
     def enable_mesh(self):
         self.__mesh = True
         self.__mesh_t0 = time.time()
@@ -58,6 +62,7 @@ class Buoy:
         self.__mesh = False
         self.__mesh_t0 = None
         self.__retransmission_counter = 0
+        print("BUOY {}: DISABLING MESH".format(self.__name))
 
     def check_mesh(self):
         if self.__mesh_mode and self.__mesh:
@@ -72,9 +77,14 @@ class Buoy:
                 print("BUOY {}: ENABLING MESH".format(self.__name))
                 self.enable_mesh()
 
-    def reset_retransmission_counter(self):
-        if self.__mesh_mode and not self.get_mesh():
-            self.__retransmission_counter = 0
+    def reset_retransmission_counter(self, packet):
+        if self.__mesh_mode:
+            if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
+                self.__retransmission_counter = 0           # Reset counter, going well...
+            else:
+                hops = json.loads(packet.get_part("H"))
+                if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
+                    self.disable_mesh()                     # No need for mesh mode
 
     def set_current_file(self, file: File):
         self.__current_file = file

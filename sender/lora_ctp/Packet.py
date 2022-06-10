@@ -1,12 +1,13 @@
 import network
 import binascii
+from ujson import dumps, loads
 
 class Packet:
 
     SOURCE_HEADER = "S"
     DESTINATION_HEADER = "D"
     MESH_HEADER = "M"
-    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')
+    MY_LORA_MAC = binascii.hexlify(network.LoRa().mac()).decode('utf-8')[8:]
 
     def __init__(self, part_separator=";;;", name_separator=":::", mesh_mode = False):
         self.__source = Packet.MY_LORA_MAC
@@ -51,11 +52,25 @@ class Packet:
         self.__parts[name] = content
         self.__order.append(name)   #FIX ME hacer idempotente
 
+    def add_hop(self, name, rssi, time_sleep):
+        metadata = {"N" : name, "R": rssi, "T": time_sleep}
+        #print(rssi)
+        if "H" in self.__order:
+            hops = loads(self.__parts["H"])
+            hops.append(metadata)
+            self.__parts["H"] = dumps(hops)
+        else:
+            hops = []
+            hops.append(metadata)
+            self.set_part("H", dumps(hops))
+
+
     def fill_part(self, name, content):
         self.__parts[name] = content
 
     def get_part(self, name):
-        return self.__parts[name]
+        if name in self.__order:
+            return self.__parts[name]
 
     def order(self, name_list):
         self.__order = name_list
@@ -76,6 +91,7 @@ class Packet:
                 break
             else:
                 packet += self.__part_separator
+        print("LEN packet to send: ",len(packet), packet)
         return packet
 
     def load(self, packet: str):
@@ -85,7 +101,7 @@ class Packet:
                 return
 
             all_parts = packet.split(self.__part_separator)
-
+            #print(all_parts)
             #Always the first three parts are source, destination and mesh
             self.__source = all_parts[0].split(self.__name_separator)[1]
             self.__destination = all_parts[1].split(self.__name_separator)[1]

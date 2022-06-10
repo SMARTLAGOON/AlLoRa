@@ -23,7 +23,7 @@ def generate_id():
     return id
 
 
-def send_packet(packet: Packet, mesh_mode = False) -> Packet:
+def send_packet(packet: Packet, mesh_mode: bool) -> Packet:
     json_response = None
     retry = True
     max_retries = 1

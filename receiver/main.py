@@ -19,7 +19,7 @@ THREAD_EXIT = False
 #Debug flag
 DEBUG = False
 
-print(binascii.hexlify(LoRa().mac()).decode('utf-8'))
+print(binascii.hexlify(LoRa().mac()).decode('utf-8')[8:])
 
 '''
 This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
