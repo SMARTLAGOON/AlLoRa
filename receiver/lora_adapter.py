@@ -13,11 +13,11 @@ class AdapterNode:
 
 	MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
-	def __init__(self, ssid, password, max_timeout = 100, mesh_mode = False, debug = False):
+	def __init__(self, ssid, password, max_timeout = 100, sf = 7, mesh_mode = False, debug = False):
 		#Enable garbage collector
 		gc.enable()
 		# Creation of LoRa socket
-		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868)
+		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
 		self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
 
 		self.__WAIT_MAX_TIMEOUT = max_timeout
@@ -32,12 +32,10 @@ class AdapterNode:
 		wlan.init(mode=WLAN.AP, ssid=ssid, auth=(WLAN.WPA2, password))
 		#print(wlan.ifconfig(id=1)) #id =1 signifies the AP interface
 		time.sleep(1)
-
 		# Set up server socket
 		self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 		self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
 		self.serversocket.bind(("192.168.4.1", 80))
-
 		# Accept maximum of 1 connection at the same time.
 		self.serversocket.listen(1)		#We only need one connection thread since
 										#it is just an rpi_receiver connected,
@@ -61,24 +59,21 @@ class AdapterNode:
 			percentage = 0
 		print('SIGNAL STRENGTH', percentage, '%')
 
-	'''
-	This function waits for a message to be received from a sender.
-	'''
-	def wait_sender_data(self, packet):
+	#This function waits for a message to be received from a sender.
+	def wait_response(self, packet):
 		timeout = self.__WAIT_MAX_TIMEOUT
 		received = False
 		received_data = b''
 
-		self.__lora_socket.send(packet.get_content())	#.encode()
 		response_packet = Packet(self.__mesh_mode)	# = mesh_mode
 		while(timeout > 0 or received is True):
 			if self.__DEBUG:
-				print("WAIT_SENDER_DATA() || quedan {} segundos timeout".format(timeout))
+				print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
 			received_data = self.__lora_socket.recv(256)
 			if received_data:
 				if self.__DEBUG:
 					self.__signal_estimation()
-					print("WAIT_SENDER_DATA() || sender_reply: {}".format(received_data))
+					print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
 				#if received_data.startswith(b'S:::'):
 				try:
 					response_packet = Packet(self.__mesh_mode)	# = mesh_mode
@@ -101,8 +96,10 @@ class AdapterNode:
 		self.__lora_socket.setblocking(False)
 		if self.__DEBUG:
 			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
+		if packet.get_length() <= AdapterNode.MAX_LENGTH_MESSAGE:
+			self.__lora_socket.send(packet.get_content())	#.encode()
 
-		return self.wait_sender_data(packet)
+		return self.wait_response(packet)
 
 	'''
 	This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it

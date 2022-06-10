@@ -1,12 +1,16 @@
-import gc
+import pycom
 from network import LoRa
+from uos import urandom
+
 import socket
 import binascii
+import gc
 from time import sleep, time
-from uos import urandom
+
+
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
-import pycom
+
 
 
 class Node:
@@ -15,13 +19,13 @@ class Node:
     CHUNK = "CHUNK"                 #"chunk-"
     MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
-    def __init__(self, name, sf, chunk_size = 201, mesh = False, debug = False):
+    def __init__(self, name, sf, chunk_size = 235, mesh_mode = False, debug = False):
         gc.enable()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         self.__lora_socket.setblocking(False)
 
-        self.__mesh = mesh
+        self.__mesh_mode = mesh_mode
         self.__DEBUG = debug
 
         self.__name = name
@@ -30,23 +34,21 @@ class Node:
         print(self.__MAC)
 
         self.__chunk_size = chunk_size
-        if self.__mesh and self.__chunk_size > 233:   # Packet size less than 255 (with Spreading Factor 7)
+        if self.__mesh_mode and self.__chunk_size > 233:   # Packet size less than 255 (with Spreading Factor 7)
             self.__chunk_size = 233 #183
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
 
         self.__file = None
 
-        self.__LAST_SEEN_IDS = list()
-        self.__LAST_IDS = list()
+        self.__LAST_SEEN_IDS = list()       # IDs that I forwarded
+        self.__LAST_IDS = list()            # IDs from my mesagges
         self.__MAX_IDS_CACHED = 30
         pycom.rgbled(0x1aa7ec) # Picton Blue
         sleep(1)
         pycom.rgbled(0) # off
 
-    '''
-    This function prints the aproximated signal strength of the last received package over LoRa
-    '''
+    #This function prints the aproximated signal strength of the last received package over LoRa
     def __signal_estimation(self):
         percentage = 0
     	rssi = self.__raw_rssi()
@@ -58,9 +60,12 @@ class Node:
     		percentage = 0
     	print('SIGNAL STRENGTH', percentage, '%')
 
-    """ This function returns the RSSI of the last received packet"""
+    # This function returns the RSSI of the last received packet
     def __raw_rssi(self):
         return self.__lora.stats()[1]
+
+    def get_mesh_mode(self):
+        return self.__mesh_mode
 
     def __is_for_me(self, packet: Packet):
         return packet.get_destination() == self.__MAC
@@ -75,18 +80,19 @@ class Node:
             if packet:
                 if self.__is_for_me(packet):
                     command = packet.get_command()  #get_part('COMMAND')
+                    destination = packet.get_source()
                     if command:
                         mesh_flag = False
-                        if self.__mesh and packet.get_mesh():    # To-Do enable/disable_mesh en load
+                        if self.__mesh_mode and packet.get_mesh():    # To-Do enable/disable_mesh en load
                             mesh_flag = True
                         if command.startswith(Node.REQUEST_DATA_INFO):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, None, mesh_flag
+                            return True, None, mesh_flag, destination
                         elif command.startswith(Node.CHUNK):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, self.__restore_backup(), mesh_flag
+                            return True, self.__restore_backup(), mesh_flag, destination
                         else:
                             if self.__DEBUG:
                                 print("ERROR: Asked for other than data info {}".format(packet.get_command()))  #part("COMMAND")
@@ -94,11 +100,9 @@ class Node:
                     self.__forward(packet)
             gc.collect()
 
-    '''
-    This function ensures that a received message matches the criteria of any expected message.
-    '''
+    #This function ensures that a received message matches the criteria of any expected message.
     def __listen_receiver(self):
-        packet = Packet(mesh_mode = self.__mesh)
+        packet = Packet(mesh_mode = self.__mesh_mode)
         data = self.__lora_socket.recv(256)
         try:
             if not packet.load(data):   #.decode('utf-8')
@@ -108,7 +112,7 @@ class Node:
                 print(e)
             return None
 
-        if self.__mesh:
+        if self.__mesh_mode:
             try:
                 if packet.get_id() in self.__LAST_SEEN_IDS:   #_part("ID")
                     if self.__DEBUG:
@@ -123,7 +127,6 @@ class Node:
 
         return packet
 
-
     def __forward(self, packet: Packet):
         try:    # Revisar si no lo envié yo mismo antes
             #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
@@ -131,23 +134,23 @@ class Node:
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
                 random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
-
                 #packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
                 packet.enable_hop()
                 pycom.rgbled(0x7f0000) # red
                 sleep(random_sleep)  # Revisar
                 pycom.rgbled(0)        # off
 
-                self.__lora_socket.send(packet.get_content())   #.encode()
-                self.__LAST_SEEN_IDS.append(packet.get_id())    #part("ID")
-                self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
+                if packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
+                    self.__lora_socket.send(packet.get_content())   #.encode()
+                    self.__LAST_SEEN_IDS.append(packet.get_id())    #part("ID")
+                    self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
                 #else:
                 #    if self.__DEBUG:
                 #        print("ALREADY_FORWARDED", self.__LAST_SEEN_IDS)
-        except KeyError as e:
+        except Exception as e:
             # If packet was corrupted along the way, won't read the COMMAND part
             if self.__DEBUG:
-                print("JAMMING FORWARDING", e)
+                print("ERROR FORWARDING", e)
 
     def set_file(self, name, content):
         self.__file = File(name, content, self.__chunk_size)
@@ -155,12 +158,12 @@ class Node:
         del(content)
         gc.collect()
 
-    def set_new_file(self, name, content, mesh_flag):
+    def set_new_file(self, name, content, mesh_flag, destination):
         self.set_file(name, content)
-        response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO, type=Node.REQUEST_DATA_INFO)
-        if self.__mesh and mesh_flag and response_packet:
+        response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO)
+        if self.__mesh_mode and mesh_flag and response_packet:
             response_packet.enable_mesh()
-        self.__send(response_packet)
+        self.__send(response_packet, destination)
         pycom.rgbled(0x007f00) # green
         sleep(0.1)
         pycom.rgbled(0)        # off
@@ -172,16 +175,18 @@ class Node:
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
 
-    def __send(self, response_packet: Packet):
+    def __send(self, response_packet: Packet, destination):
         if response_packet:
-            if self.__mesh:
+            if self.__mesh_mode:
                 response_packet.set_id(self.__generate_id())    #part("ID", str(self.__generate_id()))
                 t_sleep = 0
+                """
                 if response_packet.get_mesh():  # == "1"  # To-Do enable/disable_mesh en load
                     t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
                     pycom.rgbled(0xb19cd8) # purple
                     sleep(t_sleep)  # Revisar
                     pycom.rgbled(0)        # off
+                """
                 #print(response_packet.get_content().encode())
                 #print(len(response_packet.get_content().encode()))
                 #response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
@@ -192,30 +197,37 @@ class Node:
             #else:
                 #response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
                 #response_packet.enable_hop()
-            self.__lora_socket.send(response_packet.get_content())  #.encode()
-
+            response_packet.set_destination(destination)
+            if response_packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
+                self.__lora_socket.send(response_packet.get_content())  #.encode()
+            else:
+                print("Error: Packet too big")
 
     def send_file(self):
         while not self.__file.sent:
             mesh_flag = False
+            destination = ''
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                     command = packet.get_command()  #_part('COMMAND')
+                    destination = packet.get_source()
                     if command:
                         response_packet = None
                         if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                            chunk_num = packet.get_payload().decode()
-                            ti = Node.CHUNK+"-"+chunk_num
-                            response_packet = self.__handle_command(command=ti, type=Node.CHUNK) #TODO Sacar a variable global los String de comandos
+                            command = "{}-{}".format(Node.CHUNK, packet.get_payload().decode())
+                            response_packet = self.__handle_command(command=command)
                         elif command.startswith(Node.REQUEST_DATA_INFO):
-                            response_packet = self.__handle_command(command=command, type=Node.REQUEST_DATA_INFO)
+                            response_packet = self.__handle_command(command=command)
                         if packet.get_mesh() and response_packet:   # == "1"
                             response_packet.enable_mesh()
                             mesh_flag = True
-                        self.__send(response_packet)
+                        self.__send(response_packet, destination)
                         if response_packet:
-                            pycom.rgbled(0x007f00) # green
+                            if response_packet.get_mesh():
+                                pycom.rgbled(0xb19cd8) # purple
+                            else:
+                                pycom.rgbled(0x007f00) # green
                             sleep(0.1)
                             pycom.rgbled(0)        # off
                             del(response_packet)
@@ -226,12 +238,11 @@ class Node:
         del(self.__file)
         gc.collect()
         self.__file = None
-        return mesh_flag
+        return mesh_flag, destination
 
-
-    def __handle_command(self, command: str, type: str):
+    def __handle_command(self, command: str):
         response_packet = None
-        if type == Node.REQUEST_DATA_INFO:    # handle for new file
+        if command.startswith(Node.REQUEST_DATA_INFO):    # handle for new file
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
                 return None
@@ -242,19 +253,17 @@ class Node:
             else:
                 self.__file.metadata_sent = True
 
-            response_packet = Packet(self.__mesh)   #mesh_mode =
+            response_packet = Packet(self.__mesh_mode)   #mesh_mode =
             response_packet.set_source(self.__MAC)
             response_packet.set_metadata(self.__file.get_length(), self.__file.get_name())
-            #response_packet.set_part("LENGTH", self.__file.get_length())
-            #response_packet.set_part("FILENAME", self.__file.get_name())
 
-        elif type == Node.CHUNK:
+        elif command.startswith(Node.CHUNK):
             requested_chunk = int(command.split('-')[1])
             #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
             if self.__DEBUG:
                 print("RC: {}".format(requested_chunk))
             #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
-            response_packet = Packet(mesh_mode = self.__mesh)
+            response_packet = Packet(mesh_mode = self.__mesh_mode)
             response_packet.set_source(self.__MAC)
             #response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
             response_packet.set_data(self.__file.get_chunk(requested_chunk))
@@ -264,14 +273,13 @@ class Node:
 
         return response_packet
 
-
     def __generate_id(self):
-    	id = -1
-    	while (id in self.__LAST_IDS) or (id == -1):
-    		id = urandom(1)[0] % 65535 + 0 #999
-    	self.__LAST_IDS.append(id)
-    	self.__LAST_IDS = self.__LAST_IDS[-self.__MAX_IDS_CACHED:]
-    	return id
+        id = -1
+        while (id in self.__LAST_IDS) or (id == -1):
+            id = int.from_bytes(urandom(2), 'little')
+        self.__LAST_IDS.append(id)
+        self.__LAST_IDS = self.__LAST_IDS[-self.__MAX_IDS_CACHED:]
+        return id
 
     def __clean_backup(self):
         backup = open('backup.txt', "wb")

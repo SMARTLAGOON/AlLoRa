@@ -56,10 +56,13 @@ def load_config():
     global SOCKET_TIMEOUT
     global PACKET_RETRY_SLEEP
     global SOCKET_RECV_SIZE
+    
+    global SYNC_REMOTE
     global SYNC_REMOTE_FILE_SENDING_TIME_SLEEP
     global SYNC_REMOTE_FILE_SENDING_MAX_RETRIES
     global NEXT_ACTION_TIME_SLEEP
     global SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS
+    global TIME_PER_BUOY
 
     logger_info.info("Loading config")
 
@@ -72,10 +75,13 @@ def load_config():
     SOCKET_TIMEOUT = config.getint('receiver', 'SOCKET_TIMEOUT')
     PACKET_RETRY_SLEEP = config.getfloat('receiver', 'PACKET_RETRY_SLEEP')
     SOCKET_RECV_SIZE = config.getint('receiver', 'SOCKET_RECV_SIZE')
+    
+    SYNC_REMOTE = config.getboolean('general', 'SYNC_REMOTE')
     SYNC_REMOTE_FILE_SENDING_TIME_SLEEP = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_TIME_SLEEP')
     SYNC_REMOTE_FILE_SENDING_MAX_RETRIES = config.getint('general', 'SYNC_REMOTE_FILE_SENDING_MAX_RETRIES')
     NEXT_ACTION_TIME_SLEEP = config.getfloat('general', 'NEXT_ACTION_TIME_SLEEP')
     SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS = config.getfloat('general', 'SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS')
+    TIME_PER_BUOY = config.getint('general', 'TIME_PER_BUOY')
 
 
 def load_buoys_json():

@@ -1,7 +1,10 @@
 import struct
 import hashlib
 import binascii
-from json import loads, dumps
+try:
+    from ujson import loads, dumps
+except:
+    from json import loads, dumps
 
 class Packet:
 
@@ -182,9 +185,6 @@ class Packet:
         self.__mesh  = (flags >> 4) & 1 == 1
         self.__hop = (flags >> 6) & 1 == 1
 
-        #if (content == b''):
-        #   self.__payload = b''
-        #else:
         self.__payload = content
 
         self.__check = self.__checksum == self.__get_checksum(self.__payload)

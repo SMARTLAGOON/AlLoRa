@@ -5,7 +5,6 @@ Analogous class to Lopy's one but instead of making chunks, this one reassembles
 '''
 class File:
 
-
     def __init__(self, name: str, length: int):
         self.__name = name
         self.__chunks = dict()
@@ -16,28 +15,22 @@ class File:
         #Timestamp is not saved along the rest of variables, so in case of network shutdown or something, the record will not respect the timeseries
         self.__timestamp = int(time() * 1000) #FIXME This is a temporal solution until the datalogger can put a timestamp
 
-
     def get_timestamp(self):
         return self.__timestamp
 
-
     def get_name(self):
         return self.__name
-
 
     def get_content(self):
         self.__assembly()
         return self.__content
 
-
     def get_missing_chunks(self) -> list:
         self.__assembly()
         return self.__missing_chunks
 
-
     def add_chunk(self, order: int, chunk: bytes):
         self.__chunks[order] = chunk
-
 
     def __assembly(self):
         self.__content = str()

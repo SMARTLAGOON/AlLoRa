@@ -6,7 +6,8 @@ from json.decoder import JSONDecodeError
 from multiprocessing.context import Process
 import requests
 import utils
-from File import File
+from lora_ctp.ctp_node import Node
+from lora_ctp.File import File
 from states.ProcessChunkState import ProcessChunkState
 from states.RequestDataState import RequestDataState
 
@@ -16,28 +17,29 @@ It mounts a basic State pattern helping with communication protocol, also saves 
 '''
 class Buoy:
 
-
     REQUEST_DATA_STATE = RequestDataState()
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
-
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active: bool, mesh_mode: bool):
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, 
+                        uploading_endpoint: str, active: bool, lora_node: Node):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address[8:]
         self.__uploading_endpoint = uploading_endpoint
         self.__active = active
 
+        self.lora_node = lora_node
+
         self.__next_state = RequestDataState()
         self.__current_file = None
 
-        self.__mesh_mode = mesh_mode
+        #self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
         self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 10  # MRBM
-        self.__mesh_t0 = None
-        self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
 
+        self.__LAST_SEEN_IDS = list()            # IDs from my mesagges
+        self.__MAX_IDS_CACHED = 30          # Max number of IDs saved
 
     def get_name(self):
         return self.__name
@@ -45,8 +47,8 @@ class Buoy:
     def get_mac_address(self):
         return self.__mac_address
 
-    def get_mesh_mode(self):
-        return self.__mesh_mode
+    #def get_mesh_mode(self):
+    #    return self.__mesh_mode
 
     def get_mesh(self):
         return self.__mesh
@@ -64,13 +66,8 @@ class Buoy:
         self.__retransmission_counter = 0
         print("BUOY {}: DISABLING MESH".format(self.__name))
 
-    def check_mesh(self):
-        if self.__mesh_mode and self.__mesh:
-            if (time.time() - self.__mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
-                self.disable_mesh()
-
     def count_retransmission(self):
-        if self.__mesh_mode and not self.get_mesh():
+        if self.lora_node.get_mesh_mode and not self.get_mesh():
             #print("BUOY {}: retransmission + 1".format(self.__name))
             self.__retransmission_counter += 1
             if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
@@ -78,7 +75,7 @@ class Buoy:
                 self.enable_mesh()
 
     def reset_retransmission_counter(self, packet):
-        if self.__mesh_mode:
+        if self.lora_node.get_mesh_mode:
             if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
                 self.__retransmission_counter = 0           # Reset counter, going well...
             else:
@@ -87,6 +84,17 @@ class Buoy:
                     #self.disable_mesh()                     # No need for mesh mode
                 if not packet.get_hop():
                     self.disable_mesh()
+
+    def check_id_list(self, id):
+        if id not in self.__LAST_SEEN_IDS:
+            self.__LAST_SEEN_IDS.append(id)    #part("ID")
+            self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
+            return True
+        else:
+            return False
+
+    def reset_id_list(self):
+        self.__LAST_SEEN_IDS = list()
 
     def set_current_file(self, file: File):
         self.__current_file = file
@@ -97,9 +105,7 @@ class Buoy:
 
     def do_next_action(self):
         self.__next_state = self.__getattribute__(self.__next_state.do_action(self))
-        self.check_mesh()
         self.__backup()
-
 
     '''
     This function saves the state of the application serializing itself.
@@ -121,7 +127,6 @@ class Buoy:
             except Exception as e:
                 pass
 
-
             #TODO Remove the timestamp in filename, this is a temporal solution until datalogger arrives
             def create_filename():
                 timestamp = self.__current_file.get_timestamp()
@@ -141,12 +146,9 @@ class Buoy:
                 fp.write(self.__current_file.get_content().encode('utf-8'))
             utils.logger_info.info("Buoy {} Saved file {} containing {}".format(self.__name, self.__current_file.get_name(), self.__current_file.get_content().encode('utf-8')))
 
-
-    '''
-    This function looks for content in a constant loop.
-    '''
+    
+    #This function looks for content in a constant loop.
     def sync_remote(self):
-
         def sync(buoy_mac_address: str):
             current_buoy = None
             for buoy in utils.load_buoys_json():
