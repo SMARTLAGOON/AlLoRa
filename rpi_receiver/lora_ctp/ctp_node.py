@@ -5,19 +5,19 @@ from time import sleep, time
 
 from random import randint
 from time import strftime
-import json
-import select
+
 
 from lora_ctp.Packet import Packet
 
 class Node:
 
-    def __init__(self, gateway = False, mesh_mode = False, debug_hops = False):
+    def __init__(self, gateway = False, mesh_mode = False, debug_hops = False, adapter = None):
         self.__gateway = gateway
         self.__mesh_mode = mesh_mode
         self.__debug_hops = debug_hops
 
-        self.adapter = False
+        self.adapter = adapter
+        self.adapter.set_mesh_mode(self.__mesh_mode)
         
         self.__LAST_IDS = list()
         self.__LAST_SEEN_IDS = list()            # IDs from my mesagges
@@ -108,7 +108,7 @@ class Node:
                 packet.enable_debug_hops()
             
         if self.adapter:
-            response_packet = self.__talk_to_wifi_adapter(packet)
+            response_packet = self.adapter.send(packet)
         else:
             pass # Other way to send data (lora_socket, dragino, etc)
 
@@ -124,51 +124,3 @@ class Node:
                 #print(line)
             return True
         return False
-
-    def __talk_to_wifi_adapter(self, packet: Packet) -> Packet:
-        json_response = None
-        retry = True
-        max_retries = 1
-        response_packet = Packet(self.__mesh_mode) # = mesh_mode
-        while max_retries > 0 and retry:
-            try:
-                s = socket.socket()
-                s.setblocking(True)
-                addr = socket.getaddrinfo(self.RECEIVER_API_HOST, self.RECEIVER_API_PORT)[0][-1]
-                s.settimeout(self.SOCKET_TIMEOUT)
-                s.connect(addr)
-
-                content_str = packet.get_dict()
-                content = json.dumps({"packet": content_str})
-
-                httpreq = 'POST {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}'.format(
-                    "/send-packet", self.RECEIVER_API_HOST, len(content), content).encode('utf-8')
-
-                ready_to_read, ready_to_write, in_error = select.select([],
-                                                                        [s],
-                                                                        [],
-                                                                        15)
-                s.send(httpreq)
-                ready_to_read, ready_to_write, in_error = select.select([s],
-                                                                        [],
-                                                                        [s],
-                                                                        15)
-                response = s.recv(self.SOCKET_RECV_SIZE)
-
-                retry = False
-                try:
-                    extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
-                    json_response = json.loads(extracted_response)
-                    response_packet.load_dict(json_response['response_packet'])
-                except Exception as e:
-                    #print("Error in load: ", e)
-                    pass    # It fails when response is empty
-
-            except Exception as e:
-                self.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
-                sleep(self.PACKET_RETRY_SLEEP)
-                retry = True
-            finally:
-                max_retries -= 1
-
-        return response_packet

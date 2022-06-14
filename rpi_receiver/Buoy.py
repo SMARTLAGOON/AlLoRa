@@ -124,7 +124,6 @@ class Buoy:
                 fp.write(self.__current_file.get_content().encode('utf-8'))
             utils.logger_info.info("Buoy {} Saved file {} containing {}".format(self.__name, self.__current_file.get_name(), self.__current_file.get_content().encode('utf-8')))
 
-    
     #This function looks for content in a constant loop.
     def sync_remote(self):
         def sync(buoy_mac_address: str):

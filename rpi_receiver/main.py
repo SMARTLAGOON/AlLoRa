@@ -3,6 +3,7 @@ import time
 import utils
 from Buoy import Buoy
 from lora_ctp.ctp_node import Node
+from lora_ctp.adapters.Wifi_adapter import WiFi_adapter
 
 '''
 Restores a serialized Buoy object as a way of resuming the state right where it was left.
@@ -40,10 +41,11 @@ if __name__ == "__main__":
     utils.logger_info.info("BuoySoftware RPI_RECEIVER")
     utils.load_config()
 
-    lora_node = Node(gateway = True, mesh_mode = True, debug_hops = False)
-    lora_node.set_adapter(utils.SOCKET_TIMEOUT, utils.RECEIVER_API_HOST, 
+    adapter = WiFi_adapter(utils.SOCKET_TIMEOUT, utils.RECEIVER_API_HOST, 
                             utils.RECEIVER_API_PORT, utils.SOCKET_RECV_SIZE, 
                             utils.logger_error, utils.PACKET_RETRY_SLEEP)
+
+    lora_node = Node(gateway = True, mesh_mode = True, debug_hops = False, adapter = adapter)
     
     for buoy in utils.load_buoys_json():
         aux_buoy = restore_backup(buoy, lora_node)

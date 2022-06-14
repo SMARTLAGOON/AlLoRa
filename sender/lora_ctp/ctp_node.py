@@ -28,7 +28,7 @@ class Node:
         self.__name = name
         self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[8:]
         #if self.__DEBUG:
-        print(self.__MAC)
+        print(self.__name, " : ", self.__MAC)
 
         self.__chunk_size = chunk_size
         if self.__mesh_mode and self.__chunk_size > 233:   # Packet size less than 255 (with Spreading Factor 7)
@@ -111,7 +111,8 @@ class Node:
 
         if self.__mesh_mode:
             try:
-                if packet.get_id() in self.__LAST_SEEN_IDS:   #_part("ID")
+                packet_id = packet.get_id() #Check if already forwarded or sent by myself
+                if packet_id in self.__LAST_SEEN_IDS or packet_id in self.__LAST_IDS:
                     if self.__DEBUG:
                         print("ALREADY_SEEN", self.__LAST_SEEN_IDS)
                     return None
@@ -125,9 +126,8 @@ class Node:
         return packet
 
     def __forward(self, packet: Packet):
-        try:    # Revisar si no lo envié yo mismo antes
-            #if packet.get_part("ID") not in self.__LAST_SEEN_IDS:
-            if packet.get_mesh():   #part("M") == "1"
+        try:
+            if packet.get_mesh():
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
                 random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
