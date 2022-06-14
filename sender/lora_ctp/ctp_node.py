@@ -1,17 +1,14 @@
-import pycom
-from network import LoRa
-from uos import urandom
-
 import socket
 import binascii
 import gc
 from time import sleep, time
 
+import pycom
+from network import LoRa
+from uos import urandom
 
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
-
-
 
 class Node:
 
@@ -134,7 +131,8 @@ class Node:
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
                 random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
-                #packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
+                if packet.get_debug_hops():
+                    packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
                 packet.enable_hop()
                 pycom.rgbled(0x7f0000) # red
                 sleep(random_sleep)  # Revisar
@@ -180,6 +178,9 @@ class Node:
             if self.__mesh_mode:
                 response_packet.set_id(self.__generate_id())    #part("ID", str(self.__generate_id()))
                 t_sleep = 0
+                if response_packet.get_debug_hops():
+                    response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
+
                 """
                 if response_packet.get_mesh():  # == "1"  # To-Do enable/disable_mesh en load
                     t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
@@ -187,11 +188,6 @@ class Node:
                     sleep(t_sleep)  # Revisar
                     pycom.rgbled(0)        # off
                 """
-                #print(response_packet.get_content().encode())
-                #print(len(response_packet.get_content().encode()))
-                #response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
-                #response_packet.enable_hop()
-            	#self.__lora_socket.send(response_packet.get_content().encode())
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
             #else:
@@ -214,14 +210,22 @@ class Node:
                     destination = packet.get_source()
                     if command:
                         response_packet = None
-                        if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                            command = "{}-{}".format(Node.CHUNK, packet.get_payload().decode())
-                            response_packet = self.__handle_command(command=command)
-                        elif command.startswith(Node.REQUEST_DATA_INFO):
-                            response_packet = self.__handle_command(command=command)
-                        if packet.get_mesh() and response_packet:   # == "1"
-                            response_packet.enable_mesh()
-                            mesh_flag = True
+                        if packet.get_debug_hops():
+                            response_packet = Packet(mesh_mode = self.__mesh_mode)
+                            response_packet.set_source(self.__MAC)
+                            response_packet.set_data("")
+                            response_packet.enable_debug_hops()
+                        else:
+                            if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                                command = "{}-{}".format(Node.CHUNK, packet.get_payload().decode())
+                                response_packet = self.__handle_command(command=command)
+                            elif command.startswith(Node.REQUEST_DATA_INFO):
+                                response_packet = self.__handle_command(command=command)
+                        if response_packet:   # == "1"
+                            if packet.get_mesh():
+                                response_packet.enable_mesh()
+                                mesh_flag = True
+
                         self.__send(response_packet, destination)
                         if response_packet:
                             if response_packet.get_mesh():
@@ -262,10 +266,9 @@ class Node:
             #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
             if self.__DEBUG:
                 print("RC: {}".format(requested_chunk))
-            #response = self.chunk_format.format(self.MAC, self.file.get_chunk(requested_chunk)).encode()
+
             response_packet = Packet(mesh_mode = self.__mesh_mode)
             response_packet.set_source(self.__MAC)
-            #response_packet.set_part("CHUNK", self.__file.get_chunk(requested_chunk))
             response_packet.set_data(self.__file.get_chunk(requested_chunk))
 
             if not self.__file.first_sent:

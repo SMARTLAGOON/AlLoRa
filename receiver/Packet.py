@@ -27,16 +27,20 @@ class Packet:
 
         self.__source = ''            # 8 Bytes mac address of the source
         self.__destination = ''       # 8 Bytes mac address of the destination
-        self.__command = None           # Type of command / or Data
-        self.__retransmission = False     # True if already sent one or more times
+
         self.__checksum = None          # Checksum
         self.__payload = b''           # Content of the message
 
         self.__check = None               # True if checksum is correct with content
 
+        ## Flags:
+        self.__command = None           # Type of command / or Data
+        self.__retransmission = False     # True if already sent one or more times
         # Only for mesh mode
         self.__mesh = False  # Mesh On or Off for this Node
         self.__hop = False   # If packet was forwarder -> 1, else -> 0
+        self.__debug_hops = False    # Overrides payload to get path details (hops)
+
         self.__id = None    # Random number from 0 to 65.535
 
         self.__hops = None
@@ -107,19 +111,35 @@ class Packet:
     def get_hop(self):
         return self.__hop
 
+    def get_debug_hops(self):
+        return self.__debug_hops
+
+    def enable_debug_hops(self):
+        self.__debug_hops = True
+
+    def disable_debug_hops(self):
+        self.__debug_hops = False
+
+    def get_message_path(self):
+        if self.__debug_hops:
+            try:
+                hops = loads(self.__payload)
+                return hops
+            except:
+                return None
+
     def add_hop(self, name, rssi, time_sleep):
-        metadata = {"N" : name, "R": rssi, "T": time_sleep}
-        #print(rssi)
-        if self.__hops:
-            hops = loads(self.__hops)
-            hops.append(metadata)
+        hop = {"N" : name, "R": rssi, "T": time_sleep}
+        path = self.get_message_path()
+        if path:
+            path.append(hop)
         else:
-            hops = []
-            hops.append(metadata)
-        self.__hops = dumps(hops)
+            path = [hop]
+        self.enable_debug_hops()
+        self.__payload = dumps(path).encode()
 
     def set_id(self, id):
-        if id < 65535:
+        if id <= 65535:
             self.__id = id
 
     def get_id(self):
@@ -151,12 +171,17 @@ class Packet:
                 flags = flags | (1<<4)
             if self.__hop:
                 flags = flags | (1<<6)
+            if self.__debug_hops:
+                flags = flags | (1<<7)
 
             p = self.__payload
             self.__checksum = self.__get_checksum(p)
 
             if self.__mesh_mode:
-                id_bytes = self.__id.to_bytes(2, 'little')
+                try:
+                    id_bytes = self.__id.to_bytes(2, 'little')
+                except:
+                    print(self.__source.encode(), self.__destination.encode(), flags, self.__id, self.__checksum)
                 #print(self.__source, self.__destination, flags, id_bytes, self.__checksum, p)
                 h = struct.pack(self.HEADER_FORMAT,self.__source.encode(), self.__destination.encode(), flags, id_bytes, self.__checksum)
             else:
@@ -184,6 +209,7 @@ class Packet:
         self.__retranmission = (flags >> 2) & 1 == 1
         self.__mesh  = (flags >> 4) & 1 == 1
         self.__hop = (flags >> 6) & 1 == 1
+        self.__debug_hops = (flags >> 7) & 1 == 1
 
         self.__payload = content
 
@@ -201,6 +227,7 @@ class Packet:
             "payload" : self.__payload.decode(),
             "mesh" : self.__mesh,
             "hop" : self.__hop,
+            "debug_hops" : self.__debug_hops,
             "id" :self.__id,
             }
         return d
@@ -214,6 +241,7 @@ class Packet:
         self.__payload = d["payload"].encode()
         self.__mesh = d["mesh"]
         self.__hop = d["hop"]
+        self.__debug_hops = d["debug_hops"]
         self.__id = d["id"]
 
         self.__check = self.__checksum == self.__get_checksum(self.__payload)

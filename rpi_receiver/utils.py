@@ -63,6 +63,7 @@ def load_config():
     global NEXT_ACTION_TIME_SLEEP
     global SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS
     global TIME_PER_BUOY
+    global MAX_RETRANSMISSIONS_BEFORE_MESH
 
     logger_info.info("Loading config")
 
@@ -82,6 +83,7 @@ def load_config():
     NEXT_ACTION_TIME_SLEEP = config.getfloat('general', 'NEXT_ACTION_TIME_SLEEP')
     SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS = config.getfloat('general', 'SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS')
     TIME_PER_BUOY = config.getint('general', 'TIME_PER_BUOY')
+    MAX_RETRANSMISSIONS_BEFORE_MESH = config.getint('general', 'MAX_RETRANSMISSIONS_BEFORE_MESH')
 
 
 def load_buoys_json():

@@ -16,7 +16,7 @@ class State(ABC):
     def do_action(self, buoy):  # Buoy is the context
         pass
 
-    def write_metadata(self, packet):
+    def save_hops(self, packet):
         pass
         """
         hops = json.loads(packet.get_part("H"))

@@ -15,35 +15,16 @@ class RequestDataState(State):
         pass
 
     def do_action(self, buoy) -> str:
-        """
-        self.__packet = Packet(buoy.get_mesh_mode())    #mesh_mode = 
-        self.__packet.set_destination(buoy.get_mac_address())
-        self.__packet.ask_metadata()    #set_part("COMMAND", "request-data-info")
-        if buoy.get_mesh():
-            self.__packet.enable_mesh()"""
 
-        #utils.logger_debug.debug("Buoy {} RequestDataState command: {}".format(buoy.get_name(), self.__packet.get_content()))
-        response_packet = buoy.lora_node.ask_metadata(buoy.get_mac_address(), buoy.get_mesh())
-        #response_packet = ctp_node.send_packet(packet=self.__packet)
-
-        if response_packet.get_command() == "METADATA":
-            #utils.logger_debug.debug("Buoy {} response: {}".format(buoy.get_name(), response_packet.get_content()))
-            try:
-                self.write_metadata(response_packet)
-                metadata = response_packet.get_metadata()
-                length = metadata["LENGTH"]
-                filename = metadata["FILENAME"]
-                buoy.reset_retransmission_counter(response_packet)
-                #filename = response_packet.get_part("FILENAME")
-                #length = int(response_packet.get_part("LENGTH"))
-                new_file = File(filename, length)
-                buoy.set_current_file(new_file)
-                utils.logger_debug.debug("Buoy {} File {} has been set".format(buoy.get_name(), filename))
-                return State.PROCESS_CHUNK_STATE  # If all went well, continue
-                #If message is corrupted...
-            except Exception as e:   #KeyError
-                buoy.count_retransmission()
-                return State.REQUEST_DATA_STATE
+        metadata, hop = buoy.lora_node.ask_metadata(buoy.get_mac_address(), buoy.get_mesh())
+        if metadata:
+            length = metadata[0]
+            filename = metadata[1]
+            new_file = File(filename, length)
+            buoy.set_current_file(new_file)
+            buoy.reset_retransmission_counter(hop)
+            utils.logger_debug.debug("Buoy {} File {} has been set".format(buoy.get_name(), filename))
+            return State.PROCESS_CHUNK_STATE  # If all went well, continue
         else:
             buoy.count_retransmission()
             return State.REQUEST_DATA_STATE

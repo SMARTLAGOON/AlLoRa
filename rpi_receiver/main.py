@@ -14,6 +14,7 @@ def restore_backup(buoy: dict, lora_node: Node):
     mac_address = buoy['mac_address']
     uploading_endpoint = buoy['uploading_endpoint']
     active = buoy["active"]
+    max_retransmissions = utils.MAX_RETRANSMISSIONS_BEFORE_MESH
 
     utils.logger_info.info("Restoring buoy: {}".format(buoy))
     restored_buoy = Buoy(name=name,
@@ -21,8 +22,9 @@ def restore_backup(buoy: dict, lora_node: Node):
                          mac_address=mac_address,
                          uploading_endpoint=uploading_endpoint,
                          active=active,
+                         MAX_RETRANSMISSIONS_BEFORE_MESH = max_retransmissions,
                          lora_node = lora_node)
-
+    #restored_buoy.enable_mesh()
     try:
         with open('application_backup/buoy_{}.pickle.bak'.format(mac_address), 'rb') as fp:
             restored_buoy = pickle.load(fp)
@@ -38,11 +40,11 @@ if __name__ == "__main__":
     utils.logger_info.info("BuoySoftware RPI_RECEIVER")
     utils.load_config()
 
-    lora_node = Node(gateway = True, mesh_mode= True)
+    lora_node = Node(gateway = True, mesh_mode = True, debug_hops = False)
     lora_node.set_adapter(utils.SOCKET_TIMEOUT, utils.RECEIVER_API_HOST, 
                             utils.RECEIVER_API_PORT, utils.SOCKET_RECV_SIZE, 
                             utils.logger_error, utils.PACKET_RETRY_SLEEP)
-
+    
     for buoy in utils.load_buoys_json():
         aux_buoy = restore_backup(buoy, lora_node)
         if aux_buoy.is_active():

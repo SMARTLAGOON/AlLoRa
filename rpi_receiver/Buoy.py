@@ -21,7 +21,8 @@ class Buoy:
     PROCESS_CHUNK_STATE = ProcessChunkState()
 
     def __init__(self, name: str, coordinates: tuple, mac_address: str, 
-                        uploading_endpoint: str, active: bool, lora_node: Node):
+                        uploading_endpoint: str, active: bool, 
+                        MAX_RETRANSMISSIONS_BEFORE_MESH: int, lora_node: Node):
         self.__name = name
         self.__coordinates = coordinates #(lat, lon, alt)
         self.__mac_address = mac_address[8:]
@@ -36,19 +37,13 @@ class Buoy:
         #self.__mesh_mode = mesh_mode
         self.__mesh = False
         self.__retransmission_counter = 0
-        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 10  # MRBM
-
-        self.__LAST_SEEN_IDS = list()            # IDs from my mesagges
-        self.__MAX_IDS_CACHED = 30          # Max number of IDs saved
+        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
 
     def get_name(self):
         return self.__name
 
     def get_mac_address(self):
         return self.__mac_address
-
-    #def get_mesh_mode(self):
-    #    return self.__mesh_mode
 
     def get_mesh(self):
         return self.__mesh
@@ -58,43 +53,26 @@ class Buoy:
 
     def enable_mesh(self):
         self.__mesh = True
-        self.__mesh_t0 = time.time()
+        print("BUOY {}: ENABLING MESH".format(self.__name))
 
     def disable_mesh(self):
         self.__mesh = False
-        self.__mesh_t0 = None
         self.__retransmission_counter = 0
         print("BUOY {}: DISABLING MESH".format(self.__name))
 
     def count_retransmission(self):
         if self.lora_node.get_mesh_mode and not self.get_mesh():
-            #print("BUOY {}: retransmission + 1".format(self.__name))
             self.__retransmission_counter += 1
             if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
-                print("BUOY {}: ENABLING MESH".format(self.__name))
                 self.enable_mesh()
 
-    def reset_retransmission_counter(self, packet):
+    def reset_retransmission_counter(self, hop): #packet
         if self.lora_node.get_mesh_mode:
             if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
                 self.__retransmission_counter = 0           # Reset counter, going well...
             else:
-                #hops = json.loads(packet.get_part("H"))
-                #if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
-                    #self.disable_mesh()                     # No need for mesh mode
-                if not packet.get_hop():
+                if not hop:
                     self.disable_mesh()
-
-    def check_id_list(self, id):
-        if id not in self.__LAST_SEEN_IDS:
-            self.__LAST_SEEN_IDS.append(id)    #part("ID")
-            self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
-            return True
-        else:
-            return False
-
-    def reset_id_list(self):
-        self.__LAST_SEEN_IDS = list()
 
     def set_current_file(self, file: File):
         self.__current_file = file
