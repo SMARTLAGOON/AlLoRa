@@ -41,8 +41,11 @@ class DataSource:
     def __read(self):
         while self.__STOP_THREAD is False:
             try:
-                print(self.__STOP_THREAD)
-                self.__add_to_queue(file=self._read_datasource())
+                file = self._read_datasource()
+                if file is not None:
+                    self.__add_to_queue(file=file)
+                else:
+                    print("skipped file, it is None")
                 utime.sleep(self.__SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
