@@ -60,6 +60,9 @@ class Packet:
     def get_command(self):
         return self.__command
 
+    def set_ok(self):
+        self.__command = "OK"
+
     def ask_metadata(self):
          self.__command = "METADATA"
 
@@ -129,14 +132,18 @@ class Packet:
                 return None
 
     def add_hop(self, name, rssi, time_sleep):
-        hop = {"N" : name, "R": rssi, "T": time_sleep}
+        hop = (name, rssi, time_sleep)
         path = self.get_message_path()
-        if path:
+        if isinstance(path, list):
             path.append(hop)
         else:
             path = [hop]
         self.enable_debug_hops()
         self.__payload = dumps(path).encode()
+
+    def add_previous_hops(self, path):
+        if isinstance(path, list):
+            self.__payload = dumps(path).encode()
 
     def set_id(self, id):
         if id <= 65535:

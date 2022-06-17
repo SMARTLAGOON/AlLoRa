@@ -3,12 +3,13 @@ import json
 import select
 from time import sleep, time
 
-from lora_ctp.Packet import Packet
+from lora_ctp.Packet import Packet   #lora_ctp.
 
 class WiFi_adapter:
 
     def __init__(self, SOCKET_TIMEOUT, RECEIVER_API_HOST, RECEIVER_API_PORT, 
                     SOCKET_RECV_SIZE, logger_error, PACKET_RETRY_SLEEP):
+        
         self.SOCKET_TIMEOUT = SOCKET_TIMEOUT
         self.RECEIVER_API_HOST = RECEIVER_API_HOST
         self.RECEIVER_API_PORT = RECEIVER_API_PORT
@@ -16,10 +17,13 @@ class WiFi_adapter:
         self.logger_error = logger_error
         self.PACKET_RETRY_SLEEP = PACKET_RETRY_SLEEP
 
+    def get_mac(self):
+        return "000000000"
+
     def set_mesh_mode(self, mesh_mode=False):
         self.__mesh_mode = mesh_mode
 
-    def send(self, packet: Packet) -> Packet:
+    def send_and_wait_response(self, packet: Packet) -> Packet:
         json_response = None
         retry = True
         max_retries = 1

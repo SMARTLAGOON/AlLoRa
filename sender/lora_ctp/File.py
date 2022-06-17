@@ -41,7 +41,7 @@ class File:
         if self.__last_chunk_sent:
             self.__check_retransmission(position)
         self.__last_chunk_sent = position
-        return  bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]).decode()
+        return bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]).decode()
 
     def __check_retransmission(self, requested_chunk):
         if requested_chunk == self.__last_chunk_sent:

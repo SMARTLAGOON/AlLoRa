@@ -1,32 +1,45 @@
-import socket
-import binascii
 import gc
 from time import sleep, time
 
 import pycom
-from network import LoRa
 from uos import urandom
+
+import socket
+import binascii
 
 from lora_ctp.File import File
 from lora_ctp.Packet import Packet
 
 class Node:
 
+    OK = "OK"
     REQUEST_DATA_INFO = "METADATA"  #"request-data-info"
     CHUNK = "CHUNK"                 #"chunk-"
     MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
-    def __init__(self, name, sf, chunk_size = 235, mesh_mode = False, debug = False):
+    def __init__(self, name, frequency, sf, chunk_size = 235, mesh_mode = False,
+                    debug = False, adapter = None):
         gc.enable()
-        self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
-        self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
-        self.__lora_socket.setblocking(False)
-
         self.__mesh_mode = mesh_mode
+
+        self.adapter = adapter
+        if self.adapter:
+            self.adapter.set_mesh_mode(self.__mesh_mode)
+            self.__MAC = self.adapter.get_mac()[8:]
+        else:
+
+            from network import LoRa
+
+            self.__lora = LoRa(mode=LoRa.LORA, frequency=frequency,
+                                region=LoRa.EU868, sf = sf)
+            self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
+            self.__lora_socket.setblocking(False)
+            self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[8:]
+
         self.__DEBUG = debug
 
         self.__name = name
-        self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[8:]
+
         #if self.__DEBUG:
         print(self.__name, " : ", self.__MAC)
 
@@ -70,7 +83,7 @@ class Node:
     def got_file(self):     # Check if I have a file to send
         return self.__file is not None
 
-    def stablish_connection(self):
+    def establish_connection(self):
         try_connect = True
         while try_connect:
             packet = self.__listen_receiver()
@@ -78,18 +91,29 @@ class Node:
                 if self.__is_for_me(packet):
                     command = packet.get_command()  #get_part('COMMAND')
                     destination = packet.get_source()
+                    debug_hops_flag = packet.get_debug_hops()
                     if command:
                         mesh_flag = False
                         if self.__mesh_mode and packet.get_mesh():    # To-Do enable/disable_mesh en load
                             mesh_flag = True
+                        if command.startswith(Node.OK):
+                            response_packet = Packet(self.__mesh_mode)   #mesh_mode =
+                            response_packet.set_source(self.__MAC)
+                            response_packet.set_ok()
+                            if self.__mesh_mode and mesh_flag:
+                                response_packet.enable_mesh()
+                            if debug_hops_flag:
+                                response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
+                            self.__send_response(response_packet, destination)
+                            return True, None, mesh_flag, debug_hops_flag, destination
                         if command.startswith(Node.REQUEST_DATA_INFO):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, None, mesh_flag, destination
+                            return True, None, mesh_flag, debug_hops_flag, destination
                         elif command.startswith(Node.CHUNK):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, self.__restore_backup(), mesh_flag, destination
+                            return True, self.__restore_backup(), mesh_flag, debug_hops_flag, destination
                         else:
                             if self.__DEBUG:
                                 print("ERROR: Asked for other than data info {}".format(packet.get_command()))  #part("COMMAND")
@@ -138,8 +162,8 @@ class Node:
                 sleep(random_sleep)  # Revisar
                 pycom.rgbled(0)        # off
 
-                if packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
-                    self.__lora_socket.send(packet.get_content())   #.encode()
+                success = self.__send(packet)
+                if success:
                     self.__LAST_SEEN_IDS.append(packet.get_id())    #part("ID")
                     self.__LAST_SEEN_IDS = self.__LAST_SEEN_IDS[-self.__MAX_IDS_CACHED:]
                 #else:
@@ -156,16 +180,19 @@ class Node:
         del(content)
         gc.collect()
 
-    def set_new_file(self, name, content, mesh_flag, destination):
+    def set_new_file(self, name, content, mesh_flag, debug_hops_flag, destination):
         self.set_file(name, content)
+        """
         response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO)
-        if self.__mesh_mode and mesh_flag and response_packet:
+        if self.__mesh_mode and mesh_flag:
             response_packet.enable_mesh()
-        self.__send(response_packet, destination)
+        if debug_hops_flag:
+            response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
+        self.__send_response(response_packet, destination)
         pycom.rgbled(0x007f00) # green
         sleep(0.1)
         pycom.rgbled(0)        # off
-        del(response_packet)
+        del(response_packet)"""
         gc.collect()
 
     def restore_file(self, name, content):
@@ -173,35 +200,32 @@ class Node:
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
 
-    def __send(self, response_packet: Packet, destination):
+    def __send_response(self, response_packet: Packet, destination):
         if response_packet:
             if self.__mesh_mode:
-                response_packet.set_id(self.__generate_id())    #part("ID", str(self.__generate_id()))
-                t_sleep = 0
-                if response_packet.get_debug_hops():
-                    response_packet.add_hop(self.__name, self.__raw_rssi(), t_sleep)
+                response_packet.set_id(self.__generate_id())
 
-                """
-                if response_packet.get_mesh():  # == "1"  # To-Do enable/disable_mesh en load
-                    t_sleep = (urandom(1)[0] % 10 + 1) * 0.1
-                    pycom.rgbled(0xb19cd8) # purple
-                    sleep(t_sleep)  # Revisar
-                    pycom.rgbled(0)        # off
-                """
                 if self.__DEBUG:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
-            #else:
-                #response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
-                #response_packet.enable_hop()
+
             response_packet.set_destination(destination)
-            if response_packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
-                self.__lora_socket.send(response_packet.get_content())  #.encode()
-            else:
-                print("Error: Packet too big")
+            self.__send(response_packet)
+
+    '''This function send a LoRA-CTP Packet using raw LoRa'''
+    def __send(self, packet):
+        if self.__DEBUG:
+            print("SEND_PACKET() || packet: {}".format(packet.get_content()))
+        if packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
+            self.__lora_socket.send(packet.get_content())	#.encode()
+            return True
+        else:
+            print("Error: Packet too big")
+            return False
 
     def send_file(self):
         while not self.__file.sent:
             mesh_flag = False
+            debug_hops_flag = False
             destination = ''
             packet = self.__listen_receiver()
             if packet:
@@ -221,12 +245,18 @@ class Node:
                                 response_packet = self.__handle_command(command=command)
                             elif command.startswith(Node.REQUEST_DATA_INFO):
                                 response_packet = self.__handle_command(command=command)
+                            elif command.startswith(Node.OK):
+                                response_packet = self.__handle_command(command=command)
                         if response_packet:   # == "1"
                             if packet.get_mesh():
                                 response_packet.enable_mesh()
                                 mesh_flag = True
+                            if packet.get_debug_hops():
+                                debug_hops_flag = True
+                                response_packet.add_previous_hops(packet.get_message_path())
+                                response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
 
-                        self.__send(response_packet, destination)
+                        self.__send_response(response_packet, destination)
                         if response_packet:
                             if response_packet.get_mesh():
                                 pycom.rgbled(0xb19cd8) # purple
@@ -242,15 +272,20 @@ class Node:
         del(self.__file)
         gc.collect()
         self.__file = None
-        return mesh_flag, destination
+        return mesh_flag, debug_hops_flag, destination
 
     def __handle_command(self, command: str):
         response_packet = None
-        if command.startswith(Node.REQUEST_DATA_INFO):    # handle for new file
+        if command.startswith(Node.OK):
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
                 return None
-            elif self.__file.metadata_sent:
+            response_packet = Packet(self.__mesh_mode)   #mesh_mode =
+            response_packet.set_source(self.__MAC)
+            response_packet.set_ok()
+
+        if command.startswith(Node.REQUEST_DATA_INFO):    # handle for new file
+            if self.__file.metadata_sent:
                 self.__file.retransmission += 1
                 if self.__DEBUG:
                     print("asked again for data_info")

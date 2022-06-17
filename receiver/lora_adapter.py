@@ -19,6 +19,7 @@ class AdapterNode:
 		# Creation of LoRa socket
 		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
 		self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
+		self.__lora_socket.setblocking(False)
 
 		self.__WAIT_MAX_TIMEOUT = max_timeout
 		self.__mesh_mode = mesh_mode
@@ -59,47 +60,51 @@ class AdapterNode:
 			percentage = 0
 		print('SIGNAL STRENGTH', percentage, '%')
 
-	#This function waits for a message to be received from a sender.
-	def wait_response(self, packet):
-		timeout = self.__WAIT_MAX_TIMEOUT
-		received = False
-		received_data = b''
-
+	"""This function waits for a message to be received from a sender using raw LoRa"""
+	def send_and_wait_response(self, packet):
+		packet.set_source(self.__MAC)		# Adding mac address to packet
+		success = self.__send(packet)
 		response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-		while(timeout > 0 or received is True):
-			if self.__DEBUG:
-				print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
-			received_data = self.__lora_socket.recv(256)
-			if received_data:
+		if success:
+			timeout = self.__WAIT_MAX_TIMEOUT
+			received = False
+			received_data = b''
+			while(timeout > 0 or received is True):
 				if self.__DEBUG:
-					self.__signal_estimation()
-					print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
-				#if received_data.startswith(b'S:::'):
-				try:
-					response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-					response_packet.load(received_data)	#.decode('utf-8')
-					if response_packet.get_source() == packet.get_destination():
-						received = True
-						break
-					else:
+					print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
+				received_data = self.__recv()
+				if received_data:
+					if self.__DEBUG:
+						self.__signal_estimation()
+						print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
+					#if received_data.startswith(b'S:::'):
+					try:
 						response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-				except Exception as e:
-					print("Corrupted packet received", e)
-			time.sleep(0.01)
-			timeout = timeout - 1
+						response_packet.load(received_data)	#.decode('utf-8')
+						if response_packet.get_source() == packet.get_destination():
+							received = True
+							break
+						else:
+							response_packet = Packet(self.__mesh_mode)	# = mesh_mode
+					except Exception as e:
+						print("Corrupted packet received", e, received_data)
+				time.sleep(0.01)
+				timeout -= 1
 		return response_packet
 
-	'''
-	This function broadcasts a message
-	'''
-	def send_packet(self, packet):
-		self.__lora_socket.setblocking(False)
+	'''This function send a LoRA-CTP Packet using raw LoRa'''
+	def __send(self, packet):
 		if self.__DEBUG:
 			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
 		if packet.get_length() <= AdapterNode.MAX_LENGTH_MESSAGE:
 			self.__lora_socket.send(packet.get_content())	#.encode()
+			return True
+		else:
+			print("Error: Packet too big")
+			return False
 
-		return self.wait_response(packet)
+	def __recv(self):
+		return self.__lora_socket.recv(256)
 
 	'''
 	This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
@@ -127,9 +132,10 @@ class AdapterNode:
 				#Response to the sender (buoy)
 				packet = Packet(self.__mesh_mode)
 				packet.load_dict(response_json['packet'])	#response_json['packet']
-				packet.set_source(self.__MAC)		# Adding mac address to packet
-				buoy_response_packet = self.send_packet(packet)
+				buoy_response_packet = self.send_and_wait_response(packet)
 				if buoy_response_packet.get_command():
+					if buoy_response_packet.get_debug_hops():
+						buoy_response_packet.add_hop("G", self.__raw_rssi(), 0)
 					#print(buoy_response_packet.get_content())
 					json_buoy_response = ujson.dumps({"response_packet": buoy_response_packet.get_dict()})	#get_content()
 					if self.__DEBUG == True:
