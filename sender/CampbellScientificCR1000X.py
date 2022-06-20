@@ -6,6 +6,8 @@ import os
 import socket
 from DataSource import DataSource
 from machine import UART
+import uhashlib
+import ubinascii
 
 
 class CampbellScientificCR1000X(DataSource):
@@ -22,37 +24,39 @@ class CampbellScientificCR1000X(DataSource):
 
     def _read_datasource(self) -> File:
         file = None
-
+        exit_counter = 10
         try:
+            print("GET")
             self.__uart.write("GET<<<END>>>")
-            # Wait for content
-            while (self.__uart.any() <= 0):
-                utime.sleep(0.1)
-            # When content is available
+            exit_counter = 10
+            ended = False
             data = b""
-            while (self.__uart.any() > 0):
-                while True:
-                    #print("read")
-                    try:
-                        raw = self.__uart.read(256)
-                        try:
-                            if "<<<END>>>" in raw:
-                                break
-                        except Exception as e:
-                            pass
-                        data += raw
-                    except Exception as e:
-                        pass
-                    utime.sleep(0.01)
+            while exit_counter > 0:
+                raw = self.__uart.read(256)
+                if raw is None or len(raw) <= 0:
+                    #print("dry pipe")
+                    exit_counter -= 0.01
+                else:
+                    #print("new msg")
+                    exit_counter = 10
+                    data += raw
+                    if b"<<<END>>>" in raw:
+                        ended = True
+                        break
+                utime.sleep(0.01)
+            print("read")
+            data = data.decode('utf-8')
+            #print(data)
+            if ended is True and data[:len("<<<BEGIN>>>")] == "<<<BEGIN>>>":
+                data = data[len("<<<BEGIN>>>"):-len("<<<END>>>")]
+                #If there are two merged files, file is invalid
+                if "<<<BEGIN>>>" or "<<<END>>>" not in data:
+                    hash = str(ubinascii.hexlify(uhashlib.sha256(data).digest()))
+                    print(hash)
 
-            #print("END", data)
-            #print("TYPE", type(data))
-
-            #print("decode", type(data.decode('utf-8')))
-            json_response = ujson.loads(data.decode('utf-8'))
-            #print("post decoded")
-            filename = json_response['Output5min']['data'][0]['time']
-            file = File(name='{}.json'.format(filename), content=json_response, chunk_size=super()._get_file_chunk_size())
+                    # Extract timestamp
+                    filename = data.split('"time":  ')[1][1:20]
+                    file = File(name='{}'.format(filename), content=data, chunk_size=super()._get_file_chunk_size())
         except Exception as e:
             print(e)
         return file

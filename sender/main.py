@@ -1,3 +1,4 @@
+'''
 from lora_ctp.ctp_node import Node
 
 
@@ -64,3 +65,23 @@ if __name__ == "__main__":
 	except KeyboardInterrupt as e:
 		print("THREAD_EXIT")
 		THREAD_EXIT = True
+'''
+from CampbellScientificCR1000X import CampbellScientificCR1000X
+import utime
+
+datasourceCR1000X = CampbellScientificCR1000X(file_chunk_size=190, sleep_between_readings=30)
+datasourceCR1000X.start()
+
+counter = 1
+while True:
+	try:
+		#file = datasourceCR1000X.get_backup()
+		file = datasourceCR1000X.get_next_file()
+		if file is not None:
+			#print(file.get_content())
+			print(counter, file.get_name())
+			counter += 1
+		utime.sleep(30)
+	except KeyboardInterrupt as e:
+		datasourceCR1000X.stop()
+		break

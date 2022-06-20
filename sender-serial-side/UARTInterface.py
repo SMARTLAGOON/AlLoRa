@@ -45,17 +45,14 @@ class UARTInterface:
                         command += raw
                         try:
                             if b"<<<END>>>" in raw:
-                                print("exit raw")
                                 break
                         except Exception as e:
                             pass
-
                     except Exception as e:
                         pass
                     utime.sleep(0.01)
 
             command = command.decode('utf-8')[:-len("<<<END>>>")]
-            print("COMMAND", command)
             for listener in self.__listeners:
                 _thread.start_new_thread(listener.do_action, (command, self))
 
@@ -64,12 +61,14 @@ class UARTInterface:
         print("write")
         length = len(message)
         to_send = ""
+        self.__uart.write("<<<BEGIN>>>")
         for i in range(0, length, 256):
             if length - i < 256:
-                to_send = message[i:-1]
+                to_send = message[i:]
             else:
                 to_send = message[i:i+256]
             #print(to_send)
             self.__uart.write(to_send)
-            utime.sleep(0.1)
+            utime.sleep(0.05)
         self.__uart.write("<<<END>>>")
+        print("write finished")
