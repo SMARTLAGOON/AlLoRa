@@ -6,7 +6,9 @@ from  math import ceil
 from time import time
 gc.enable()
 
+
 class File:
+
 
     def __init__(self, name: str, content:bytes, chunk_size: int):
         self.__name = name
@@ -48,7 +50,7 @@ class File:
         if self.__last_chunk_sent:
             self.__check_retransmission(position)
         self.__last_chunk_sent = position
-        return  bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]).decode()
+        return bytes(self.__content[position*self.__chunk_size : position*self.__chunk_size + self.__chunk_size]).decode()
 
 
     def __check_retransmission(self, requested_chunk):

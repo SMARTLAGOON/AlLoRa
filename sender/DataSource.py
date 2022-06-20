@@ -2,9 +2,10 @@ import _thread
 import utime
 import os
 import ujson
+# TODO Generalize to unbind DataSource from LoraCTP File class
 from lora_ctp.File import File
 
-
+# Do not instanciate this class as pretends to be an abstract one
 class DataSource:
 
 
@@ -41,8 +42,11 @@ class DataSource:
     def __read(self):
         while self.__STOP_THREAD is False:
             try:
-                print(self.__STOP_THREAD)
-                self.__add_to_queue(file=self._read_datasource())
+                file = self._read_datasource()
+                if file is not None:
+                    self.__add_to_queue(file=file)
+                else:
+                    print("skipped file, it is None")
                 utime.sleep(self.__SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
@@ -79,6 +83,22 @@ class DataSource:
             return None
 
 
+    def get_backup(self):
+        try:
+            filename = ""
+            with open("./filename-backup.txt", "r") as f:
+                filename = f.read()
+
+            content = None
+            with open("./content-backup.json", "r") as f:
+                content = ujson.load(f)
+
+            rescued_file = File(name='{}'.format(filename), content=content, chunk_size=self.__file_chunk_size)
+            return rescued_file
+        except OSError as e:
+            print("The backup could not be restored", e)
+
+
     def __backup(self, file: File):
         try:
             os.remove("./filename-backup.txt")
@@ -91,19 +111,3 @@ class DataSource:
 
         with open("./content-backup.json", "w") as f:
             ujson.dump(file.get_content(), f)
-
-
-    def restore_from_backup(self):
-        try:
-            filename = ""
-            with open("./filename-backup.txt", "r") as f:
-                filename = f.read()
-
-            content = None
-            with open("./content-backup.json", "r") as f:
-                content = ujson.load(f)
-
-            rescued_file = File(name='{}'.format(filename), content=content, chunk_size=self.__file_chunk_size)
-            self.__add_to_queue(file=rescued_file)
-        except OSError as e:
-            print("The backup could not be restored", e)
