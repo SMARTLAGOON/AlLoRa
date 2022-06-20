@@ -6,98 +6,36 @@ from json.decoder import JSONDecodeError
 from multiprocessing.context import Process
 import requests
 import utils
-from File import File
-from states.ProcessChunkState import ProcessChunkState
-from states.RequestDataState import RequestDataState
+
+from lora_ctp.Digital_Endpoint import Digital_EndPoint, File
 
 '''
 This class helps to handle senders (buoys) in a handy way.
 It mounts a basic State pattern helping with communication protocol, also saves its state just in case of a blackout or whatever.
 '''
-class Buoy:
+class Buoy(Digital_EndPoint):
 
-
-    REQUEST_DATA_STATE = RequestDataState()
-    PROCESS_CHUNK_STATE = ProcessChunkState()
-
-
-    def __init__(self, name: str, coordinates: tuple, mac_address: str, uploading_endpoint: str, active: bool, mesh_mode: bool):
-        self.__name = name
+    def __init__(self, name: str, coordinates: tuple, mac_address: str, 
+                        uploading_endpoint: str, active: bool, 
+                        MAX_RETRANSMISSIONS_BEFORE_MESH: int):
+        
+        super().__init__(name, mac_address, active, MAX_RETRANSMISSIONS_BEFORE_MESH)
         self.__coordinates = coordinates #(lat, lon, alt)
-        self.__mac_address = mac_address[8:]
-        self.__uploading_endpoint = uploading_endpoint
-        self.__active = active
+        self.uploading_endpoint = uploading_endpoint
 
-        self.__next_state = RequestDataState()
-        self.__current_file = None
-
-        self.__mesh_mode = mesh_mode
-        self.__mesh = False
-        self.__retransmission_counter = 0
-        self.__MAX_RETRANSMISSIONS_BEFORE_MESH = 10  # MRBM
-        self.__mesh_t0 = None
-        self.__MAX_MESH_MINUTES = 60                # MMM (minutes)
-
-
-    def get_name(self):
-        return self.__name
-
-    def get_mac_address(self):
-        return self.__mac_address
-
-    def get_mesh_mode(self):
-        return self.__mesh_mode
-
-    def get_mesh(self):
-        return self.__mesh
-
-    def is_active(self):
-        return self.__active
-
-    def enable_mesh(self):
-        self.__mesh = True
-        self.__mesh_t0 = time.time()
-
-    def disable_mesh(self):
-        self.__mesh = False
-        self.__mesh_t0 = None
-        self.__retransmission_counter = 0
-        print("BUOY {}: DISABLING MESH".format(self.__name))
-
-    def check_mesh(self):
-        if self.__mesh_mode and self.__mesh:
-            if (time.time() - self.__mesh_t0) / 60 > self.__MAX_MESH_MINUTES:
-                self.disable_mesh()
-
-    def count_retransmission(self):
-        if self.__mesh_mode and not self.get_mesh():
-            #print("BUOY {}: retransmission + 1".format(self.__name))
-            self.__retransmission_counter += 1
-            if self.__retransmission_counter >= self.__MAX_RETRANSMISSIONS_BEFORE_MESH:
-                print("BUOY {}: ENABLING MESH".format(self.__name))
-                self.enable_mesh()
-
-    def reset_retransmission_counter(self, packet):
-        if self.__mesh_mode:
-            if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
-                self.__retransmission_counter = 0           # Reset counter, going well...
-            else:
-                hops = json.loads(packet.get_part("H"))
-                if hops[-1]['N'] == self.__name:   # If last hop was from this buoy...
-                    self.disable_mesh()                     # No need for mesh mode
 
     def set_current_file(self, file: File):
-        self.__current_file = file
+        self.current_file = file
         self.__backup()
 
-    def get_current_file(self):
-        return self.__current_file
-
-    def do_next_action(self):
-        self.__next_state = self.__getattribute__(self.__next_state.do_action(self))
-        self.check_mesh()
+    def set_metadata(self, metadata, hop, mesh_mode):
+        super().set_metadata(metadata, hop, mesh_mode)
+        #utils.logger_debug.debug("Buoy {} File {} has been set".format(self.get_name(), self.current_file.get_name()))
         self.__backup()
 
+    def set_data(self, data, hop, mesh_mode):
+        super().set_data(data, hop, mesh_mode)
+        self.__backup()
 
     '''
     This function saves the state of the application serializing itself.
@@ -105,28 +43,27 @@ class Buoy:
     It also saves the data received from buoys in their specific folders.
     '''
     def __backup(self):
-        utils.logger_debug.debug("Buoy {} Backing up".format(self.__name))
+        utils.logger_debug.debug("Buoy {} Backing up".format(self.name))
         try:
             os.mkdir('application_backup')
         except Exception as e:
             pass
-        with open('application_backup/buoy_{}.pickle.bak'.format(self.__mac_address), 'wb') as fp:
+        with open('application_backup/buoy_{}.pickle.bak'.format(self.mac_address), 'wb') as fp:
             pickle.dump(self, fp)
 
-        if self.__current_file is not None and len(self.__current_file.get_missing_chunks()) <= 0:
+        if self.current_file is not None and len(self.current_file.get_missing_chunks()) <= 0:
             try:
-                os.mkdir(self.__mac_address)
+                os.mkdir(self.mac_address)
             except Exception as e:
                 pass
 
-
             #TODO Remove the timestamp in filename, this is a temporal solution until datalogger arrives
             def create_filename():
-                timestamp = self.__current_file.get_timestamp()
-                original_filename = self.__current_file.get_name()
+                timestamp = self.current_file.get_timestamp()
+                original_filename = self.current_file.get_name()
                 new_filename = "{}-{}".format(timestamp, original_filename)
 
-                directory = './{}'.format(self.__mac_address)
+                directory = './{}'.format(self.mac_address)
                 filenames = os.listdir(directory)
 
                 for f in filenames:
@@ -135,16 +72,12 @@ class Buoy:
                         return f
                 return new_filename
 
-            with open('./{}/{}'.format(self.__mac_address, create_filename()), 'wb') as fp:
-                fp.write(self.__current_file.get_content().encode('utf-8'))
-            utils.logger_info.info("Buoy {} Saved file {} containing {}".format(self.__name, self.__current_file.get_name(), self.__current_file.get_content().encode('utf-8')))
+            with open('./{}/{}'.format(self.mac_address, create_filename()), 'wb') as fp:
+                fp.write(self.current_file.get_content().encode('utf-8'))
+            utils.logger_info.info("Buoy {} Saved file {} containing {}".format(self.name, self.current_file.get_name(), self.current_file.get_content().encode('utf-8')))
 
-
-    '''
-    This function looks for content in a constant loop.
-    '''
+    #This function looks for content in a constant loop.
     def sync_remote(self):
-
         def sync(buoy_mac_address: str):
             current_buoy = None
             for buoy in utils.load_buoys_json():
@@ -202,7 +135,7 @@ class Buoy:
                                     time.sleep(utils.SYNC_REMOTE_FILE_SENDING_TIME_SLEEP) # Keep it above 1 for not overloading the server
                             if status_code == 200:
                                 utils.logger_info.info("Buoy {} Synced file {} in {}".format(current_buoy['name'], f, current_buoy['uploading_endpoint']))
-                                os.remove('./{}/{}'.format(self.__mac_address, f))
+                                os.remove('./{}/{}'.format(self.mac_address, f))
                                 utils.logger_info.info("Buoy {} Deleted file {}".format(current_buoy['name'], f))
                             elif retries <= 0:
                                 utils.logger_info.info("Buoy {} File {} not synced, exceeded retries".format(current_buoy['name'], f))
@@ -218,6 +151,6 @@ class Buoy:
                 finally:
                     time.sleep(utils.SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS)
 
-        process = Process(target=sync, args=(self.__mac_address,))
+        process = Process(target=sync, args=(self.mac_address,))
         process.start()
         #.join() is not needed as the while loop never ends

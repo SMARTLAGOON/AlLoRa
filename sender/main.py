@@ -1,14 +1,10 @@
-'''
 from lora_ctp.ctp_node import Node
 
-
 #Thread exit flag
-THREAD_EXIT = False
+#THREAD_EXIT = False
 
 # For testing
-sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512]	#, 1024
-#sfs = [7, 8, 9, 10, 11, 12]		# For changing SF in sync with the receiver
-#len_list = len(sizes)
+sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 file_counter = 0
 
 def get_next_file(sizes, file_counter):
@@ -17,7 +13,6 @@ def get_next_file(sizes, file_counter):
 	size = sizes[n]
 	return n, size, file_counter
 
-
 def clean_timing_file():
 	test_log = open('log.txt', "wb")
 	test_log.write("")
@@ -25,63 +20,31 @@ def clean_timing_file():
 
 
 if __name__ == "__main__":
-
-	lora_node = Node(name = "A", sf = 7, chunk_size = 201, mesh = True, debug = False)
-	"""
-	from lora_ctp.Packet import Packet
-	p = Packet(mesh_mode = lora_node.__mesh)
-	cs = 193
-	p.set_part("CHUNK", "{}".format(0)*cs)
-	p.set_destination(lora_node.__MAC)
-	print(p.get_content())
-	print(len(p.get_content()))
-	lora_node.__lora_socket.send(p.get_content().encode())
-	print("sent")"""
-
+	lora_node = Node(name = "A", frequency = 868000000, sf = 7,
+					chunk_size = 235, mesh_mode = True, debug = False)
 	try:
 		clean_timing_file()
-		success, backup, mesh_flag = lora_node.stablish_connection()
+		success, backup, mesh_flag, debug_hops_flag, destination = lora_node.establish_connection()
 		if success:
+			print("Connected!")
 			if backup:
 				print(backup)
 				size = int(backup.split(".")[0])
 				file_counter = sizes.index(size)
 				n, size, file_counter = get_next_file(sizes, file_counter)
-				lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%100)))
-				#lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))
+				#lora_node.restore_file(name = '{}.json'.format(size), content = bytearray('TEST-{}'.format(n%100)))
+				lora_node.restore_file(name = '{}.json'.format(size),
+										content = bytearray('{}'.format(n%10)*(1024 * size)))
 			while True:
 				if not lora_node.got_file():
 					n, size, file_counter = get_next_file(sizes, file_counter)
-					lora_node.set_new_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%100)), mesh_flag = mesh_flag)
+					lora_node.set_new_file(name = '{}.json'.format(size),
+											content = bytearray('{}'.format(n%10)*(1024 * size)),
+											mesh_flag = mesh_flag, debug_hops_flag = debug_hops_flag,
+											destination = destination)
 
-				mesh_flag = lora_node.send_file()
-					#lora_node.send_file(name = '{}.json'.format(size), content = bytearray('{}'.format(n%10)*(1024 * size)))	#( )).encode("UTF-8") '{}'.format(n%10)*(1024 * size)	#('{}'.format(n%10)*(1024 * size)).encode("UTF-8")
-					#file_counter += 1
+				mesh_flag, debug_hops_flag, destination = lora_node.send_file()
 
-					#test_log = open('log.txt', "rb")
-					#results = '{}'.format(test_log.readlines())
-					#test_log.close()
-					#lora_node.send_file("results", results)
 	except KeyboardInterrupt as e:
-		print("THREAD_EXIT")
-		THREAD_EXIT = True
-'''
-from CampbellScientificCR1000X import CampbellScientificCR1000X
-import utime
-
-datasourceCR1000X = CampbellScientificCR1000X(file_chunk_size=190, sleep_between_readings=30)
-datasourceCR1000X.start()
-
-counter = 1
-while True:
-	try:
-		#file = datasourceCR1000X.get_backup()
-		file = datasourceCR1000X.get_next_file()
-		if file is not None:
-			#print(file.get_content())
-			print(counter, file.get_name())
-			counter += 1
-		utime.sleep(30)
-	except KeyboardInterrupt as e:
-		datasourceCR1000X.stop()
-		break
+		print("THREAD_EXIT WITH ERROR: ", e)
+		#THREAD_EXIT = True
