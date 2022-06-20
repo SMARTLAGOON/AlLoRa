@@ -7,7 +7,7 @@ from multiprocessing.context import Process
 import requests
 import utils
 
-from lora_ctp.DataSource import Digital_EndPoint, File
+from lora_ctp.Digital_Endpoint import Digital_EndPoint, File
 
 '''
 This class helps to handle senders (buoys) in a handy way.
