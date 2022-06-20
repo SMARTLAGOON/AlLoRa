@@ -57,7 +57,6 @@ class Digital_EndPoint:
 
     def set_current_file(self, file: File):
         self.current_file = file
-        # backup
 
     def get_current_file(self):
         return self.current_file
@@ -71,7 +70,6 @@ class Digital_EndPoint:
             if mesh_mode:
                 self.count_retransmission()
         
-    
     def set_metadata(self, metadata, hop, mesh_mode):
         if metadata:
             length = metadata[0]
@@ -97,11 +95,10 @@ class Digital_EndPoint:
         if data:
             self.current_file.add_chunk(self.current_chunk, data)
             if mesh_mode:
-                self.reset_retransmission_counter(hop) #response_packet
+                self.reset_retransmission_counter(hop)
         else:
             if mesh_mode:
                 self.count_retransmission()
         
         if len(self.current_file.get_missing_chunks()) <= 0:
             self.state = Digital_EndPoint.OK
-            #self.state = DataSource.REQUEST_DATA_STATE  #DataSource.OK

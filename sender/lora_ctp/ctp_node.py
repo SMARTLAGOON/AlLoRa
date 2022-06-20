@@ -182,17 +182,6 @@ class Node:
 
     def set_new_file(self, name, content, mesh_flag, debug_hops_flag, destination):
         self.set_file(name, content)
-        """
-        response_packet = self.__handle_command(command=Node.REQUEST_DATA_INFO)
-        if self.__mesh_mode and mesh_flag:
-            response_packet.enable_mesh()
-        if debug_hops_flag:
-            response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
-        self.__send_response(response_packet, destination)
-        pycom.rgbled(0x007f00) # green
-        sleep(0.1)
-        pycom.rgbled(0)        # off
-        del(response_packet)"""
         gc.collect()
 
     def restore_file(self, name, content):
@@ -209,7 +198,7 @@ class Node:
             	       print("SENT FINAL RESPONSE", response_packet.get_content())
 
             response_packet.set_destination(destination)
-            self.__send(response_packet)
+            return self.__send(response_packet)
 
     '''This function send a LoRA-CTP Packet using raw LoRa'''
     def __send(self, packet):
@@ -217,6 +206,14 @@ class Node:
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Node.MAX_LENGTH_MESSAGE:
             self.__lora_socket.send(packet.get_content())	#.encode()
+            if packet.get_mesh():
+                pycom.rgbled(0xb19cd8) # purple
+            else:
+                pycom.rgbled(0x007f00) # green
+                sleep(0.1)
+            pycom.rgbled(0)        # off
+            del(packet)
+            gc.collect()
             return True
         else:
             print("Error: Packet too big")
@@ -257,15 +254,6 @@ class Node:
                                 response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
 
                         self.__send_response(response_packet, destination)
-                        if response_packet:
-                            if response_packet.get_mesh():
-                                pycom.rgbled(0xb19cd8) # purple
-                            else:
-                                pycom.rgbled(0x007f00) # green
-                            sleep(0.1)
-                            pycom.rgbled(0)        # off
-                            del(response_packet)
-                            gc.collect()
                 else:
                     self.__forward(packet=packet)
 

@@ -20,7 +20,7 @@ def clean_timing_file():
 
 
 if __name__ == "__main__":
-	lora_node = Node(name = "C", frequency = 868000000, sf = 7,
+	lora_node = Node(name = "A", frequency = 868000000, sf = 7,
 					chunk_size = 235, mesh_mode = True, debug = False)
 	try:
 		clean_timing_file()

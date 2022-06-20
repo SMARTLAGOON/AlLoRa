@@ -37,8 +37,6 @@ class Buoy(Digital_EndPoint):
         super().set_data(data, hop, mesh_mode)
         self.__backup()
 
-    # do next action : self.__backup()
-
     '''
     This function saves the state of the application serializing itself.
 
