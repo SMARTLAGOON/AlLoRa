@@ -72,9 +72,7 @@ class Digital_EndPoint:
         
     def set_metadata(self, metadata, hop, mesh_mode):
         if metadata:
-            length = metadata[0]
-            filename = metadata[1]
-            new_file = File(filename, length)
+            new_file = File(name = metadata[1], length = metadata[0])
             self.set_current_file(new_file)
             if mesh_mode:
                 self.reset_retransmission_counter(hop)

@@ -214,7 +214,7 @@ class Node:
                 pycom.rgbled(0xb19cd8) # purple
             else:
                 pycom.rgbled(0x007f00) # green
-                sleep(0.1)
+            sleep(0.1)
             pycom.rgbled(0)        # off
             del(packet)
             gc.collect()

@@ -3,7 +3,7 @@ from adapters.Wifi_adapter import WiFi_adapter
 
 class Gateway_Node(LoRA_CTP_Node):
 
-    def __init__(self, mesh_mode = False, debug_hops = False, gateway = False, adapter = None):
+    def __init__(self, mesh_mode = False, debug_hops = False, adapter = None):
         LoRA_CTP_Node.__init__(self, mesh_mode = False, debug_hops = False, adapter = adapter)
     
     def set_nodes_to_hear(self, list_of_nodes):
