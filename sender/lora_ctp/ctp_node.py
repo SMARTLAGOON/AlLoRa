@@ -77,6 +77,9 @@ class Node:
     def get_mesh_mode(self):
         return self.__mesh_mode
 
+    def get_chunk_size(self):
+        return self.__chunk_size
+
     def __is_for_me(self, packet: Packet):
         return packet.get_destination() == self.__MAC
 
@@ -105,15 +108,15 @@ class Node:
                             if debug_hops_flag:
                                 response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
                             self.__send_response(response_packet, destination)
-                            return True, None, mesh_flag, debug_hops_flag, destination
+                            return False #, None, mesh_flag, debug_hops_flag, destination
                         if command.startswith(Node.REQUEST_DATA_INFO):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, None, mesh_flag, debug_hops_flag, destination
+                            return True #True, None, mesh_flag, debug_hops_flag, destination
                         elif command.startswith(Node.CHUNK):
                             pycom.rgbled(0x007f00) # green
                             try_connect = False
-                            return True, self.__restore_backup(), mesh_flag, debug_hops_flag, destination
+                            return True #True, self.__restore_backup(), mesh_flag, debug_hops_flag, destination
                         else:
                             if self.__DEBUG:
                                 print("ERROR: Asked for other than data info {}".format(packet.get_command()))  #part("COMMAND")
@@ -174,18 +177,19 @@ class Node:
             if self.__DEBUG:
                 print("ERROR FORWARDING", e)
 
-    def set_file(self, name, content):
-        self.__file = File(name, content, self.__chunk_size)
-        self.__backup_sending_file()
-        del(content)
-        gc.collect()
+    def set_file(self, file):   #name, content
+        self.__file = file  #File(name, content, self.__chunk_size)
+        #self.__backup_sending_file()
+        #del(content)
+        #gc.collect()
 
+    """
     def set_new_file(self, name, content, mesh_flag, debug_hops_flag, destination):
         self.set_file(name, content)
-        gc.collect()
+        gc.collect()"""
 
-    def restore_file(self, name, content):
-        self.set_file(name, content)
+    def restore_file(self, file):   #name, content
+        self.set_file(file)
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
 
@@ -307,6 +311,7 @@ class Node:
         self.__LAST_IDS = self.__LAST_IDS[-self.__MAX_IDS_CACHED:]
         return id
 
+    """
     def __clean_backup(self):
         backup = open('backup.txt', "wb")
         backup.write("")
@@ -321,4 +326,4 @@ class Node:
         backup = open('backup.txt', "rb")
         name = backup.readline().decode("utf-8")
         backup.close()
-        return name
+        return name"""

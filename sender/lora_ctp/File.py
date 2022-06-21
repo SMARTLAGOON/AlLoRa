@@ -8,7 +8,7 @@ gc.enable()
 
 class File:
 
-    def __init__(self, name: str, content:bytes, chunk_size: int):
+    def __init__(self, name: str, content:bytearray, chunk_size: int):
         self.__name = name
         self.__content = content
         self.__chunk_size = chunk_size

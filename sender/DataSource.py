@@ -92,8 +92,7 @@ class DataSource:
             content = None
             with open("./content-backup.json", "r") as f:
                 content = ujson.load(f)
-
-            rescued_file = File(name='{}'.format(filename), content=content, chunk_size=self.__file_chunk_size)
+            rescued_file = File(name='{}'.format(filename), content=bytearray(content), chunk_size=self.__file_chunk_size)
             return rescued_file
         except OSError as e:
             print("The backup could not be restored", e)
@@ -110,4 +109,4 @@ class DataSource:
             f.write(file.get_name())
 
         with open("./content-backup.json", "w") as f:
-            ujson.dump(file.get_content(), f)
+            ujson.dump(bytes(file.get_content()).decode(), f)

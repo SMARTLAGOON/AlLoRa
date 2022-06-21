@@ -12,11 +12,12 @@ class CampbellScientificCR1000XMockup(DataSource):
 
 
     def __load_mockup(self, mockup_file_path: str) -> str:
+        data = ''
         with open(mockup_file_path) as f:
-            return ujson.load(f)
-
+            #return ujson.load(f)
+            data = f.read()
+        return data
 
     def _read_datasource(self):
-        print("read datasource")
-        filename = self.__mockup_data['Output5min']['data'][0]['time']
-        return File(name='{}.json'.format(filename), content=self.__mockup_data, chunk_size=super()._get_file_chunk_size())
+        filename = self.__mockup_data.split('"time":  ')[1][1:20]
+        return File(name='{}.txt'.format(filename), content=bytearray(self.__mockup_data), chunk_size=super()._get_file_chunk_size())
