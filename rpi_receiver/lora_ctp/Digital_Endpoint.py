@@ -1,5 +1,5 @@
 # Persistance - Mirror - etc
-from lora_ctp.File import File
+from lora_ctp.ctp_file import CTP_File
 
 class Digital_EndPoint:
 
@@ -55,7 +55,7 @@ class Digital_EndPoint:
             if not hop:
                 self.disable_mesh()
 
-    def set_current_file(self, file: File):
+    def set_current_file(self, file: CTP_File):
         self.current_file = file
 
     def get_current_file(self):
@@ -72,7 +72,7 @@ class Digital_EndPoint:
         
     def set_metadata(self, metadata, hop, mesh_mode):
         if metadata:
-            new_file = File(name = metadata[1], length = metadata[0])
+            new_file = CTP_File(name = metadata[1], length = metadata[0])
             self.set_current_file(new_file)
             if mesh_mode:
                 self.reset_retransmission_counter(hop)

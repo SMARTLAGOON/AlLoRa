@@ -1,6 +1,3 @@
-'''
-This class eases the use of a File divided in chunks
-'''
 import gc
 from  math import ceil
 from time import time
@@ -9,7 +6,7 @@ gc.enable()
 '''
 Analogous class to Lopy's one but instead of making chunks, this one reassembles them
 '''
-class File:
+class CTP_File:
 
     def __init__(self, name: str = None, content: bytearray = None, chunk_size: int = None, length: int = None):
         self.__name = name
@@ -37,16 +34,16 @@ class File:
 
             #Timestamp is not saved along the rest of variables, so in case of network shutdown or something, the record will not respect the timeseries
             self.__timestamp = int(time() * 1000) #FIXME This is a temporal solution until the datalogger can put a timestamp
-
+ 
 
     def get_name(self):
-        return self.__name
+        return self.__name    
 
     def get_content(self):
         if self.assembly_needed:
             self.__assembly()
         return self.__content
-
+    
     # Receiver methods
 
     def get_timestamp(self):
@@ -67,7 +64,7 @@ class File:
                 self.__content += self.__chunks[i].decode('utf-8')
             except KeyError as e:
                 self.__missing_chunks.append(i)
-
+    
     # Sender methods
     def get_length(self):
         return self.__chunk_counter
@@ -104,7 +101,7 @@ class File:
 
 
 if __name__ == "__main__":
-    x = File(name = "Test", length = 100)
+    x = CTP_File(name = "Test", length = 100)
     print(x.get_name())
-    y = File(name = "Test2", content = bytearray(b"1111111111111111111"), chunk_size = 2)
+    y = CTP_File(name = "Test2", content = bytearray(b"1111111111111111111"), chunk_size = 2)
     print(y.get_name())

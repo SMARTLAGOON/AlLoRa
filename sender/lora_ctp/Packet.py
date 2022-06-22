@@ -12,8 +12,19 @@ class Packet:
     HEADER_FORMAT_P2P  = "!8s8sB3s" #Source, Destination, Flags, Check Sum
     HEADER_SIZE_MESH  = 22
     HEADER_FORMAT_MESH  = "!8s8sB2s3s" #Source, Destination, Flags, ID, Check Sum
-    COMMAND = {"DATA": "00", "OK": "01", "CHUNK": "10", "METADATA": "11"}
-    COMMAND_BITS = {"00": "DATA", "01": "OK", "10": "CHUNK", "11": "METADATA"}
+
+    OK = "OK"
+    METADATA = "METADATA"  #"request-data-info"
+    CHUNK = "CHUNK"                 #"chunk-"
+    DATA = "DATA"
+    COMMAND = {DATA: "00", OK: "01", CHUNK: "10", METADATA: "11"}
+    COMMAND_BITS = {"00": DATA, "01": OK, "10": CHUNK, "11": METADATA}
+
+    def check_command(command):
+        if command in Packet.COMMAND:
+            return True
+        else:
+            return False
 
     def __init__(self, mesh_mode):
         self.__mesh_mode = mesh_mode
@@ -304,3 +315,9 @@ if __name__ == "__main__":
     length = metadata["LENGTH"]
     filename = metadata["FILENAME"]
     print(length, filename)
+
+    print(Packet.check_command("OK"))
+    print(Packet.check_command("METADATA"))
+    print(Packet.check_command("DATA"))
+    print(Packet.check_command("CHUNK"))
+    print(Packet.check_command("Other"))

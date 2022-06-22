@@ -1,20 +1,16 @@
 import gc
 from time import sleep, time
+import socket
+import binascii
 
 import pycom
 from uos import urandom
 
-import socket
-import binascii
-
-from lora_ctp.File import File
+from lora_ctp.ctp_file import CTP_File
 from lora_ctp.Packet import Packet
 
-class Node:
+class LoRA_CTP_Node:
 
-    OK = "OK"
-    REQUEST_DATA_INFO = "METADATA"  #"request-data-info"
-    CHUNK = "CHUNK"                 #"chunk-"
     MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
 
     def __init__(self, name, frequency, sf, chunk_size = 235, mesh_mode = False,
@@ -61,14 +57,14 @@ class Node:
     #This function prints the aproximated signal strength of the last received package over LoRa
     def __signal_estimation(self):
         percentage = 0
-    	rssi = self.__raw_rssi()
-    	if (rssi >= -50):
-    		percentage = 100
-    	elif (rssi <= -50) and (rssi >= -100):
-    		percentage = 2 * (rssi + 100)
-    	elif (rssi < 100):
-    		percentage = 0
-    	print('SIGNAL STRENGTH', percentage, '%')
+        rssi = self.__raw_rssi()
+        if (rssi >= -50):
+            percentage = 100
+        elif (rssi <= -50) and (rssi >= -100):
+            percentage = 2 * (rssi + 100)
+        elif (rssi < 100):
+            percentage = 0
+        print('SIGNAL STRENGTH', percentage, '%')
 
     # This function returns the RSSI of the last received packet
     def __raw_rssi(self):
@@ -87,39 +83,28 @@ class Node:
         return self.__file is not None
 
     def establish_connection(self):
-        try_connect = True
-        while try_connect:
+        while True:
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet):
-                    command = packet.get_command()  #get_part('COMMAND')
+                    command = packet.get_command()
                     destination = packet.get_source()
-                    debug_hops_flag = packet.get_debug_hops()
-                    if command:
-                        mesh_flag = False
-                        if self.__mesh_mode and packet.get_mesh():    # To-Do enable/disable_mesh en load
-                            mesh_flag = True
-                        if command.startswith(Node.OK):
-                            response_packet = Packet(self.__mesh_mode)   #mesh_mode =
+                    if Packet.check_command(command):
+                        if command == Packet.OK:
+                            response_packet = Packet(self.__mesh_mode)
                             response_packet.set_source(self.__MAC)
                             response_packet.set_ok()
-                            if self.__mesh_mode and mesh_flag:
+                            if self.__mesh_mode and packet.get_mesh():
                                 response_packet.enable_mesh()
-                            if debug_hops_flag:
+                            if packet.get_debug_hops():
+                                response_packet.add_previous_hops(packet.get_message_path())
                                 response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
+                            pycom.rgbled(0x007f00) # green
                             self.__send_response(response_packet, destination)
-                            return False #, None, mesh_flag, debug_hops_flag, destination
-                        if command.startswith(Node.REQUEST_DATA_INFO):
-                            pycom.rgbled(0x007f00) # green
-                            try_connect = False
-                            return True #True, None, mesh_flag, debug_hops_flag, destination
-                        elif command.startswith(Node.CHUNK):
-                            pycom.rgbled(0x007f00) # green
-                            try_connect = False
-                            return True #True, self.__restore_backup(), mesh_flag, debug_hops_flag, destination
+                            pycom.rgbled(0)        # off
+                            return False
                         else:
-                            if self.__DEBUG:
-                                print("ERROR: Asked for other than data info {}".format(packet.get_command()))  #part("COMMAND")
+                            return True
                 else:
                     self.__forward(packet)
             gc.collect()
@@ -177,18 +162,10 @@ class Node:
             if self.__DEBUG:
                 print("ERROR FORWARDING", e)
 
-    def set_file(self, file):   #name, content
-        self.__file = file  #File(name, content, self.__chunk_size)
-        #self.__backup_sending_file()
-        #del(content)
-        #gc.collect()
+    def set_file(self, file):
+        self.__file = file
 
-    """
-    def set_new_file(self, name, content, mesh_flag, debug_hops_flag, destination):
-        self.set_file(name, content)
-        gc.collect()"""
-
-    def restore_file(self, file):   #name, content
+    def restore_file(self, file):
         self.set_file(file)
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
@@ -199,7 +176,7 @@ class Node:
                 response_packet.set_id(self.__generate_id())
 
                 if self.__DEBUG:
-            	       print("SENT FINAL RESPONSE", response_packet.get_content())
+                    print("SENT FINAL RESPONSE", response_packet.get_content())
 
             response_packet.set_destination(destination)
             return self.__send(response_packet)
@@ -233,7 +210,7 @@ class Node:
                 if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
                     command = packet.get_command()  #_part('COMMAND')
                     destination = packet.get_source()
-                    if command:
+                    if Packet.check_command(command):
                         response_packet = None
                         if packet.get_debug_hops():
                             response_packet = Packet(mesh_mode = self.__mesh_mode)
@@ -241,14 +218,12 @@ class Node:
                             response_packet.set_data("")
                             response_packet.enable_debug_hops()
                         else:
-                            if command.startswith(Node.CHUNK):     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
-                                command = "{}-{}".format(Node.CHUNK, packet.get_payload().decode())
+                            if command == Packet.CHUNK:     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                                command = "{}-{}".format(Packet.CHUNK, packet.get_payload().decode())
                                 response_packet = self.__handle_command(command=command)
-                            elif command.startswith(Node.REQUEST_DATA_INFO):
+                            else:   # Metadata or OK
                                 response_packet = self.__handle_command(command=command)
-                            elif command.startswith(Node.OK):
-                                response_packet = self.__handle_command(command=command)
-                        if response_packet:   # == "1"
+                        if response_packet:
                             if packet.get_mesh():
                                 response_packet.enable_mesh()
                                 mesh_flag = True
@@ -268,7 +243,7 @@ class Node:
 
     def __handle_command(self, command: str):
         response_packet = None
-        if command.startswith(Node.OK):
+        if command.startswith(Packet.OK):
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
                 return None
@@ -276,7 +251,7 @@ class Node:
             response_packet.set_source(self.__MAC)
             response_packet.set_ok()
 
-        if command.startswith(Node.REQUEST_DATA_INFO):    # handle for new file
+        if command.startswith(Packet.METADATA):    # handle for new file
             if self.__file.metadata_sent:
                 self.__file.retransmission += 1
                 if self.__DEBUG:
@@ -288,7 +263,7 @@ class Node:
             response_packet.set_source(self.__MAC)
             response_packet.set_metadata(self.__file.get_length(), self.__file.get_name())
 
-        elif command.startswith(Node.CHUNK):
+        elif command.startswith(Packet.CHUNK):
             requested_chunk = int(command.split('-')[1])
             #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
             if self.__DEBUG:
@@ -310,20 +285,3 @@ class Node:
         self.__LAST_IDS.append(id)
         self.__LAST_IDS = self.__LAST_IDS[-self.__MAX_IDS_CACHED:]
         return id
-
-    """
-    def __clean_backup(self):
-        backup = open('backup.txt', "wb")
-        backup.write("")
-        backup.close()
-
-    def __backup_sending_file(self):
-        backup = open('backup.txt', "wb")
-        backup.write(self.__file.get_name())
-        backup.close()
-
-    def __restore_backup(self):
-        backup = open('backup.txt', "rb")
-        name = backup.readline().decode("utf-8")
-        backup.close()
-        return name"""

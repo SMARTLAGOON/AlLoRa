@@ -63,7 +63,7 @@ class WiFi_adapter:
                     pass    # It fails when response is empty
 
             except Exception as e:
-                self.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
+                #self.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
                 sleep(self.PACKET_RETRY_SLEEP)
                 retry = True
             finally:

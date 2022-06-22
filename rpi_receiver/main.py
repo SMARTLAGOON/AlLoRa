@@ -1,8 +1,8 @@
 import pickle
-import time
 import utils
+
 from Buoy import Buoy
-from lora_ctp.ctp_node import LoRA_CTP_Node
+from lora_ctp.Gateway import LoRa_CTP_Gateway
 from lora_ctp.adapters.Wifi_adapter import WiFi_adapter
 
 '''
@@ -44,7 +44,7 @@ if __name__ == "__main__":
                             utils.RECEIVER_API_PORT, utils.SOCKET_RECV_SIZE, 
                             utils.logger_error, utils.PACKET_RETRY_SLEEP)
 
-    lora_node = LoRA_CTP_Node(mesh_mode = True, debug_hops = False, adapter = adapter, 
+    lora_gateway = LoRa_CTP_Gateway(mesh_mode = True, debug_hops = False, adapter = adapter, 
                                 NEXT_ACTION_TIME_SLEEP = utils.NEXT_ACTION_TIME_SLEEP, 
                                 TIME_PER_BUOY = utils.TIME_PER_BUOY)
     
@@ -55,5 +55,5 @@ if __name__ == "__main__":
             if utils.SYNC_REMOTE:
                 utils.BUOYS[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
 
-    lora_node.set_datasources(utils.BUOYS)
-    lora_node.check_datasources()
+    lora_gateway.set_datasources(utils.BUOYS)
+    lora_gateway.check_datasources()

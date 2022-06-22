@@ -1,5 +1,5 @@
 import ujson
-from lora_ctp.File import File
+from lora_ctp.ctp_file import CTP_File
 from DataSource import DataSource
 
 
@@ -20,4 +20,4 @@ class CampbellScientificCR1000XMockup(DataSource):
 
     def _read_datasource(self):
         filename = self.__mockup_data.split('"time":  ')[1][1:20]
-        return File(name='{}.txt'.format(filename), content=bytearray(self.__mockup_data), chunk_size=super()._get_file_chunk_size())
+        return CTP_File(name='{}.txt'.format(filename), content=bytearray(self.__mockup_data), chunk_size=super()._get_file_chunk_size())

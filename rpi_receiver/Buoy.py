@@ -7,7 +7,7 @@ from multiprocessing.context import Process
 import requests
 import utils
 
-from lora_ctp.Digital_Endpoint import Digital_EndPoint, File
+from lora_ctp.Digital_Endpoint import Digital_EndPoint, CTP_File
 
 '''
 This class helps to handle senders (buoys) in a handy way.
@@ -24,7 +24,7 @@ class Buoy(Digital_EndPoint):
         self.uploading_endpoint = uploading_endpoint
 
 
-    def set_current_file(self, file: File):
+    def set_current_file(self, file: CTP_File):
         self.current_file = file
         self.__backup()
 
