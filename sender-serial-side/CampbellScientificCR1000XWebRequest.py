@@ -3,7 +3,7 @@ from network import ETH
 import utime
 import os
 import socket
-from UARTInterface import UARTInterface, UARTInterfaceListener
+from UARTInterface import *
 import uhashlib
 import ubinascii
 import select
@@ -40,7 +40,10 @@ class CampbellScientificCR1000XWebRequest(UARTInterfaceListener):
         if command == "GET":
             print("GET")
             data = self.__read_datasource()
-            uart_interface.write(message=data)
+            try:
+                uart_interface.write(message=data)
+            except UARTParallelWritingException as e:
+                print(e)
 
 
     def __read_datasource(self) -> str:

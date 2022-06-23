@@ -37,9 +37,9 @@ class CampbellScientificCR1000X(DataSource):
                     #print("dry pipe")
                     exit_counter -= 0.01
                 else:
-                    #print("new msg")
                     exit_counter = 10
                     data += raw
+                    #print(raw)
                     if b"<<<END>>>" in raw:
                         ended = True
                         break
