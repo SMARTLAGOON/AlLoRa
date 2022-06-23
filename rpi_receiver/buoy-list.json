@@ -1,26 +1,38 @@
 [
   {
-    "name": "Boya 1 (Isla del Barón)",
+    "name": "A",
     "lat": 37.6996,
     "lon": -0.7858,
     "alt":0,
-    "mac_address": "70b3d549909cd59c",
-    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data"
+    "mac_address": "70b3d5499a76ba3f",
+    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
+    "active": true
   },
   {
-    "name": "Boya 2 (Canal del Estacio)",
-    "lat": 37.7467,
-    "lon": -0.7377,
+    "name": "B",
+    "lat": 37.6996,
+    "lon": -0.7858,
     "alt":0,
-    "mac_address": "70b3d549933c91d4",
-    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fd03813ea3c800203a9d37/data"
+    "mac_address": "70b3d54993a5bb9c",
+    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
+    "active": false
   },
   {
-    "name": "Boya 3 (Rambla del Albujón)",
-    "lat": 37.7161,
-    "lon": -0.8584,
+    "name": "C",
+    "lat": 37.6996,
+    "lon": -0.7858,
     "alt":0,
-    "mac_address": "70b3d54992152e85",
-    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fd03c73ea3c800203a9d39/data"
+    "mac_address": "70b3d549922f4240",
+    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
+    "active": false
+  },
+  {
+    "name": "E",
+    "lat": 37.6996,
+    "lon": -0.7858,
+    "alt":0,
+    "mac_address": "70b3d5499973b469",
+    "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
+    "active": false
   }
 ]
