@@ -3,7 +3,7 @@ import utils
 
 from Buoy import Buoy
 from lora_ctp.Gateway import LoRa_CTP_Gateway
-from lora_ctp.adapters.Wifi_adapter import WiFi_adapter
+from lora_ctp.adapters.Dragino_adapter import Dragino_adapter
 
 '''
 Restores a serialized Buoy object as a way of resuming the state right where it was left.
@@ -40,10 +40,7 @@ if __name__ == "__main__":
     utils.logger_info.info("BuoySoftware RPI_RECEIVER")
     utils.load_config()
 
-    adapter = WiFi_adapter(utils.SOCKET_TIMEOUT, utils.RECEIVER_API_HOST, 
-                            utils.RECEIVER_API_PORT, utils.SOCKET_RECV_SIZE, 
-                            utils.logger_error, utils.PACKET_RETRY_SLEEP)
-
+    adapter = Dragino_adapter(debug=True)
     lora_gateway = LoRa_CTP_Gateway(mesh_mode = True, debug_hops = False, adapter = adapter, 
                                 NEXT_ACTION_TIME_SLEEP = utils.NEXT_ACTION_TIME_SLEEP, 
                                 TIME_PER_BUOY = utils.TIME_PER_BUOY)
