@@ -37,7 +37,7 @@ class Dragino_connector(Connector):
             percentage = 0
         print('SIGNAL STRENGTH', percentage, '%')
 
-    def __send(self, packet):
+    def send(self, packet):
         if self.__DEBUG:
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
@@ -47,7 +47,7 @@ class Dragino_connector(Connector):
             print("Error: Packet too big")
         return False
 
-    def __recv(self, size):
+    def recv(self, size):
         packet = self.lora.recv(size)
         return packet
 
@@ -55,7 +55,7 @@ class Dragino_connector(Connector):
         packet.set_source(self.get_mac())  # Adding mac address to packet
 
         self.lora.setblocking(True)
-        success = self.__send(packet)
+        success = self.send(packet)
         self.lora.setblocking(False)
 
         response_packet = Packet(self.__mesh_mode)  # = mesh_mode
@@ -68,7 +68,7 @@ class Dragino_connector(Connector):
                     print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
                 try:
                     self.lora.settimeout(timeout)
-                    received_data = self.__recv(256)
+                    received_data = self.recv(256)
                     if received_data:
                         if self.__DEBUG:
                             self.__signal_estimation()

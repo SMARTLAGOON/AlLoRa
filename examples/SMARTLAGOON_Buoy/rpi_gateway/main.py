@@ -48,7 +48,7 @@ if __name__ == "__main__":
     #connector = Dragino_connector(debug=True)
     lora_gateway = mLoRaCTP_Gateway(mesh_mode = True, debug_hops = False, connector = connector, 
                                 NEXT_ACTION_TIME_SLEEP = utils.NEXT_ACTION_TIME_SLEEP, 
-                                TIME_PER_BUOY = utils.TIME_PER_BUOY)
+                                TIME_PER__ENDPOINT = utils.TIME_PER_BUOY)
     
     for buoy in utils.load_buoys_json():
         aux_buoy = restore_backup(buoy)
@@ -57,5 +57,5 @@ if __name__ == "__main__":
             if utils.SYNC_REMOTE:
                 utils.BUOYS[-1].sync_remote() # This function cannot be moved into Buoy class, as when restored Process won't start over unless more logic added into Buoy class
 
-    lora_gateway.set_datasources(utils.BUOYS)
-    lora_gateway.check_datasources()
+    lora_gateway.set_digital_endpoints(utils.BUOYS)
+    lora_gateway.check_digital_endpoints()

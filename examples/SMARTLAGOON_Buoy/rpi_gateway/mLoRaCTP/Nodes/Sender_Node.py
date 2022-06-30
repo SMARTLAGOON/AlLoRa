@@ -6,7 +6,7 @@ from time import sleep, time
 class mLoRaCTP_Sender(mLoRaCTP_Node):
 
     def __init__(self, name, chunk_size = 235, mesh_mode = False, debug = False, connector = None):
-        mLoRaCTP_Node.__init__(self, mesh_mode, debug_hops = False, connector = connector)
+        mLoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
         gc.enable()
         self.__name = name
         self.__DEBUG = debug

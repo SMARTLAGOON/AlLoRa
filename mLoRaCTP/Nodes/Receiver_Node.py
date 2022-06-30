@@ -5,7 +5,7 @@ class mLoRaCTP_Receiver(mLoRaCTP_Node):
 
     def __init__(self, mesh_mode = False, debug_hops = False, connector = None, 
                     NEXT_ACTION_TIME_SLEEP = 0.1):
-        mLoRaCTP_Node.__init__(self, mesh_mode, debug_hops, connector = connector)
+        mLoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
 
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
@@ -70,56 +70,24 @@ class mLoRaCTP_Receiver(mLoRaCTP_Node):
         else:
             return None, None
 
-    """This function waits for a message to be received from a sender using raw LoRa"""
-    def send_and_wait_response(self, packet):
-        packet.set_source(self.__MAC)		# Adding mac address to packet
-        success = self.__send(packet)
-        response_packet = Packet(self.mesh_mode)
-        if success:
-            timeout = self.__WAIT_MAX_TIMEOUT
-            received = False
-            received_data = b''
-            while(timeout > 0 or received is True):
-                if self.__DEBUG:
-                    print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
-                received_data = self.__recv()
-                if received_data:
-                    if self.__DEBUG:
-                        self.__signal_estimation()
-                        print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
-                    #if received_data.startswith(b'S:::'):
-                    try:
-                        response_packet = Packet(self.mesh_mode)	# = mesh_mode
-                        response_packet.load(received_data)	#.decode('utf-8')
-                        if response_packet.get_source() == packet.get_destination():
-                            received = True
-                            break
-                        else:
-                            response_packet = Packet(self.mesh_mode)	# = mesh_mode
-                    except Exception as e:
-                        print("Corrupted packet received", e)
-                time.sleep(0.01)
-                timeout = timeout - 1
-        return response_packet
-
-    def listen_datasource(self, datasource, listening_time):
-        mac = datasource.get_mac_address()
+    def listen_to_endpoint(self, digital_endpoint, listening_time):
+        mac = digital_endpoint.get_mac_address()
         t0 = time()
         in_time = True
         while (in_time):
-            if datasource.state == "REQUEST_DATA_STATE":
-                metadata, hop = self.ask_metadata(mac, datasource.get_mesh())
-                datasource.set_metadata(metadata, hop, self.mesh_mode)
+            if digital_endpoint.state == "REQUEST_DATA_STATE":
+                metadata, hop = self.ask_metadata(mac, digital_endpoint.get_mesh())
+                digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
 
-            elif datasource.state == "PROCESS_CHUNK_STATE":
-                next_chunk = datasource.get_next_chunk()
+            elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
+                next_chunk = digital_endpoint.get_next_chunk()
                 if next_chunk is not None:
-                    data, hop = self.ask_data(mac, datasource.get_mesh(), next_chunk)
-                    datasource.set_data(data, hop, self.mesh_mode)
+                    data, hop = self.ask_data(mac, digital_endpoint.get_mesh(), next_chunk)
+                    digital_endpoint.set_data(data, hop, self.mesh_mode)
 
-            elif datasource.state == "OK":
-                ok, hop = self.ask_ok(mac, datasource.get_mesh())
-                datasource.connected(ok, hop, self.mesh_mode)
+            elif digital_endpoint.state == "OK":
+                ok, hop = self.ask_ok(mac, digital_endpoint.get_mesh())
+                digital_endpoint.connected(ok, hop, self.mesh_mode)
 
             #elif datasource.state == "REQUEST_CONNECT":
                 #pass

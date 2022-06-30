@@ -9,8 +9,6 @@ except:
 
 class mLoRaCTP_Node:
 
-    MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
-
     def __init__(self, mesh_mode = False, debug_hops = False, connector = None):
 
         self.mesh_mode = mesh_mode

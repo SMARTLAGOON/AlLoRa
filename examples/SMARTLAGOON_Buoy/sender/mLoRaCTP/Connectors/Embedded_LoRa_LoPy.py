@@ -23,6 +23,8 @@ class LoRa_LoPy_Connector(Connector):
 
         self.__DEBUG = debug
         self.__mesh_mode = mesh_mode
+
+        self.__WAIT_MAX_TIMEOUT = 10
         gc.enable()
 
     def get_rssi(self):

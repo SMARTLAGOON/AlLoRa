@@ -9,9 +9,7 @@ except:
 
 class mLoRaCTP_Node:
 
-    MAX_LENGTH_MESSAGE = 255    # Must check if packet <= this limit to send a message
-
-    def __init__(self, mesh_mode = False, debug_hops = False, connector = None):
+    def __init__(self, mesh_mode = False, connector = None):
 
         self.mesh_mode = mesh_mode
 
@@ -20,9 +18,9 @@ class mLoRaCTP_Node:
             self.connector.set_mesh_mode(self.mesh_mode)
             self.__MAC = self.connector.get_mac()[8:]
 
-        self.LAST_IDS = list()            # IDs from my mesagges
-        self.LAST_SEEN_IDS = list()
-        self.MAX_IDS_CACHED = 30          # Max number of IDs saved
+        self.LAST_IDS = list()              # IDs from my mesagges
+        self.LAST_SEEN_IDS = list()         # IDs from others
+        self.MAX_IDS_CACHED = 30            # Max number of IDs saved
 
     def get_mesh_mode(self):
         return self.mesh_mode
@@ -40,7 +38,7 @@ class mLoRaCTP_Node:
 
     def check_id_list(self, id):
         if id not in self.LAST_SEEN_IDS:
-            self.LAST_SEEN_IDS.append(id)    #part("ID")
+            self.LAST_SEEN_IDS.append(id)
             self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
             return True
         else:
@@ -48,7 +46,7 @@ class mLoRaCTP_Node:
 
     def send_request(self, packet: Packet) -> Packet:
         if self.mesh_mode:
-            packet.set_id(self.generate_id())    #_part("ID", str(generate_id()))
+            packet.set_id(self.generate_id())
             if self.debug_hops:
                 packet.enable_debug_hops()
 
@@ -65,4 +63,5 @@ class mLoRaCTP_Node:
                     print("SENT FINAL RESPONSE", response_packet.get_content())
 
             response_packet.set_destination(destination)
-            return self.connector.send(response_packet)
+            if self.connector:
+                return self.connector.send(response_packet)
