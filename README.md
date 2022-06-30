@@ -254,6 +254,8 @@ The system follow a logic of requests from the Receiver to the Sender. Depending
 
 The [Digital Endpoints](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) operates with the following states or phases of the communication:
 
+[<img style="float: right;" src="readme_assets/m3LoRaCTP_figures/Untitled%201.png" width="350"/>](Untitled%201.png)
+
 1. **Establish connection**
     
     Every Digital Endpoint start in this state, is sends a simple packet with the command “ok” and waits until a “ok” from the sender is received, then, it continues to the next state. 
@@ -269,9 +271,6 @@ The [Digital Endpoints](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41
 4. **Final acknowledge**
     
     In order to maintain the synchronization between the Nodes, a final acknowledge will be sent, and the system will wait until the Sender replies with an “ok” command.
-    
-
-![Untitled](readme_assets/m3LoRaCTP_figures/Untitled%201.png)
 
 **More information about how the [commands work](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) in the Packet Structure section*
 
@@ -285,13 +284,34 @@ The header size is variable depending on the enabled mode (mesh or point-2-point
 
 Finally, if the system is working in [Mesh mode](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) (detailed below), an additional 2 Bytes are used to store a message ID. The ID is a random number between 0 and 65.535 (the range of values that can be represented in binary using 2 Bytes) and it is used to manage the retransmissions when in mesh mode and to avoid chunk duplication in the receiver.
 
-**Point-2-point Packet**
+<table>
+<tr>
+<th>Point-2-point Packet</th>
+<th>Mesh Packet</th>
+</tr>
+<tr>
+<td>
+<pre>
+<img 
+  src="readme_assets/m3LoRaCTP_figures/Untitled%202.png"
+  title = "hola"
+  width="300"
+  />
+</pre>
+</td>
+<td>
 
-![Untitled](readme_assets/m3LoRaCTP_figures/Untitled%202.png)
+<img 
+  src="readme_assets/m3LoRaCTP_figures/Untitled%202.png"
+  title = "hola"
+  width="300"
+  />
 
-**Mesh Packet**
+</td>
+</tr>
+</table>
 
-![Untitled](readme_assets/m3LoRaCTP_figures/Untitled%203.png)
+
 
 With this, the point-2-point Packet has 235 Bytes maximum for its payload, while the mesh Packet has 233 available Bytes. It seems like a small difference, but with 255 Bytes maximum per Packet, every Byte counts when sending Kilobytes of data.
 
@@ -299,7 +319,12 @@ With this, the point-2-point Packet has 235 Bytes maximum for its payload, while
 
 The Flag Byte is structured as follows:
 
-![Untitled](readme_assets/m3LoRaCTP_figures/Untitled%204.png)
+<img src="readme_assets/m3LoRaCTP_figures/Untitled%204.png" 
+alt="Picture" 
+width="500" 
+style="display: block; margin: 0 auto" />
+
+
 
 - **Command bits**:
     
