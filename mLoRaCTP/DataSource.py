@@ -11,7 +11,8 @@ class DataSource:
 
     def __init__(self, file_chunk_size: int, file_queue_size=25, sleep_between_readings=60):
 
-        self.__STOP_THREAD = False
+        self.__STOP_THREAD = True
+        self.__IS_STARTED = False
 
         self.__file_queue = []
         self.__file_queue_size = file_queue_size
@@ -50,6 +51,7 @@ class DataSource:
                 utime.sleep(self.__SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
+        self.__IS_STARTED = False
         print(self.__STOP_THREAD)
 
 
@@ -63,6 +65,8 @@ class DataSource:
 
     def start(self):
         self._prepare()
+        self.__STOP_THREAD = False
+        self.__IS_STARTED = True
         _thread.start_new_thread(self.__read, ())
 
 
@@ -70,6 +74,8 @@ class DataSource:
         self.__STOP_THREAD = True
         print(self.__STOP_THREAD)
 
+    def is_started(self):
+        return self.__IS_STARTED
 
     '''
     Everytime this function is called, it assumes the file is already consumed, so a deleting is performed.
@@ -108,5 +114,6 @@ class DataSource:
         with open("./filename-backup.txt", "w") as f:
             f.write(file.get_name())
 
-        with open("./content-backup.json", "w") as f:
-            ujson.dump(bytes(file.get_content()).decode(), f)
+        with open("./content-backup", "w") as f:
+            #ujson.dump(bytes(file.get_content()).decode(), f)
+            f.write(file.get_content())

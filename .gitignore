@@ -1,9 +1,4 @@
 /trials
-
-rpi_receiver/70b3d549909cd59c/
-
-rpi_receiver/70b3d54992152e85/
-
-rpi_receiver/70b3d549933c91d4/
 .DS_Store
+*.pyc
 *.pyc
