@@ -1,4 +1,3 @@
-# Persistance - Mirror - etc
 from mLoRaCTP.mLoRaCTP_File import CTP_File
 
 class Digital_EndPoint:
