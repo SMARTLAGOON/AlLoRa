@@ -1,6 +1,6 @@
 # m<sup>3</sup>****LoRaCTP:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
 
-The code in **[this repository](https://github.com/GRCDEV/m3LoraCTP)** contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
+The code in this repository contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
 
 ~~Details of the protocol can be found in this paper: (soon)~~
 
@@ -36,12 +36,12 @@ The code in **[this repository](https://github.com/GRCDEV/m3LoraCTP)** contains 
 <details>
 <summary>It contains all the code necessary to setup a communication network between devices, from a point-to-point using two LoPy4’s, to a mesh with a gateway and multiple edge-nodes.</summary>
     
-## [Nodes](https://github.com/GRCDEV/m3LoraCTP/tree/main/mLoRaCTP/Nodes)
+## [Nodes](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/mLoRaCTP/Nodes)
 
 <details>
 <summary>A node is the element in charge of managing the communication logic for the Content Transfer Protocol.</summary>
 
-  ### [Base_Node.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Base_Node.py)
+  ### [Base_Node.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Base_Node.py)
 
   It is the parent class from whom the other nodes inherits them base and common attributes and methods.
   It receives a boolean to indicate if the system is working on **mesh mode** or not and a **[Connector](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b).**
@@ -50,7 +50,7 @@ The code in **[this repository](https://github.com/GRCDEV/m3LoraCTP)** contains 
 
   The main methods in this class are send_request and send_response.
 
-  ### [Sender_Node.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Sender_Node.py)
+  ### [Sender_Node.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Sender_Node.py)
 
   It is a structure whose purpose, as its name implies, is to send one or more [Files](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) . It waits and listens for requests from a [Receiver](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) or [Gateway](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) Node and syncs with them to send blocks (we call them chunks) of bytes of a [File,](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)  until it finishes and is ready to send another one.  
 
@@ -93,7 +93,7 @@ The code in **[this repository](https://github.com/GRCDEV/m3LoraCTP)** contains 
  ```
  </details>
 
- ### [Receiver_Node.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Receiver_Node.py)
+ ### [Receiver_Node.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Receiver_Node.py)
 
  It is a structure whose purpose, as its name implies, is to receive [Files](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b). It asks information to a [Sender](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)  and listens for the responses. In order to communicate with an specific Node, the Receiver must have the information of this endpoint, for this,  we use the [Digital_Endpoint](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) class, who contains the MAC Address of the endpoint and manages the states of the communication and generates the complete [File](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) when the receiver finishes collecting all the chunks.
 
@@ -128,7 +128,7 @@ content = ctp_file.get_content()
 ```
 </details>
 
-### [Gateway_Node.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Gateway_Node.py)
+### [Gateway_Node.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Nodes/Gateway_Node.py)
 
 It is a practically a [Receiver Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) (actually, it inherits from it) but it has the capability to manage multiple [Sender Nodes](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b), receiving a list of [Digital_Endpoints](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)  to check.
  <details>
@@ -165,41 +165,41 @@ lora_gateway.check_digital_endpoints()    # Listening for ever...
     
 </details>    
     
-## [Connectors](https://github.com/GRCDEV/m3LoraCTP/tree/main/mLoRaCTP/Connectors)
+## [Connectors](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/mLoRaCTP/Connectors)
     
 <details>
 <summary>A connector is the element that gives and manages the access to LoRa to a Node. The main objective of the connector is to make mLoRaCTP available to as many type of devices as possible. Many devices have embedded LoRa capabilities, while others maybe not, so the connector is a class that acts as a bridge to LoRa.</summary>
         
-### [Connector.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Connector.py)
+### [Connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Connector.py)
 
 It is the parent class from whom the connectors inherits them base attributes and methods.
 
 It manages the methods to send and receive data using raw LoRa, gives access to the RSSI of the last received package and the MAC address of the device. It also contains the method send_and_wait_response, whose function is to send a packet (usually with a request) and wait for a predefined period of time (WAIT_MAX_TIMEOUT).
 
-### [Embedded_LoRa_LoPy.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Embedded_LoRa_LoPy.py)
+### [Embedded_LoRa_LoPy.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Embedded_LoRa_LoPy.py)
 
 This type of connector is very straightforward, it uses the native library for using LoRa from the LoPy4 (Only tested in LoPy4)
 
-### [Wifi_connector.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Wifi_connector.py)
+### [Wifi_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Connectors/Wifi_connector.py)
 
 Is the counterpart of the [mLoRaCTP-WiFi_adapter](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b),  developed to use in a Raspberry Pi, but also tested on a regular computer. 
 
-### [RPI_Dragino_connector](https://github.com/GRCDEV/m3LoraCTP/tree/main/mLoRaCTP/Connectors/RPi_Dragino_connector)
+### [RPI_Dragino_connector](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/mLoRaCTP/Connectors/RPi_Dragino_connector)
 
 - This connector was developed to use in a Raspberry Pi connected to a Dragino LoRa/HPS HAT for RPi v1.4. It uses the SX127x library to manage the Raspberry Pi’s GPIOs in order to control the Dragino and send packages using a LoRa channel.
 
     More testing is required with this one…
 
-    ### [Dragino_connector.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Connectors/RPi_Dragino_connector/Dragino_connector.py)
+    ### [Dragino_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Connectors/RPi_Dragino_connector/Dragino_connector.py)
 
 </details>
     
-## [Adapters](https://github.com/GRCDEV/m3LoraCTP/tree/main/mLoRaCTP/Adapters)
+## [Adapters](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/mLoRaCTP/Adapters)
 
 <details>
 <summary>Sometimes another device is needed in order to bridge to LoRa, depending of the technology used for the connection. In this cases, the code for the adapters will be in this folder, for now we have a WiFi to LoRa adapter</summary>
 
-### [mLoRaCTP-WiFi_adapter](https://github.com/GRCDEV/m3LoraCTP/tree/main/mLoRaCTP/Adapters/mLoRaCTP-WiFi_adapter)
+### [mLoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/mLoRaCTP/Adapters/mLoRaCTP-WiFi_adapter)
 
 It contains the code for a LoPy4. It activates a hotspot for the Node to be bridged to connect to and a “light version” of a mix of the code of a Node and a Connector.  
 
@@ -212,23 +212,23 @@ It operates in this way:
 
 </details>
     
-### → [Datasource.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/DataSource.py)
+### → [Datasource.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/DataSource.py)
 
 A Datasource is a handy class that can be use to manage the files to be send. It is supposed to be used to feed Files to send to a Sender Nodes.
 
-### → [Digital_Endpoint.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/Digital_Endpoint.py)
+### → [Digital_Endpoint.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/Digital_Endpoint.py)
 
 Contains the MAC Address of the endpoint to communicate with and manages the states of the communication. It also manages the generation of the complete [File](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) when the receiver finishes collecting all the chunks.
 
 It also manages the “state” or phase in which the transfer is. 
 
-### → [mLoRaCTP_File.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/mLoRaCTP_File.py)
+### → [mLoRaCTP_File.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/mLoRaCTP_File.py)
 
 It is the class who focus on the actual File to be sent or received. It can be used to obtain the chunks of the content to transfer to the Sender Nodes and also assembly all the blocks received to obtain the complete File in the Receiver/Gateway side.
 
 It can be instantiated with content (byte array) to be used by the Sender to transmit the content, or it can also be instantiated as a “container”, in order to receive the chunks and finally assemble it to obtain the whole content, in the Receiver side.
 
-### → [mLoRaCTP_Packet.py](https://github.com/GRCDEV/m3LoraCTP/blob/main/mLoRaCTP/mLoRaCTP_Packet.py)
+### → [mLoRaCTP_Packet.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/mLoRaCTP/mLoRaCTP_Packet.py)
 
 This class structures the actual packet to be sent through LoRa. It manages the creation of the message to be sent and also is capable of load the data received by LoRa in order to check that the message was correctly received (with checksum). 
 It is composed by a header and the actual payload. 
@@ -242,7 +242,7 @@ More details about the structure of the packages [here](https://www.notion.so/m3
 <details>
 <summary>Contain examples of implementation of the mLoRaCTP code.</summary>
     
-## **[SMARTLAGOON_Buoy](https://github.com/GRCDEV/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy)**
+## **[SMARTLAGOON_Buoy](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy)**
 
 The code that inspired this implementation. It uses a Raspberry Pi 4 as a [Gateway Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b), interfacing with LoRa using a LoPy4 with the [mLoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/BuoySoftware/tree/ModuLoRa/mLoRaCTP/Adapters/mLoRaCTP-WiFi_adapter) code and receiving messages from multiple Buoys that send the data collected by data loggers using a LoPy4 set up as a [Sender Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b).
 
@@ -383,7 +383,7 @@ Where it shows the time of reception, the ID of the message and then a list of h
 
 # Running an example
 
-## → **[SMARTLAGOON_Buoy](https://github.com/GRCDEV/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy): How to use it**
+## → **[SMARTLAGOON_Buoy](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy): How to use it**
 
 ### Hardware Requirements
 
