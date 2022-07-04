@@ -1,4 +1,4 @@
-from mLoRaCTP.mLoRaCTP_File import CTP_File
+from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 
 class Digital_EndPoint:
 
@@ -7,8 +7,8 @@ class Digital_EndPoint:
     PROCESS_CHUNK_STATE = "PROCESS_CHUNK_STATE"
     OK = "OK"
 
-    def __init__(self, name: str, mac_address: str, active: bool, 
-                        MAX_RETRANSMISSIONS_BEFORE_MESH: int):
+    def __init__(self, name: str, mac_address: str, active: bool = True, 
+                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10):
         self.name = name
         self.mac_address = mac_address[8:]
         self.active = active
@@ -99,3 +99,4 @@ class Digital_EndPoint:
         
         if len(self.current_file.get_missing_chunks()) <= 0:
             self.state = Digital_EndPoint.OK
+            return self.current_file

@@ -1,9 +1,9 @@
 import time
 
-from mLoRaCTP.mLoRaCTP_Packet import Packet
-from mLoRaCTP.Connectors.SX127x import board_config, constants
-from mLoRaCTP.Connectors.SX127x import LoRa
-from mLoRaCTP.Connectors.Connector import Connector
+from m3LoRaCTP.m3LoRaCTP_Packet import Packet
+from m3LoRaCTP.Connectors.SX127x import board_config, constants
+from m3LoRaCTP.Connectors.SX127x import LoRa
+from m3LoRaCTP.Connectors.Connector import Connector
 
 
 class Dragino_connector(Connector):

@@ -1,13 +1,13 @@
 from time import sleep, time
 
-from mLoRaCTP.mLoRaCTP_Packet import Packet
+from m3LoRaCTP.m3LoRaCTP_Packet import Packet
 
 try:
     from os import urandom
 except:
     from uos import urandom
 
-class mLoRaCTP_Node:
+class m3LoRaCTP_Node:
 
     def __init__(self, mesh_mode = False, connector = None):
 

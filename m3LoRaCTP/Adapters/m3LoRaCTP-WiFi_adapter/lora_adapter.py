@@ -7,7 +7,7 @@ import usocket
 import time
 from network import WLAN, LoRa
 
-from mLoRACTP_Packet import Packet
+from m3LoRaCTP_Packet import Packet
 
 class AdapterNode:
 
@@ -119,8 +119,8 @@ class AdapterNode:
 			r = clientsocket.recv(1024)	#256	#512
 			# If recv() returns with 0 the other end closed the connection
 			if len(r) == 0:
-			    clientsocket.close()
-			    return
+				clientsocket.close()
+				return
 			else:
 				if self.__DEBUG:
 					print("Received: {}".format(str(r)))

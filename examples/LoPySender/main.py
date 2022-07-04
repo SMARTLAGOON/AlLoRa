@@ -1,8 +1,8 @@
 import pycom
 
-from mLoRaCTP.Nodes.Sender_Node import mLoRaCTP_Sender
-from mLoRaCTP.Connectors.Embedded_LoRa_LoPy import LoRa_LoPy_Connector
-from mLoRaCTP.mLoRaCTP_File import CTP_File
+from m3LoRaCTP.Nodes.Sender_Node import m3LoRaCTP_Sender
+from m3LoRaCTP.Connectors.Embedded_LoRa_LoPy import LoRa_LoPy_Connector
+from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 from time import sleep
 
 # For testing
@@ -21,20 +21,20 @@ if __name__ == "__main__":
 	connector = LoRa_LoPy_Connector(frequency = 868000000, sf = 7)
 
 	# Then, we set up out Sender Node, with name "A", with mesh mode activated
-	lora_node = mLoRaCTP_Sender(name = "A", connector = connector, mesh_mode = True)
-	
+	lora_node = m3LoRaCTP_Sender(name = "C", connector = connector, mesh_mode = True)
+
 	# We turn on a led for a second to know that we are doing ok...
 	pycom.rgbled(0x1aa7ec) 	# Picton Blue
 	sleep(1)
 	pycom.rgbled(0) 		# off
 
 	chunk_size = lora_node.get_chunk_size()		# We use it to create the files to be sent...
-	
+
 	try:
 		clean_timing_file()
 		backup = lora_node.establish_connection()
 		print("Connected!")
-		
+
 		# This is how to handle a backup file if needed (not implemented in this example...)
 		if backup:
 			print("Asking backup")
@@ -49,12 +49,12 @@ if __name__ == "__main__":
 				size = sizes[n]
 				print("Setting file")
 				pycom.rgbled(0xd74894)							# Kirby Pink.
-				
-				file = CTP_File(name = '{}.json'.format(size), 
-								content = bytearray('{}'.format(n%10)*(1024 * size)), 
+
+				file = CTP_File(name = '{}.json'.format(size),
+								content = bytearray('{}'.format(n%10)*(1024 * size)),
 								chunk_size=chunk_size)
 				lora_node.set_file(file)
-				
+
 				print("New file set, ", file.get_name())
 				pycom.rgbled(0)									# LED off
 

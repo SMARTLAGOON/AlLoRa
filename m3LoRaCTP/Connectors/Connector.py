@@ -1,4 +1,4 @@
-from mLoRaCTP.mLoRaCTP_Packet import Packet
+from m3LoRaCTP.m3LoRaCTP_Packet import Packet
 
 class Connector:
     MAX_LENGTH_MESSAGE = 255

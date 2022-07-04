@@ -3,7 +3,7 @@ import utime
 import os
 import ujson
 # TODO Generalize to unbind DataSource from LoraCTP File class
-from mLoRaCTP.mLoRaCTP_File import CTP_File
+from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 
 # Do not instanciate this class as pretends to be an abstract one
 class DataSource:

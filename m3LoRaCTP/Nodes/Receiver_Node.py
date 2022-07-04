@@ -1,11 +1,21 @@
-from mLoRaCTP.Nodes.Base_Node import mLoRaCTP_Node, Packet
-from time import time, sleep, strftime
+from m3LoRaCTP.Nodes.Base_Node import m3LoRaCTP_Node, Packet
+from time import time, sleep
+try:
+    from time import strftime
+    def get_time():
+        return strftime("%Y-%m-%d_%H:%M:%S")
+except:
+    from utime import localtime
+    def get_time():
+        tt = localtime()
+        return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
 
-class mLoRaCTP_Receiver(mLoRaCTP_Node):
+
+class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
 
     def __init__(self, mesh_mode = False, debug_hops = False, connector = None, 
                     NEXT_ACTION_TIME_SLEEP = 0.1):
-        mLoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
+        m3LoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
 
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
@@ -70,7 +80,7 @@ class mLoRaCTP_Receiver(mLoRaCTP_Node):
         else:
             return None, None
 
-    def listen_to_endpoint(self, digital_endpoint, listening_time):
+    def listen_to_endpoint(self, digital_endpoint, listening_time, return_file=False):
         mac = digital_endpoint.get_mac_address()
         t0 = time()
         in_time = True
@@ -83,7 +93,9 @@ class mLoRaCTP_Receiver(mLoRaCTP_Node):
                 next_chunk = digital_endpoint.get_next_chunk()
                 if next_chunk is not None:
                     data, hop = self.ask_data(mac, digital_endpoint.get_mesh(), next_chunk)
-                    digital_endpoint.set_data(data, hop, self.mesh_mode)
+                    file = digital_endpoint.set_data(data, hop, self.mesh_mode)
+                    if file and return_file:
+                        return file
 
             elif digital_endpoint.state == "OK":
                 ok, hop = self.ask_ok(mac, digital_endpoint.get_mesh())
@@ -99,7 +111,7 @@ class mLoRaCTP_Receiver(mLoRaCTP_Node):
         if packet.get_debug_hops():
             hops = packet.get_message_path()
             id = packet.get_id()
-            t = strftime("%Y-%m-%d_%H:%M:%S")
+            t = get_time()  #strftime("%Y-%m-%d_%H:%M:%S")
             line = "{}: ID={} -> {}\n".format(t, id, hops)
             with open('log_rssi.txt', 'a') as log:
                 log.write(line)

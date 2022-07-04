@@ -1,12 +1,12 @@
 import gc
-from mLoRaCTP.Nodes.Base_Node import mLoRaCTP_Node, Packet, urandom
-from mLoRaCTP.mLoRaCTP_File import CTP_File
+from m3LoRaCTP.Nodes.Base_Node import m3LoRaCTP_Node, Packet, urandom
+from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 from time import sleep, time
 
-class mLoRaCTP_Sender(mLoRaCTP_Node):
+class m3LoRaCTP_Sender(m3LoRaCTP_Node):
 
     def __init__(self, name, chunk_size = 235, mesh_mode = False, debug = False, connector = None):
-        mLoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
+        m3LoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
         gc.enable()
         self.__name = name
         self.__DEBUG = debug
@@ -17,7 +17,7 @@ class mLoRaCTP_Sender(mLoRaCTP_Node):
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
 
-        print(self.__MAC)
+        print(self.__name, ":", self.__MAC)
 
         self.__file = None
 
