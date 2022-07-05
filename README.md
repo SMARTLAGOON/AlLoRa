@@ -433,6 +433,8 @@ Where it shows the time of reception, the ID of the message and then a list of h
 
 ### Setup:
 
+In order to run an example, if you are using a Python compatible device, you should install the latest version of the m3LoRaCTP library. If your device has MicroPython support (like the LoPy4), we recommend copy the m3LoRaCTP folder of this repo directly into your device.
+
 <details>
  <summary><b><u>Setup a LoPy4</u></b></summary>
    
