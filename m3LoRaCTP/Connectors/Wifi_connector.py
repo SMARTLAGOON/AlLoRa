@@ -9,7 +9,7 @@ from m3LoRaCTP.Connectors.Connector import Connector
 class WiFi_connector(Connector):
 
     def __init__(self, RECEIVER_API_HOST, RECEIVER_API_PORT, SOCKET_TIMEOUT=10, 
-                    SOCKET_RECV_SIZE=10000,  PACKET_RETRY_SLEEP=0.5, logger_error=None,):
+                    SOCKET_RECV_SIZE=10000,  PACKET_RETRY_SLEEP=0.5, logger_error=None):
         super().__init__()
         self.SOCKET_TIMEOUT = SOCKET_TIMEOUT
         self.RECEIVER_API_HOST = RECEIVER_API_HOST
