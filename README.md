@@ -241,7 +241,7 @@ It operates in this way:
 <details>
 <summary><b><u>Setup Lopy4 Adapter</u></b></summary>
 
-1. Setup the LoPy4 (following this instructions).
+1. Setup the LoPy4 (following this [instructions](https://github.com/SMARTLAGOON/m3LoRaCTP/edit/main/README.md#setup)).
 2. Uploading and running the code
    
    1. Open the [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP-Adapters/m3LoRaCTP-WiFi_adapter) folder of the repo in your IDE
