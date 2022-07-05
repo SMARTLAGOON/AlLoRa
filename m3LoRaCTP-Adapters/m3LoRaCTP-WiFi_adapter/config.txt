@@ -1,0 +1,2 @@
+ssid=smartlagoon_land_receiver
+auth=smartlagoonX98ASasd00de2l

@@ -8,25 +8,30 @@ The code in this repository contains a toolbox that allows transferring content 
 > For a better experience, you can check our awesome **Notion** description of the code [here...](https://barratia.notion.site/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)
 
 ## Content
-
 - [Folders](#folders)
-  - [**m<sup>3</sup>LoRaCTP**](#msup3suploractp)
+  - [m<sup>3</sup>LoRaCTP](#msup3suploractp)
     - [Nodes](#nodes)
+      - [Base_Node.py](#base_nodepy)
+      - [Sender_Node.py](#sender_nodepy)
+      - [Receiver_Node.py](#receiver_nodepy)
+      - [Gateway_Node.py](#gateway_nodepy)
     - [Connectors](#connectors)
-    - [Adapters](#adapters)
     - [→ Datasource.py](#-datasourcepy)
     - [→ Digital_Endpoint.py](#-digital_endpointpy)
-    - [→ m3LoRaCTP_File.py](#-m3LoRaCTP_Filepy)
-    - [→ m3LoRaCTP_Packet.py](#-m3LoRaCTP_Packetpy)
+    - [→ m3LoRaCTP_File.py](#-m3loractp_filepy)
+    - [→ m3LoRaCTP_Packet.py](#-m3loractp_packetpy)
+  - [Adapters](#adapters)
+    - [m3LoRaCTP-WiFi_adapter](#m3loractp-wifi_adapter)
   - [Examples](#examples)
-    - [**SMARTLAGOON_Buoy**](#smartlagoon_buoy)
-- [**How does it work?**](#how-does-it-work)
+- [How does it work?](#how-does-it-work)
   - [→ Communication logic](#-communication-logic)
   - [→ Packet Structure](#-packet-structure)
     - [Flag composition](#flag-composition)
   - [→ Mesh mode](#-mesh-mode)
   - [→ Debug Hops](#-debug-hops)
 - [Running an example](#running-an-example)
+    - [Hardware Requirements](#hardware-requirements)
+    - [Setup](#setup)
 
 # Folders
 
@@ -36,7 +41,7 @@ The code in this repository contains a toolbox that allows transferring content 
 <details>
 <summary>It contains all the code necessary to setup a communication network between devices, from a point-to-point using two LoPy4’s, to a mesh with a gateway and multiple edge-nodes.</summary>
     
-## [Nodes](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Nodes)
+### [Nodes](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Nodes)
 
 <details>
 <summary>A node is the element in charge of managing the communication logic for the Content Transfer Protocol.</summary>
@@ -165,7 +170,7 @@ lora_gateway.check_digital_endpoints()    # Listening for ever...
     
 </details>    
     
-## [Connectors](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Connectors)
+### [Connectors](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Connectors)
     
 <details>
 <summary>A connector is the element that gives and manages the access to LoRa to a Node. The main objective of the connector is to make m3LoRaCTP available to as many type of devices as possible. Many devices have embedded LoRa capabilities, while others maybe not, so the connector is a class that acts as a bridge to LoRa.</summary>
@@ -194,24 +199,6 @@ Is the counterpart of the [m3LoRaCTP-WiFi_adapter](https://www.notion.so/m3LoRaC
 
 </details>
     
-## [Adapters](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Adapters)
-
-<details>
-<summary>Sometimes another device is needed in order to bridge to LoRa, depending of the technology used for the connection. In this cases, the code for the adapters will be in this folder, for now we have a WiFi to LoRa adapter</summary>
-
-### [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Adapters/m3LoRaCTP-WiFi_adapter)
-
-It contains the code for a LoPy4. It activates a hotspot for the Node to be bridged to connect to and a “light version” of a mix of the code of a Node and a Connector.  
-
-It operates in this way:
-
-<aside>
-🍓 Raspberry Pi/Computer Node (Wifi Connector) **←Wi-Fi→** LoPy4 with m3LoRaCTP-WiFi_adapter **←LoRa→** Node
-
-</aside>
-
-</details>
-    
 ### → [Datasource.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/DataSource.py)
 
 A Datasource is a handy class that can be use to manage the files to be send. It is supposed to be used to feed Files to send to a Sender Nodes.
@@ -237,20 +224,74 @@ More details about the structure of the packages [here](https://www.notion.so/m3
 
 </details>
 
+## Adapters
+
+<details>
+<summary>Sometimes another device is needed in order to bridge to LoRa, depending of the technology used for the connection. In this cases, the code for the adapters will be in this folder, for now we have a WiFi to LoRa adapter</summary>
+
+### [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP-Adapters/m3LoRaCTP-WiFi_adapter)
+
+It contains the code for a LoPy4. It activates a hotspot for the Node to be bridged to connect to and a “light version” of a mix of the code of a Node and a Connector.  
+
+It operates in this way:
+
+🍓 Raspberry Pi/Computer Node (Wifi Connector) **←Wi-Fi→** LoPy4 with m3LoRaCTP-WiFi_adapter **←LoRa→** Node
+
+
+<details>
+<summary><b><u>Setup Lopy4 Adapter</u></b></summary>
+
+1. Setup the LoPy4 (following this instructions).
+2. Uploading and running the code
+   
+   1. Open the [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP-Adapters/m3LoRaCTP-WiFi_adapter) folder of the repo in your IDE
+   2. Connect your LoPy4 + expansion board to your computer. PyMakr should recognise it and show you something like this:
+
+        ![Untitled](readme_assets/Hardware_Setup/Untitled%203.png)
+
+        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+
+            <p align="center">
+            <img width="400" src="readme_assets/Hardware_Setup/Untitled%204.png">
+            </p>
+
+   3. Open the config.txt file and setup a SSID and Password for the Lopy4's Wi-Fi hotspot, you will use this to connect to the adapter with the device that you are connecting to LoRa through this adapter.
+
+   4. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+
+     ![Untitled](readme_assets/Hardware_Setup/Untitled%205.png)
+
+     With this, the code will boot automatically each time the LoPy4 is on.
+
+   5. If everything is ok, you should see something like this on the terminal:
+
+     <p align="center">
+    <img width="400" src="readme_assets/Hardware_Setup/Untitled%207.png">
+    </p>
+
+   6. Import and setup a [Wifi_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/Wifi_connector.py) in the device that you want to communicate using m3LoRaCTP, and then use the rest of the library as explained in this repo. Your device should be connected to the Adapter's hotspot and everything should work as normal. 
+
+ </details>
+
+</details>
+
 ## Examples
 
 <details>
-<summary>Contain examples of implementation of the m3LoRaCTP code.</summary>
-    
-## **[SMARTLAGOON_Buoy](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy)**
+<summary>Contain examples of uses of the m3LoRaCTP code.</summary>
 
-The code that inspired this implementation. It uses a Raspberry Pi 4 as a [Gateway Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b), interfacing with LoRa using a LoPy4 with the [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/BuoySoftware/tree/ModuLoRa/m3LoRaCTP/Adapters/m3LoRaCTP-WiFi_adapter) code and receiving messages from multiple Buoys that send the data collected by data loggers using a LoPy4 set up as a [Sender Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b).
+### [LoPy Sender](https://github.com/SMARTLAGOON/m3LoRaCTP/tree/main/examples/LoPySender)
 
-A class Buoy is defined, that inherits from [Digital Endpoint](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) and adds some specific capabilities specific for this project. The [Gateway Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) receives a list of (Digital) Buoys to listen to. 
+A simple implementation of a Sender Node use case, it sends increasingly larger files of numbers.
 
-Something similar was made in the LoPy4 that is in the actual Buoy. It has a Data logger class that inherits from Datasource in order to feed the [Sender Node](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b) with the Files to sent.
+### [LoPy Receiver](https://github.com/SMARTLAGOON/m3LoRaCTP/tree/main/examples/LoPyReceiver)
 
-You can check how to test it here [below](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)…
+A simple implementation of a Receiver Node use case, it ask a Sender Node for information and listen to the responses
+
+### [Raspberry Gateway](https://github.com/SMARTLAGOON/m3LoRaCTP/tree/main/examples/RaspberryGateway)
+
+An implementation of a Gateway Node using Raspberry Pi (or a desktop computer), it access LoRa using the [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Adapters/m3LoRaCTP-WiFi_adapter) and listens to two Sender Nodes and prints the content when a whole File is received.
+
 </details>
 
 # **How does it work?**
@@ -383,44 +424,28 @@ Where it shows the time of reception, the ID of the message and then a list of h
 
 # Running an example
 
-## → **[SMARTLAGOON_Buoy](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/examples/SMARTLAGOON_Buoy): How to use it**
-
 ### Hardware Requirements
 
-- [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/) → Gateway
-- 2 [Lopy4](https://pycom.io/product/lopy4/) → Sender and Wifi Adapter
-- [Pysense 2.0 X](https://pycom.io/product/pysense-2-0-x/)
-- [Pygate 868](https://pycom.io/product/pygate/)
-- [Power over Ehternet (PoE) Adapter](https://pycom.io/product/power-over-ethernet-adapter/)
-
-The project structure is divided in three folders (one per device...):
-
-- __sender:__ Pycom Lopy 4 code for buoy side.
-
-- __receiver:__ Pycom Lopy 4 code for land side.
-
-- __rpi_receiver:__ Raspberry Pi code for land side.
-
+- [Raspberry Pi 4](https://www.raspberrypi.com/products/raspberry-pi-4-model-b/)
+- [Lopy4](https://pycom.io/product/lopy4/) with an expansion board like:
+  - [Pysense 2.0 X](https://pycom.io/product/pysense-2-0-x/)
+  - [Pygate 868](https://pycom.io/product/pygate/)
 
 ### Setup:
 
-Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware) or clone the repo.
-
 <details>
-<summary><b><u>Lopy4 + Pygate (Sender) & Lopy4 + Pysense 2.0 X (Adapter)</u></b></summary>
-
-    
+ <summary><b><u>Setup a LoPy4</u></b></summary>
+   
 *   <details>
-    <summary><b>1. Updating the expansion boards (Pysense 2.0 X and Pygate)</b></summary>
+    <summary><b>1. Updating the expansion boards (Pysense 2.0 X or Pygate)</b></summary>
  
     
     Follow this: [Updating Expansion Board Firmware](https://docs.pycom.io/chapter/pytrackpysense/installation/firmware.html)
-
     * <details>
       <summary><b><i>TL;DR ⚡ </i></b></summary>
 
       >    
-      > ⚠️ You should remove the LoPy4 from the board for this step, we are only working with the Pysense 2 and the Pygate
+      > ⚠️ You should remove the LoPy4 from the board for this step, we are only working with the Pysense 2 or the Pygate
       >
 
         1. Download this:
@@ -509,9 +534,8 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
             ```
     </details>
 *   <details>
-    <summary><b>2. Update the Lopy4’s </b></summary>
+    <summary><b>2. Update the Lopy4 </b></summary>
  
-    
 
     1. Download the Pycom Firmware Tool from: [Updating Device Firmware](https://docs.pycom.io/updatefirmware/device/)
 
@@ -535,7 +559,7 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
     We’ll need to upload the programs using PyMakr, a library that can be installed into [VS Code](https://code.visualstudio.com/) and [Atom](https://atom.io/) (I will refer to them as [IDE](https://en.wikipedia.org/wiki/Integrated_development_environment))
 
     
-    > ⚠️ I’m personally using an M1 Pro Macbook Pro and Atom with PyMakr and it’s working fine for me.
+    > ⚠️ I personally used an M1 Pro Macbook Pro and Atom with PyMakr and it worked fine for me.
 
 
     - Here is the official Pycom guide to using Atom + PyMakr: [Atom](https://docs.pycom.io/gettingstarted/software/atom/)
@@ -545,139 +569,44 @@ Download the code from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftwar
 
     Once you have everything installed and working, you should be able to connect your LoPy4 + expansion board (Pygate  and Pysense 2.0 X for the sender and the receiver respectively) to your computer using an USB cable and PyMakr should recognise it.
     </details>
+
 *   <details>
-    <summary><b>4. Uploading and running the code</b></summary>
+    <summary><b>4. Uploading and running code</b></summary>
+   
+       1. Open the folder of the example you want to run in the LoPy4 in your IDE
+       2. Connect your LoPy4 + expansion board to your computer. PyMakr should recognise it and show you something like this:
+        
+    <p align="center">
+     <img width="500" src="readme_assets/Hardware_Setup/Untitled%203.png">
+    </p>
 
-    *   <details>
-        <summary><b>Sender</b></summary>
+     - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
 
-        1.  Open the sender folder of the repo in your IDE
-        2. Connect your LoPy4 + Pygate to your computer. PyMakr should recognise it and show you something like this:
+     <p align="center">
+     <img width="400" src="readme_assets/Hardware_Setup/Untitled%204.png">
+     </p>
 
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%203.png)
+       3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
 
-            - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
+    ![Untitled](readme_assets/Hardware_Setup/Untitled%205.png)
 
-                ![Untitled](readme_assets/Hardware_Setup/Untitled%204.png)
+    With this, the code will boot automatically each time the LoPy4 is on.
 
-        3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
+       4. If everything is ok, you should see something like this on the terminal:
 
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%205.png)
-
-            With this, the code will boot automatically each time the LoPy4 is on.
-
-        4. If everything is ok, you should see something like this on the terminal:
-
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%206.png)
-
-            Register your LoPy4’s MAC Address (we will use it later...), in this example mine is: 70b3d5499973b469
-
-        </details>
-    *   <details>
-        <summary><b>Adapter:</b></summary>
-
-    
-        >✌🏻 The process is exactly the same that for the [sender](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2), but changing the project folder... (and [steps #4](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2) and [#5](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2))
-
-        1.  Open the receiver folder of the repo in your IDE
-        2. Connect your LoPy4 + PySense 2.0 X to your computer. PyMakr should recognise it and show you something like this:
-
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%203.png)
-
-            - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
-
-                ![Untitled](readme_assets/Hardware_Setup/Untitled%204.png)
-
-        3. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
-
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%205.png)
-
-            With this, the code will boot automatically each time the LoPy4 is on.
-
-        4. If everything is ok, you should see something like this on the terminal:
-
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%207.png)
-
-        5. Open the boot file and check line number #9:
-
-            ![Untitled](readme_assets/Hardware_Setup/Untitled%208.png)
-
-             Those are the SSID and Password of the Lopy4's Wi-Fi hotspot, we will need this info in order to [connect the Raspberry Pi 4 to it late](https://www.notion.so/BuoySoftware-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
-        </details>
-    </details>
- </details>
-
-<details>
- <summary><b><u>Raspberry Pi 4 (Gateway)</u></b></summary>
-
-1. Setup your Raspberry Pi 4 with [Raspberry Pi OS 32bit](https://www.raspberrypi.com/software/) and [install Python 3.8.](https://itheo.tech/install-python-38-on-a-raspberry-pi)
-2. Download the rpi_gateway folder from [BuoySoftware](https://github.com/SMARTLAGOON/BuoySoftware)
-3. Install Python3.8 dependencies using:
-    
-    ```bash
-    sudo python3.8 pip install -r requirements.txt
-    ```
-    
-4. Register your LoPy’s Mac Address into the ****buoy-list.json**** like this:
-    
-    ```json
-    [
-    {
-        "name": "A",
-        "lat": 37.6996,
-        "lon": -0.7858,
-        "alt":0,
-        "mac_address": "70b3d5499a76ba3f",
-        "uploading_endpoint": "https://heterolistic.ucam.edu/api/applications/607816fe4e830d00204224c0/userHardSensors/61fcf9dc3ea3c800203a9d35/data",
-        "active": true
-      }
-    ]
-    ```
-    
-    Make sure to put set the active flag to true!
-    
-5. Check and change the config.ini if needed:
-
-```json
-[receiver]
-RECEIVER_MAC_ADDRESS = 70b3d549933c91d4
-RECEIVER_API_HOST = 192.168.4.1
-RECEIVER_API_PORT = 80
-SOCKET_TIMEOUT = 10
-PACKET_RETRY_SLEEP = 0.5
-SOCKET_RECV_SIZE = 10000
-
-[general]
-SYNC_REMOTE = False
-SYNC_REMOTE_FILE_SENDING_TIME_SLEEP = 5
-SYNC_REMOTE_FILE_SENDING_MAX_RETRIES = 10
-NEXT_ACTION_TIME_SLEEP = 0.1
-SYNC_REMOTE_DIRECTORY_UPDATE_INTERVAL_SECONDS = 5
-TIME_PER_BUOY = 10
-MAX_RETRANSMISSIONS_BEFORE_MESH = 10
-```
+    <p align="center">
+    <img width="400" src="readme_assets/Hardware_Setup/Untitled%207.png">
+    </p>
 
 </details>
 
-## Running the code:
+</details>
 
-1. Power on everything ⚡️ (The LoPy4’s and the Raspberry Pi 4). Both LoPy4’s should start booting their code automatically if all the previous steps were successful.
-2. Connect the RP4 to internet using its Ethernet Port (optional for uploading the received data to the cloud)
-3. Open the Wi-Fi settings in the RP4 and connect to the receiver’s [Wi-Fi hotspot](https://www.notion.so/SMARTLAGOON-Buoy-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2)
-4. Go to the rpi_gateway folder in the Raspberry Pi 4 and open the terminal (we will use it soon...)
-5. If not already done, open and edit the [buoy-list.json](https://github.com/SMARTLAGOON/BuoySoftware/blob/main/rpi_receiver/buoy-list.json), leave only one buoy and change the mac_address to the one that we found previously [here](https://www.notion.so/SMARTLAGOON-Buoy-Hardware-Setup-078125eb60f94dcdb6abdb86607a1fb2).
-    
-    You can change the name and other properties If you want to. 
-    
-    <aside>
-    🛠 If you want to add other devices (other buoys), you should add them manually in this JSON file.
-    
-    </aside>
-    
-6. With everything ready, run the [main.py](https://github.com/SMARTLAGOON/BuoySoftware/blob/main/rpi_receiver/main.py) in the RP4 like this:
-    
-    ```bash
-    python3.8 main.py
-    ```
-    
-    If everything is ok, the RP4 should start receiving data from the Wifi adapter (and the adapter from the Sender) and create a folder with the MAC address of the Sender Node and register the received data inside.
+<details>
+ <summary><b><u>Raspberry Pi 4 as a Gateway</u></b></summary>
+
+1. Setup your Raspberry Pi 4 with [Raspberry Pi OS 32bit](https://www.raspberrypi.com/software/) and [install Python 3.8.](https://itheo.tech/install-python-38-on-a-raspberry-pi)
+2. Setup an [adapter](#adapters) to give access to the Raspberry Pi to LoRa.
+3. Download the [RaspberryGateway](https://github.com/SMARTLAGOON/m3LoRaCTP/examples/RaspberryGateway) example and execute it.
+
+</details>
