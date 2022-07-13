@@ -1,8 +1,7 @@
 import _thread
 import utime
 import os
-import ujson
-# TODO Generalize to unbind DataSource from LoraCTP File class
+
 from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 
 # Do not instanciate this class as pretends to be an abstract one
@@ -62,7 +61,6 @@ class DataSource:
     def _prepare(self):
         pass
 
-
     def start(self):
         self._prepare()
         self.__STOP_THREAD = False
@@ -94,10 +92,10 @@ class DataSource:
             filename = ""
             with open("./filename-backup.txt", "r") as f:
                 filename = f.read()
-
+ 
             content = None
-            with open("./content-backup.json", "r") as f:
-                content = ujson.load(f)
+            with open("./content-backup", "r") as f:
+                content = f.read()
             rescued_file = CTP_File(name='{}'.format(filename), content=bytearray(content), chunk_size=self.__file_chunk_size)
             return rescued_file
         except OSError as e:
@@ -107,13 +105,12 @@ class DataSource:
     def __backup(self, file: CTP_File):
         try:
             os.remove("./filename-backup.txt")
-            os.remove("./content-backup.json")
+            os.remove("./content-backup")
         except OSError:
             pass
-
+ 
         with open("./filename-backup.txt", "w") as f:
             f.write(file.get_name())
-
+ 
         with open("./content-backup", "w") as f:
-            #ujson.dump(bytes(file.get_content()).decode(), f)
             f.write(file.get_content())

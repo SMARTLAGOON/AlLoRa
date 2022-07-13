@@ -17,7 +17,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
 
-        print(self.__name, ":", self.__MAC)
+        print(self.__name, ":", self.connector.get_mac())
 
         self.__file = None
 
@@ -88,6 +88,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             return True
                 else:
                     self.__forward(packet)
+            sleep(0.01)
             gc.collect()
 
     def send_file(self):
@@ -131,12 +132,12 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
         if command.startswith(Packet.OK):
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
-                return None
-            response_packet = Packet(self.mesh_mode)   #mesh_mode =
+                #return None
+            response_packet = Packet(self.mesh_mode) 
             response_packet.set_source(self.__MAC)
             response_packet.set_ok()
 
-        if command.startswith(Packet.METADATA):    # handle for new file
+        if command.startswith(Packet.METADATA):                     # handle for new file
             if self.__file.metadata_sent:
                 self.__file.retransmission += 1
                 if self.__DEBUG:
@@ -150,7 +151,6 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
 
         elif command.startswith(Packet.CHUNK):
             requested_chunk = int(command.split('-')[1])
-            #requested_chunk = int(self.command.decode('utf-8').split(";;;")[1].split(":::")[1].split('-')[1])
             if self.__DEBUG:
                 print("RC: {}".format(requested_chunk))
 

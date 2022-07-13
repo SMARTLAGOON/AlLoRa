@@ -31,11 +31,7 @@ class CTP_File:
             self.__length = length # Length in chunks
             self.__chunks = dict()
             self.__missing_chunks = list()
-
-            #Timestamp is not saved along the rest of variables, so in case of network shutdown or something, the record will not respect the timeseries
-            self.__timestamp = int(time() * 1000) #FIXME This is a temporal solution until the datalogger can put a timestamp
  
-
     def get_name(self):
         return self.__name    
 
@@ -45,10 +41,6 @@ class CTP_File:
         return self.__content
     
     # Receiver methods
-
-    def get_timestamp(self):
-        return self.__timestamp
-
     def get_missing_chunks(self) -> list:
         self.__assembly()
         return self.__missing_chunks
