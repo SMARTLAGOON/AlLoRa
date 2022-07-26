@@ -67,7 +67,7 @@ class LoRa_LoPy_Connector(Connector):
     def send_and_wait_response(self, packet):
         packet.set_source(self.__MAC)		# Adding mac address to packet
         success = self.send(packet)
-        response_packet = Packet(self.mesh_mode)	# = mesh_mode
+        response_packet = Packet(self.mesh_mode)
         if success:
             timeout = self.__WAIT_MAX_TIMEOUT
             received = False
@@ -80,13 +80,13 @@ class LoRa_LoPy_Connector(Connector):
                         print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
                     #if received_data.startswith(b'S:::'):
                     try:
-                        response_packet = Packet(self.mesh_mode)	# = mesh_mode
-                        response_packet.load(received_data)	#.decode('utf-8')
+                        response_packet = Packet(self.mesh_mode)	
+                        response_packet.load(received_data)
                         if response_packet.get_source() == packet.get_destination():
                             received = True
                             break
                         else:
-                            response_packet = Packet(self.mesh_mode)	# = mesh_mode
+                            response_packet = Packet(self.mesh_mode)
                     except Exception as e:
                         print("Corrupted packet received", e, received_data)
                 sleep(0.01)

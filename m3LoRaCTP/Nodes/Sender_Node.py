@@ -80,9 +80,8 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             if packet.get_debug_hops():
                                 response_packet.add_previous_hops(packet.get_message_path())
                                 response_packet.add_hop(self.__name, self.connector.get_rssi(), 0)
-                            #pycom.rgbled(0x007f00) # green
+
                             self.send_response(response_packet, destination)
-                            #pycom.rgbled(0)        # off
                             return False
                         else:
                             return True
@@ -96,8 +95,8 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
             destination = ''
             packet = self.__listen_receiver()
             if packet:
-                if self.__is_for_me(packet=packet): #FIXME Asegurar el forward fuera del while
-                    command = packet.get_command()  #_part('COMMAND')
+                if self.__is_for_me(packet=packet): 
+                    command = packet.get_command()  
                     destination = packet.get_source()
                     if Packet.check_command(command):
                         response_packet = None
@@ -107,7 +106,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             response_packet.set_data("")
                             response_packet.enable_debug_hops()
                         else:
-                            if command == Packet.CHUNK:     #if packet.get_part("COMMAND") is Node.REQUEST_DATA_INFO):
+                            if command == Packet.CHUNK: 
                                 command = "{}-{}".format(Packet.CHUNK, packet.get_payload().decode())
                                 response_packet = self.__handle_command(command=command)
                             else:   # Metadata or OK
@@ -177,7 +176,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
 
                 success = self.__send(packet)
                 if success:
-                    self.LAST_SEEN_IDS.append(packet.get_id())    #part("ID")
+                    self.LAST_SEEN_IDS.append(packet.get_id())
                     self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
                 #else:
                 #    if self.__DEBUG:

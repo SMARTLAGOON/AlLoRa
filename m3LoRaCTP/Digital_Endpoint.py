@@ -2,7 +2,6 @@ from m3LoRaCTP.m3LoRaCTP_File import CTP_File
 
 class Digital_EndPoint:
 
-    REQUEST_CONNECT = "REQUEST_CONNECT"
     REQUEST_DATA_STATE = "REQUEST_DATA_STATE"
     PROCESS_CHUNK_STATE = "PROCESS_CHUNK_STATE"
     OK = "OK"
@@ -14,7 +13,7 @@ class Digital_EndPoint:
         self.active = active
         self.current_file = None
 
-        self.state = Digital_EndPoint.OK  #DataSource.REQUEST_DATA_STATE  #REQUEST_CONNECT
+        self.state = Digital_EndPoint.OK
 
         self.mesh = False
         self.retransmission_counter = 0

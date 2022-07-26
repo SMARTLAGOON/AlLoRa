@@ -101,9 +101,6 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
                 ok, hop = self.ask_ok(mac, digital_endpoint.get_mesh())
                 digital_endpoint.connected(ok, hop, self.mesh_mode)
 
-            #elif datasource.state == "REQUEST_CONNECT":
-                #pass
-
             in_time = True if time() - t0 < listening_time else False
             sleep(self.NEXT_ACTION_TIME_SLEEP)
 
