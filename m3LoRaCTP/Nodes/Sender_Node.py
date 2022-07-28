@@ -116,7 +116,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                                 response_packet.enable_mesh()
                             if packet.get_debug_hops():
                                 response_packet.add_previous_hops(packet.get_message_path())
-                                response_packet.add_hop(self.__name, self.__raw_rssi(), 0)
+                                response_packet.add_hop(self.__name, self.connector.get_rssi(), 0)
 
                         self.send_response(response_packet, destination)
                 else:
@@ -169,7 +169,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                     print("FORWARDED", packet.get_content())
                 random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
                 if packet.get_debug_hops():
-                    packet.add_hop(self.__name, self.__raw_rssi(), random_sleep)
+                    packet.add_hop(self.__name, self.connector.get_rssi(), random_sleep)
                 packet.enable_hop()
                 sleep(random_sleep)  # Revisar
 
