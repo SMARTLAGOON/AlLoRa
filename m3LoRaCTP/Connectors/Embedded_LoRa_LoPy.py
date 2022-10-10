@@ -20,9 +20,8 @@ class LoRa_LoPy_Connector(Connector):
         self.__lora = LoRa(mode=LoRa.LORA, frequency=frequency,
                             region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
-        self.__lora_socket.setblocking(False)
         self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')
-        
+
         self.__WAIT_MAX_TIMEOUT = max_timeout
         self.__DEBUG = debug
         self.mesh_mode = mesh_mode
@@ -46,23 +45,31 @@ class LoRa_LoPy_Connector(Connector):
         if self.__DEBUG:
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
-            self.__lora_socket.send(packet.get_content())	#.encode()
             if packet.get_mesh():
                 pycom.rgbled(0xb19cd8) # purple
             else:
                 pycom.rgbled(0x007f00) # green
-            sleep(0.1)
-            pycom.rgbled(0)        # off
-            del(packet)
-            gc.collect()
-            return True
+            try:
+                self.__lora_socket.send(packet.get_content())	#.encode()
+                #sleep(0.1)
+                pycom.rgbled(0)        # off
+                del(packet)
+                gc.collect()
+                return True
+            except:
+                return False
         else:
             print("Error: Packet too big")
             return False
 
     def recv(self, size=256):
-        data = self.__lora_socket.recv(size)
-        return data
+        try:
+            self.__lora_socket.settimeout(6)
+            data = self.__lora_socket.recv(size)
+            self.__lora_socket.setblocking(False)
+            return data
+        except:
+            pass
 
     def send_and_wait_response(self, packet):
         packet.set_source(self.__MAC)		# Adding mac address to packet
@@ -80,7 +87,7 @@ class LoRa_LoPy_Connector(Connector):
                         print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
                     #if received_data.startswith(b'S:::'):
                     try:
-                        response_packet = Packet(self.mesh_mode)	
+                        response_packet = Packet(self.mesh_mode)
                         response_packet.load(received_data)
                         if response_packet.get_source() == packet.get_destination():
                             received = True
