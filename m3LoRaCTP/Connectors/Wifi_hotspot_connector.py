@@ -6,7 +6,7 @@ from time import sleep, time
 from m3LoRaCTP.m3LoRaCTP_Packet import Packet
 from m3LoRaCTP.Connectors.Connector import Connector
 
-class WiFi_connector(Connector):
+class WiFi_hotspot_connector(Connector):
 
     def __init__(self, RECEIVER_API_HOST, RECEIVER_API_PORT, SOCKET_TIMEOUT=10, 
                     SOCKET_RECV_SIZE=10000,  PACKET_RETRY_SLEEP=0.5, logger_error=None):
