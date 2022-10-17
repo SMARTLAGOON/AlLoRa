@@ -105,10 +105,13 @@ class AdapterNode:
 			return False
 
 	def __recv(self, size=256):
-		self.__lora_socket.settimeout(6)
-		data = self.__lora_socket.recv(size)
-		self.__lora_socket.setblocking(False)
-		return data
+		try:
+			self.__lora_socket.settimeout(6)
+			data = self.__lora_socket.recv(size)
+			self.__lora_socket.setblocking(False)
+			return data
+		except:
+			pass
 
 	#def __recv(self):
 		#return self.__lora_socket.recv(256)
