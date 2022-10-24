@@ -95,8 +95,8 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
             destination = ''
             packet = self.__listen_receiver()
             if packet:
-                if self.__is_for_me(packet=packet): 
-                    command = packet.get_command()  
+                if self.__is_for_me(packet=packet):
+                    command = packet.get_command()
                     destination = packet.get_source()
                     if Packet.check_command(command):
                         response_packet = None
@@ -106,7 +106,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             response_packet.set_data("")
                             response_packet.enable_debug_hops()
                         else:
-                            if command == Packet.CHUNK: 
+                            if command == Packet.CHUNK:
                                 command = "{}-{}".format(Packet.CHUNK, packet.get_payload().decode())
                                 response_packet = self.__handle_command(command=command)
                             else:   # Metadata or OK
@@ -132,7 +132,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
             if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
                 self.__file.sent_ok()
                 #return None
-            response_packet = Packet(self.mesh_mode) 
+            response_packet = Packet(self.mesh_mode)
             response_packet.set_source(self.__MAC)
             response_packet.set_ok()
 
@@ -173,8 +173,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                 packet.enable_hop()
                 sleep(random_sleep)  # Revisar
 
-
-                success = self.__send(packet)
+                success = self.connector.send(packet)
                 if success:
                     self.LAST_SEEN_IDS.append(packet.get_id())
                     self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]

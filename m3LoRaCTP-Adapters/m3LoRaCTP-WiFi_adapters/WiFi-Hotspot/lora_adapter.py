@@ -6,6 +6,7 @@ import binascii
 import usocket
 import time
 from network import WLAN, LoRa
+import pycom
 
 from m3LoRaCTP_Packet import Packet
 
@@ -19,7 +20,6 @@ class AdapterNode:
 		# Creation of LoRa socket
 		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
 		self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
-		self.__lora_socket.setblocking(False)
 
 		self.__WAIT_MAX_TIMEOUT = max_timeout
 		self.__mesh_mode = mesh_mode
@@ -37,6 +37,7 @@ class AdapterNode:
 		self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 		self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
 		self.serversocket.bind(("192.168.4.1", 80))
+		#self.serversocket.bind(("192.168.0.16", 5550))
 		# Accept maximum of 1 connection at the same time.
 		self.serversocket.listen(1)		#We only need one connection thread since
 										#it is just an rpi_receiver connected,
@@ -60,6 +61,28 @@ class AdapterNode:
 			percentage = 0
 		print('SIGNAL STRENGTH', percentage, '%')
 
+	'''This function send a LoRA-CTP Packet using raw LoRa'''
+	def __send(self, packet):
+		if self.__DEBUG:
+			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
+		if packet.get_length() <= AdapterNode.MAX_LENGTH_MESSAGE:
+			pycom.rgbled(0x007f00) # green
+			self.__lora_socket.send(packet.get_content())
+			pycom.rgbled(0)
+			return True
+		else:
+			print("Error: Packet too big")
+			return False
+
+	def __recv(self, size=256):
+		try:
+			self.__lora_socket.settimeout(6)
+			data = self.__lora_socket.recv(size)
+			self.__lora_socket.setblocking(False)
+			return data
+		except:
+			pass
+
 	"""This function waits for a message to be received from a sender using raw LoRa"""
 	def send_and_wait_response(self, packet):
 		packet.set_source(self.__MAC)		# Adding mac address to packet
@@ -69,41 +92,23 @@ class AdapterNode:
 			timeout = self.__WAIT_MAX_TIMEOUT
 			received = False
 			received_data = b''
-			while(timeout > 0 or received is True):
+			received_data = self.__recv()
+			if received_data:
+				pycom.rgbled(0x00ecff)						# Aquamarine blue
 				if self.__DEBUG:
-					print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
-				received_data = self.__recv()
-				if received_data:
-					if self.__DEBUG:
-						self.__signal_estimation()
-						print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
-					try:
+					self.__signal_estimation()
+					print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
+				try:
+					response_packet = Packet(self.__mesh_mode)
+					response_packet.load(received_data)
+					if response_packet.get_source() == packet.get_destination():
+						received = True
+					else:
 						response_packet = Packet(self.__mesh_mode)
-						response_packet.load(received_data)	
-						if response_packet.get_source() == packet.get_destination():
-							received = True
-							break
-						else:
-							response_packet = Packet(self.__mesh_mode)	
-					except Exception as e:
-						print("Corrupted packet received", e, received_data)
-				time.sleep(0.01)
-				timeout -= 1
+				except Exception as e:
+					print("Corrupted packet received", e, received_data)
+		pycom.rgbled(0)
 		return response_packet
-
-	'''This function send a LoRA-CTP Packet using raw LoRa'''
-	def __send(self, packet):
-		if self.__DEBUG:
-			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
-		if packet.get_length() <= AdapterNode.MAX_LENGTH_MESSAGE:
-			self.__lora_socket.send(packet.get_content())
-			return True
-		else:
-			print("Error: Packet too big")
-			return False
-
-	def __recv(self):
-		return self.__lora_socket.recv(256)
 
 	'''
 	This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
@@ -141,6 +146,7 @@ class AdapterNode:
 						print("HTTP", json_buoy_response)
 					clientsocket.send(http + json_buoy_response)
 		except Exception as e:
+			pycom.rgbled(0)
 			print("Error:", e)
 		# Close the socket and terminate the thread
 		clientsocket.close()
