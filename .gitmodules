@@ -1,0 +1,3 @@
+[submodule "m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLoRa"]
+	path = m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLoRa
+	url = https://github.com/aretdev/PyLoRa.git

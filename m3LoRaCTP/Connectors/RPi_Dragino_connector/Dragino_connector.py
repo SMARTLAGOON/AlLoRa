@@ -1,8 +1,7 @@
 import time
 
 from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.SX127x import board_config, constants
-from m3LoRaCTP.Connectors.SX127x import LoRa
+from m3LoRaCTP.Connectors.PyLoRa.pyLora import pyLora
 from m3LoRaCTP.Connectors.Connector import Connector
 
 
@@ -11,13 +10,10 @@ class Dragino_connector(Connector):
     def __init__(self, frequency=868, sf=7, mesh_mode=False, debug=False, max_timeout=10):
 
         super().__init__()
-        board_config.BOARD.setup()
-        self.lora = LoRa.LoRa(verbose=False,
-                              do_calibration=True,
-                              calibration_freq=868,
+        self.lora = pyLora(verbose=False,
+                              freq = frequency,
                               sf=sf,
-                              cr=constants.CODING_RATE.CR4_5,
-                              freq=frequency)
+                              verbose= True)
         self.__WAIT_MAX_TIMEOUT = max_timeout
         self.__DEBUG = debug
         self.__mesh_mode = mesh_mode
