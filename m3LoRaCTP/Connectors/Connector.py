@@ -3,12 +3,19 @@ from m3LoRaCTP.m3LoRaCTP_Packet import Packet
 class Connector:
     MAX_LENGTH_MESSAGE = 255
 
-    def __init__(self):
+    def __init__(self, frequency = 868000000, sf=7):
+        self.frequency = frequency
+        self.sf = sf
         self.mesh_mode = False
         self.__MAC = "000000000000000000"
 
+        self.last_sf = sf
+
     def get_mac(self):
         return self.__MAC
+
+    def set_sf(sf):
+        pass
 
     def set_mesh_mode(self, mesh_mode=False):
         self.mesh_mode = mesh_mode

@@ -36,23 +36,27 @@ class Packet:
             self.HEADER_SIZE = self.HEADER_SIZE_MESH
             self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
 
-        self.__source = ''            # 8 Bytes mac address of the source
-        self.__destination = ''       # 8 Bytes mac address of the destination
+        self.__source = ''                  # 8 Bytes mac address of the source
+        self.__destination = ''             # 8 Bytes mac address of the destination
 
-        self.__checksum = None          # Checksum
-        self.__payload = b''           # Content of the message
+        self.__checksum = None              # Checksum
+        self.__payload = b''                # Content of the message
 
-        self.__check = None               # True if checksum is correct with content
+        self.__check = None                 # True if checksum is correct with content
 
         ## Flags:
-        self.__command = None           # Type of command / or Data
-        self.__retransmission = False     # True if already sent one or more times
+        self.__command = None               # Type of command / or Data                         bit: 0, 1
+        self.__retransmission = False       # True if already sent one or more times            bit: 2
         # Only for mesh mode
-        self.__mesh = False  # Mesh On or Off for this Node
-        self.__hop = False   # If packet was forwarder -> 1, else -> 0
-        self.__debug_hops = False    # Overrides payload to get path details (hops)
+        self.__mesh = False                 # Mesh On or Off for this Node                      bit: 3
+        self.__sleep = False                # True if should sleep before forwarding message    bit: 4
+        self.__hop = False                  # If packet was forwarder -> 1, else -> 0           bit: 5
+        self.__debug_hops = False           # Overrides payload to get path details (hops)      bit: 6
+        # Change settings
+        self.__change_sf = False            # If True, check payload to change SF               bit: 7
 
-        self.__id = None    # Random number from 0 to 65.535
+        # For mesh
+        self.__id = None                    # Random number from 0 to 65.535
 
         self.__hops = None
 
@@ -186,10 +190,14 @@ class Packet:
             if self.__retransmission:
                 flags = flags | (1<<2)
             if self.__mesh:
+                flags = flags | (1<<3)
+            if self.__sleep:
                 flags = flags | (1<<4)
             if self.__hop:
-                flags = flags | (1<<6)
+                flags = flags | (1<<5)
             if self.__debug_hops:
+                flags = flags | (1<<6)
+            if self.__change_sf:
                 flags = flags | (1<<7)
 
             p = self.__payload
@@ -224,10 +232,13 @@ class Packet:
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
         c1 = "1" if (flags >> 1) & 1 == 1 else "0"
         self.__command = self.COMMAND_BITS[c0+c1]
+
         self.__retranmission = (flags >> 2) & 1 == 1
-        self.__mesh  = (flags >> 4) & 1 == 1
-        self.__hop = (flags >> 6) & 1 == 1
-        self.__debug_hops = (flags >> 7) & 1 == 1
+        self.__mesh  = (flags >> 3) & 1 == 1
+        self.__sleep = (flags >> 4) & 1 == 1
+        self.__hop = (flags >> 5) & 1 == 1
+        self.__debug_hops = (flags >> 6) & 1 == 1
+        self.__change_sf = (flags >> 7) & 1 == 1
 
         self.__payload = content
 
@@ -245,7 +256,9 @@ class Packet:
             "payload" : self.__payload.decode(),
             "mesh" : self.__mesh,
             "hop" : self.__hop,
+            "sleep" : self.__sleep,
             "debug_hops" : self.__debug_hops,
+            "change_sf" : self.__change_sf,
             "id" :self.__id,
             }
         return d
@@ -259,7 +272,9 @@ class Packet:
         self.__payload = d["payload"].encode()
         self.__mesh = d["mesh"]
         self.__hop = d["hop"]
+        self.__sleep = d["sleep"]
         self.__debug_hops = d["debug_hops"]
+        self.__change_sf = d["change_sf"]
         self.__id = d["id"]
 
         self.__check = self.__checksum == self.__get_checksum(self.__payload)

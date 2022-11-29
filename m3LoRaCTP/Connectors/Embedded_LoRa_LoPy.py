@@ -12,20 +12,33 @@ import gc
 class LoRa_LoPy_Connector(Connector):
     MAX_LENGTH_MESSAGE = 255
 
-    def __init__(self, frequency=868, sf=7, mesh_mode=False, debug=False, max_timeout = 100):
+    def __init__(self, frequency = 868000000, sf=7, mesh_mode=False, debug=False, max_timeout = 100):
 
-        super().__init__()
-        frequency = 868000000
-        sf = 7
-        self.__lora = LoRa(mode=LoRa.LORA, frequency=frequency,
-                            region=LoRa.EU868, sf = sf)
+        super().__init__(frequency = frequency, sf=sf)
+        self.__lora = LoRa(mode=LoRa.LORA, frequency=self.frequency,
+                            region=LoRa.EU868, sf = self.sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
+        #self.__lora_socket.setblocking(False)
         self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')
 
         self.__WAIT_MAX_TIMEOUT = max_timeout
         self.__DEBUG = debug
         self.mesh_mode = mesh_mode
         gc.enable()
+
+    def set_sf(self, sf):
+        if self.sf != sf:
+            self.__lora.sf(sf)
+            self.sf = sf
+            if self.__DEBUG:
+                print("SF Changed to: ", self.sf)
+
+    def get_stats(self):
+        stats = self.__lora.stats()
+        if self.__DEBUG:
+            print("rx_timestamp {0}, rssi {1}, snr {2}, sftx {3}, sfrx {4}, tx_trials {5}, tx_power {6}, tx_time_on_air {7}, tx_counter {8}, tx_frequency {9}".format(stats[0],
+                    stats[1], stats[2], stats[3], stats[4], stats[5], stats[6], stats[7], stats[8], stats[9]))
+        return stats
 
     def get_rssi(self):
         return self.__lora.stats()[1]
@@ -67,6 +80,8 @@ class LoRa_LoPy_Connector(Connector):
             self.__lora_socket.settimeout(6)
             data = self.__lora_socket.recv(size)
             self.__lora_socket.setblocking(False)
+            if self.__DEBUG:
+                self.get_stats()
             return data
         except:
             pass
@@ -85,7 +100,6 @@ class LoRa_LoPy_Connector(Connector):
                     if self.__DEBUG:
                         self.__signal_estimation()
                         print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
-                    #if received_data.startswith(b'S:::'):
                     try:
                         response_packet = Packet(self.mesh_mode)
                         response_packet.load(received_data)
