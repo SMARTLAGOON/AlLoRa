@@ -1,3 +1,9 @@
 [submodule "m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLoRa"]
 	path = m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLoRa
 	url = https://github.com/aretdev/PyLoRa.git
+[submodule "m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLora_SX127x_extensions"]
+	path = m3LoRaCTP/Connectors/RPi_Dragino_connector/PyLora_SX127x_extensions
+	url = https://github.com/GRCDEV/PyLora_SX127x_extensions
+[submodule "m3LoRaCTP/Connectors/PyLora_SX127x_extensions"]
+	path = m3LoRaCTP/Connectors/PyLora_SX127x_extensions
+	url = https://github.com/GRCDEV/PyLora_SX127x_extensions
