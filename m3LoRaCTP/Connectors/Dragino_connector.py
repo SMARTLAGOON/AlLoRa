@@ -1,7 +1,7 @@
 import time
 
 from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.PyLoRa.pyLora import pyLora
+from m3LoRaCTP.Connectors.PyLora_SX127x_extensions.pyLora import pyLora
 from m3LoRaCTP.Connectors.Connector import Connector
 
 
