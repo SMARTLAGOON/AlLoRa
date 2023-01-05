@@ -58,7 +58,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                 print(e)
 
         if self.__DEBUG:
-            self.__signal_estimation()
+            self.connector.signal_estimation()
             print('LISTEN_RECEIVER() || received_content', packet.get_content())
 
         return packet

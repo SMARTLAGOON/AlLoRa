@@ -9,13 +9,13 @@ import binascii
 import pycom
 import gc
 
-class LoRa_LoPy_Connector(Connector):
+class LoPy4_connector(Connector):
     MAX_LENGTH_MESSAGE = 255
 
     def __init__(self, frequency=868, sf=7, mesh_mode=False, debug=False, max_timeout = 100):
 
         super().__init__()
-        frequency = 868000000
+        frequency *= 1000000
         sf = 7
         self.__lora = LoRa(mode=LoRa.LORA, frequency=frequency,
                             region=LoRa.EU868, sf = sf)
