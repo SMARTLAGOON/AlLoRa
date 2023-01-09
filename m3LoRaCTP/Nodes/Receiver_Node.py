@@ -13,7 +13,7 @@ except:
 
 class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
 
-    def __init__(self, mesh_mode = False, debug_hops = False, connector = None, 
+    def __init__(self, mesh_mode = False, debug_hops = False, connector = None,
                     NEXT_ACTION_TIME_SLEEP = 0.1):
         m3LoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
 
@@ -21,7 +21,7 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
 
     def ask_ok(self, mac_address, mesh):
-        packet = Packet(self.mesh_mode) 
+        packet = Packet(self.mesh_mode)
         packet.set_destination(mac_address)
         packet.set_ok()
         if mesh:
@@ -36,7 +36,7 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
             return None, None
 
     def ask_metadata(self, mac_address, mesh):
-        packet = Packet(self.mesh_mode) 
+        packet = Packet(self.mesh_mode)
         packet.set_destination(mac_address)
         packet.ask_metadata()
         if mesh:
@@ -57,7 +57,7 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
             return None, None
 
     def ask_data(self, mac_address, mesh, next_chunk):
-        packet = Packet(self.mesh_mode) 
+        packet = Packet(self.mesh_mode)
         packet.set_destination(mac_address)
         packet.ask_data(next_chunk)
         if mesh:
@@ -66,7 +66,7 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
         if self.save_hops(response_packet):
             return b"0", response_packet.get_hop()
         if response_packet.get_command() == Packet.DATA:
-            try: 
+            try:
                 if self.mesh_mode:
                     id = response_packet.get_id()
                     if not self.check_id_list(id):
@@ -115,3 +115,24 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
                 #print(line)
             return True
         return False
+
+    def ask_change_sf(self, digital_endpoint, new_sf):
+        changing = True
+        try_for = 3
+        if 7 <= new_sf <= 12:
+            while True:
+                packet = Packet(self.mesh_mode)
+                packet.set_destination(digital_endpoint.get_mac_address())
+                packet.set_change_sf(new_sf)
+                if digital_endpoint.get_mesh():
+                    packet.enable_mesh()
+                response_packet = self.send_request(packet)
+                if response_packet.get_command() == Packet.OK:
+                    sf_response = int(response_packet.get_payload().decode().split('"')[1])
+                    print(sf_response)
+                    if sf_response == new_sf:
+                        return True
+                else:
+                    try_for -= 1
+                    if try_for <= 0:
+                        return False

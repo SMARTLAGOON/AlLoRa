@@ -31,15 +31,15 @@ class CTP_File:
             self.__length = length # Length in chunks
             self.__chunks = dict()
             self.__missing_chunks = list()
- 
+
     def get_name(self):
-        return self.__name    
+        return self.__name
 
     def get_content(self):
         if self.assembly_needed:
             self.__assembly()
         return self.__content
-    
+
     # Receiver methods
     def get_missing_chunks(self) -> list:
         self.__assembly()
@@ -56,7 +56,7 @@ class CTP_File:
                 self.__content += self.__chunks[i].decode('utf-8')
             except KeyError as e:
                 self.__missing_chunks.append(i)
-    
+
     # Sender methods
     def get_length(self):
         return self.__chunk_counter
@@ -84,7 +84,7 @@ class CTP_File:
             self.first_sent = t
         elif self.first_sent is not None:
             self.last_sent = t
-            txt = "{};t0;{};tf;{};SST;{};Retransmission;{}\n".format(self.get_name(), self.first_sent, t, t - self.first_sent, self.retransmission)
+            txt = "{} -> size: {} (chunks:{}) ;t0: {}; tf {}; SST: {}; Retransmission: {}\n".format(self.get_name(), self.__length, self.__chunk_counter, self.first_sent, t, t - self.first_sent, self.retransmission)
             print(txt)
             if report:
                 test_log = open('log.txt', "ab")

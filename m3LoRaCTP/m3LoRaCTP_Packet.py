@@ -138,6 +138,14 @@ class Packet:
     def disable_debug_hops(self):
         self.__debug_hops = False
 
+    def get_change_sf(self):
+        return self.__change_sf
+
+    def set_change_sf(self, sf):
+        self.set_ok()
+        self.__change_sf = True
+        self.__payload = dumps(sf).encode()
+
     def get_message_path(self):
         if self.__debug_hops:
             try:

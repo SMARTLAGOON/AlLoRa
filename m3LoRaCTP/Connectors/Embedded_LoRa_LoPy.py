@@ -12,9 +12,9 @@ import gc
 class LoRa_LoPy_Connector(Connector):
     MAX_LENGTH_MESSAGE = 255
 
-    def __init__(self, frequency = 868000000, sf=7, mesh_mode=False, debug=False, max_timeout = 100):
+    def __init__(self, mesh_mode=False, debug=False, max_timeout = 100):
 
-        super().__init__(frequency = frequency, sf=sf)
+        super().__init__()
         self.__lora = LoRa(mode=LoRa.LORA, frequency=self.frequency,
                             region=LoRa.EU868, sf = self.sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
@@ -77,6 +77,8 @@ class LoRa_LoPy_Connector(Connector):
 
     def recv(self, size=256):
         try:
+            #self.__lora_socket.settimeout(0.5)
+            #self.__lora_socket.setblocking(True)
             self.__lora_socket.settimeout(6)
             data = self.__lora_socket.recv(size)
             self.__lora_socket.setblocking(False)
@@ -100,6 +102,7 @@ class LoRa_LoPy_Connector(Connector):
                     if self.__DEBUG:
                         self.__signal_estimation()
                         print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
+                    #if received_data.startswith(b'S:::'):
                     try:
                         response_packet = Packet(self.mesh_mode)
                         response_packet.load(received_data)

@@ -44,7 +44,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                 return None
         except Exception as e:
             if self.__DEBUG:
-                print(e)
+                print("Error loading: ", data, " -> ",e)
             return None
 
         if self.mesh_mode:
@@ -58,7 +58,7 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                 print(e)
 
         if self.__DEBUG:
-            self.__signal_estimation()
+            self.connector.signal_estimation()
             print('LISTEN_RECEIVER() || received_content', packet.get_content())
 
         return packet
@@ -173,7 +173,8 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                 packet.enable_hop()
                 sleep(random_sleep)  # Revisar
 
-                success = self.connector.send(packet)
+
+                success = self.__send(packet)
                 if success:
                     self.LAST_SEEN_IDS.append(packet.get_id())
                     self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]

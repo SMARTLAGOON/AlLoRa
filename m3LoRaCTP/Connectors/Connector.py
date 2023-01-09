@@ -9,8 +9,6 @@ class Connector:
         self.mesh_mode = False
         self.__MAC = "000000000000000000"
 
-        self.last_sf = sf
-
     def get_mac(self):
         return self.__MAC
 
