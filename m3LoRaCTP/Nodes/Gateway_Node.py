@@ -2,12 +2,13 @@ from m3LoRaCTP.Nodes.Receiver_Node import m3LoRaCTP_Receiver
 
 class m3LoRaCTP_Gateway(m3LoRaCTP_Receiver):
 
-    def __init__(self, mesh_mode = False, debug_hops = False, connector = None, 
+    def __init__(self, connector = None, debug_hops = False, 
                     NEXT_ACTION_TIME_SLEEP = 0.1, 
                     TIME_PER_ENDPOINT = 10):
-        m3LoRaCTP_Receiver.__init__(self, mesh_mode, debug_hops, connector = connector, 
-                                    NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP)
+        super().__init__(connector = connector, debug_hops = debug_hops,
+                            NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP)
         self.TIME_PER_ENDPOINT = TIME_PER_ENDPOINT
+    
     
     def set_digital_endpoints(self, digital_endpoints):
         self.digital_endpoints = digital_endpoints

@@ -46,7 +46,6 @@ class Packet:
 
         ## Flags:
         self.__command = None               # Type of command / or Data                         bit: 0, 1
-        self.__retransmission = False       # True if already sent one or more times            bit: 2
         # Only for mesh mode
         self.__mesh = False                 # Mesh On or Off for this Node                      bit: 3
         self.__sleep = False                # True if should sleep before forwarding message    bit: 4
@@ -57,8 +56,6 @@ class Packet:
 
         # For mesh
         self.__id = None                    # Random number from 0 to 65.535
-
-        self.__hops = None
 
     def set_source(self, source: str):
         self.__source = source
@@ -92,8 +89,7 @@ class Packet:
     def get_metadata(self):
         if self.__command == "METADATA":
             try:
-                metadata = loads(self.__payload)
-                return metadata
+                return loads(self.__payload)
             except:
                 return None
 
@@ -104,15 +100,6 @@ class Packet:
     def set_data(self, chunk):
         self.__command = "DATA"
         self.__payload = chunk
-
-    def get_retransmission(self):
-        return self.__retranmission
-
-    def set_retransmission(self, retr):
-        if retr > 0:
-            self.__retranmission = True
-        else:
-            self.__retranmission = False
 
     def get_mesh(self):
         return self.__mesh
@@ -138,6 +125,12 @@ class Packet:
     def disable_debug_hops(self):
         self.__debug_hops = False
 
+    def enable_sleep(self):
+        self.__sleep = True
+
+    def get_sleep(self):
+        return self.__sleep
+
     def get_change_sf(self):
         return self.__change_sf
 
@@ -149,8 +142,7 @@ class Packet:
     def get_message_path(self):
         if self.__debug_hops:
             try:
-                hops = loads(self.__payload)
-                return hops
+                return loads(self.__payload)
             except:
                 return None
 
@@ -195,8 +187,6 @@ class Packet:
                 flags = flags | (1<<0)
             if command_bits[1] == "1":
                 flags = flags | (1<<1)
-            if self.__retransmission:
-                flags = flags | (1<<2)
             if self.__mesh:
                 flags = flags | (1<<3)
             if self.__sleep:
@@ -217,12 +207,23 @@ class Packet:
                 except:
                     print(self.__source.encode(), self.__destination.encode(), flags, self.__id, self.__checksum)
                 #print(self.__source, self.__destination, flags, id_bytes, self.__checksum, p)
-                h = struct.pack(self.HEADER_FORMAT,self.__source.encode(), self.__destination.encode(), flags, id_bytes, self.__checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.__source.encode(), self.__destination.encode(), flags, id_bytes, self.__checksum)
             else:
                 #print(self.__source, self.__destination, flags,  self.__checksum, p)
-                h = struct.pack(self.HEADER_FORMAT,  self.__source.encode(), self.__destination.encode(), flags,  self.__checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.__source.encode(), self.__destination.encode(), flags,  self.__checksum)
 
             return h+p
+
+    def parse_flags(self, flags: int):
+        c0 = "1" if (flags >> 0) & 1 == 1 else "0"
+        c1 = "1" if (flags >> 1) & 1 == 1 else "0"
+        self.__command = self.COMMAND_BITS[c0+c1]
+
+        self.__mesh  = (flags >> 3) & 1 == 1
+        self.__sleep = (flags >> 4) & 1 == 1
+        self.__hop = (flags >> 5) & 1 == 1
+        self.__debug_hops = (flags >> 6) & 1 == 1
+        self.__change_sf = (flags >> 7) & 1 == 1
 
     def load(self, packet):
         header  = packet[:self.HEADER_SIZE]
@@ -237,16 +238,7 @@ class Packet:
         self.__source = self.__source.decode()
         self.__destination = self.__destination.decode()
 
-        c0 = "1" if (flags >> 0) & 1 == 1 else "0"
-        c1 = "1" if (flags >> 1) & 1 == 1 else "0"
-        self.__command = self.COMMAND_BITS[c0+c1]
-
-        self.__retranmission = (flags >> 2) & 1 == 1
-        self.__mesh  = (flags >> 3) & 1 == 1
-        self.__sleep = (flags >> 4) & 1 == 1
-        self.__hop = (flags >> 5) & 1 == 1
-        self.__debug_hops = (flags >> 6) & 1 == 1
-        self.__change_sf = (flags >> 7) & 1 == 1
+        self.parse_flags(flags)
 
         self.__payload = content
 
@@ -259,7 +251,6 @@ class Packet:
         d = {"source" : self.__source,
             "destination" : self.__destination,
             "command" : self.__command,
-            "retransmission" : self.__retransmission,
             "checksum" : self.__checksum.decode(),
             "payload" : self.__payload.decode(),
             "mesh" : self.__mesh,
@@ -275,7 +266,6 @@ class Packet:
         self.__source = d["source"]
         self.__destination = d["destination"]
         self.__command = d["command"]
-        self.__retransmission = d["retransmission"]
         self.__checksum = d["checksum"].encode()
         self.__payload = d["payload"].encode()
         self.__mesh = d["mesh"]
@@ -306,7 +296,7 @@ if __name__ == "__main__":
 
     if mesh_mode:
         id = 555
-        p.set_retransmission(2)
+        #p.set_retransmission(2)
         p.enable_mesh()
         p.enable_hop()
         p.set_id(id)

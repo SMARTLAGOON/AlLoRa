@@ -9,18 +9,39 @@ except:
 
 class m3LoRaCTP_Node:
 
-    def __init__(self, mesh_mode = False, connector = None):
-
-        self.mesh_mode = mesh_mode
-
+    def __init__(self, connector):
+        self.open_backup()
         self.connector = connector
-        if self.connector:
-            self.connector.set_mesh_mode(self.mesh_mode)
-            self.__MAC = self.connector.get_mac()[8:]
+        self.config_connector()
 
         self.LAST_IDS = list()              # IDs from my mesagges
         self.LAST_SEEN_IDS = list()         # IDs from others
         self.MAX_IDS_CACHED = 30            # Max number of IDs saved
+
+    def open_backup(self):
+        with open("LoRa.txt", "r") as f:
+            lora_config = f.readlines()
+
+        self.__name = lora_config[0].split("=")[1].strip()
+        self.__DEBUG = lora_config[5].split("=")[1].strip() == "True"
+        self.mesh_mode = lora_config[4].split("=")[1].strip() == "True"
+        self.__chunk_size = int(lora_config[3].split("=")[1].strip())
+
+        freq = int(lora_config[1].split("=")[1].strip())
+        sf = int(lora_config[2].split("=")[1].strip())
+        self.config_connector_dic = {"freq" : freq, "sf": sf}
+        
+        if self.__DEBUG:
+            print(self.__name , freq, sf, self.__chunk_size, self.mesh_mode, self.__DEBUG)
+
+    def config_connector(self):
+        self.connector.config(frequency = self.config_connector_dic["freq"], 
+                                sf = self.config_connector_dic["sf"], 
+                                mesh_mode = self.mesh_mode, 
+                                debug = self.__DEBUG)
+        
+        self.__MAC = self.connector.get_mac()[8:]
+        print(self.__name, ":", self.__MAC)
 
     def get_mesh_mode(self):
         return self.mesh_mode
@@ -44,6 +65,9 @@ class m3LoRaCTP_Node:
         else:
             return False
 
+    def send_lora(self, packet):
+        return self.connector.send(packet)
+
     def send_request(self, packet: Packet) -> Packet:
         if self.mesh_mode:
             packet.set_id(self.generate_id())
@@ -64,4 +88,11 @@ class m3LoRaCTP_Node:
 
             response_packet.set_destination(destination)
             if self.connector:
-                return self.connector.send(response_packet)
+                self.send_lora(response_packet)
+
+    def change_sf(self, sf):
+        self.connector.backup_sf()
+        self.connector.set_sf(sf)
+
+    def restore_sf(self):
+        self.connector.restore_sf()

@@ -13,9 +13,8 @@ except:
 
 class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
 
-    def __init__(self, mesh_mode = False, debug_hops = False, connector = None,
-                    NEXT_ACTION_TIME_SLEEP = 0.1):
-        m3LoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
+    def __init__(self, connector = None, debug_hops = False, NEXT_ACTION_TIME_SLEEP = 0.1):
+        super().__init__(connector)
 
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
@@ -117,7 +116,6 @@ class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
         return False
 
     def ask_change_sf(self, digital_endpoint, new_sf):
-        changing = True
         try_for = 3
         if 7 <= new_sf <= 12:
             while True:

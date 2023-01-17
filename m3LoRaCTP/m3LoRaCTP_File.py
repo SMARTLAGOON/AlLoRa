@@ -78,7 +78,6 @@ class CTP_File:
         return False
 
     def report_SST(self, t0_tf, report=False):
-        file_name = self.get_name()
         t = time()
         if t0_tf:
             self.first_sent = t

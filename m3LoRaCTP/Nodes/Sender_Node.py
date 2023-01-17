@@ -5,19 +5,16 @@ from time import sleep, time
 
 class m3LoRaCTP_Sender(m3LoRaCTP_Node):
 
-    def __init__(self, name, chunk_size = 235, mesh_mode = False, debug = False, connector = None):
-        m3LoRaCTP_Node.__init__(self, mesh_mode, connector = connector)
+    def __init__(self, connector):
+        super().__init__(connector)
         gc.enable()
-        self.__name = name
-        self.__DEBUG = debug
 
-        self.__chunk_size = chunk_size
+        self.sf_trial = False
+        
         if self.mesh_mode and self.__chunk_size > 233:   # Packet size less than 255 (with Spreading Factor 7)
             self.__chunk_size = 233
             if self.__DEBUG:
                 print("Chunk size force down to {}".format(self.__chunk_size))
-
-        print(self.__name, ":", self.connector.get_mac())
 
         self.__file = None
 
@@ -34,6 +31,13 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
         self.set_file(file)
         self.__file.first_sent = time()
         self.__file.metadata_sent = True
+
+    def backup_config(self):
+        conf = "name={}\nfreq={}\nsf={}\nchunk_size={}\nmesh_mode={}\ndebug={}".format(
+                self.__name, self.connector.frequency, self.connector.sf, 
+                self.__chunk_size, self.mesh_mode, self.__DEBUG)
+        with open("LoRa.conf", "w") as f:
+            f.write(conf)
 
     #This function ensures that a received message matches the criteria of any expected message.
     def __listen_receiver(self):
@@ -63,8 +67,9 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
 
         return packet
 
-    def establish_connection(self):
+    def establish_connection(self, try_for=None):
         while True:
+            new_sf = None
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet):
@@ -75,6 +80,9 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             response_packet = Packet(self.mesh_mode)
                             response_packet.set_source(self.__MAC)
                             response_packet.set_ok()
+                            if packet.get_change_sf:
+                                new_sf = packet.get_payload().decode()
+                                response_packet.set_change_sf(new_sf)
                             if self.mesh_mode and packet.get_mesh():
                                 response_packet.enable_mesh()
                             if packet.get_debug_hops():
@@ -82,6 +90,10 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                                 response_packet.add_hop(self.__name, self.connector.get_rssi(), 0)
 
                             self.send_response(response_packet, destination)
+                            if new_sf:
+                                self.change_sf(int(new_sf))
+                                self.sf_trial = 3
+
                             return False
                         else:
                             return True
@@ -89,16 +101,24 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                     self.__forward(packet)
             sleep(0.01)
             gc.collect()
+            if try_for is not None:
+                try_for -= 1
+                if try_for <= 0:
+                    return False
 
     def send_file(self):
         while not self.__file.sent:
             destination = ''
+            new_sf = None
             packet = self.__listen_receiver()
             if packet:
                 if self.__is_for_me(packet=packet):
                     command = packet.get_command()
                     destination = packet.get_source()
                     if Packet.check_command(command):
+                        if self.change_sf:
+                            self.sf_trial = False
+                            self.backup_config()
                         response_packet = None
                         if packet.get_debug_hops():
                             response_packet = Packet(mesh_mode = self.mesh_mode)
@@ -109,6 +129,11 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                             if command == Packet.CHUNK:
                                 command = "{}-{}".format(Packet.CHUNK, packet.get_payload().decode())
                                 response_packet = self.__handle_command(command=command)
+                            elif command == Packet.OK and packet.get_change_sf():
+                                new_sf = packet.get_payload().decode()
+                                response_packet = Packet(self.mesh_mode)
+                                response_packet.set_source(self.__MAC)
+                                response_packet.set_change_sf(new_sf)
                             else:   # Metadata or OK
                                 response_packet = self.__handle_command(command=command)
                         if response_packet:
@@ -119,9 +144,17 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
                                 response_packet.add_hop(self.__name, self.connector.get_rssi(), 0)
 
                         self.send_response(response_packet, destination)
+                        if new_sf:
+                            self.change_sf(int(new_sf))
+                            self.sf_trial = 3
                 else:
                     self.__forward(packet=packet)
-
+            else:
+                if self.sf_trial:
+                    self.sf_trial -= 1
+                    if self.sf_trial <= 0:
+                        self.restore_sf()
+                        self.sf_trial = False
         del(self.__file)
         gc.collect()
         self.__file = None
@@ -167,14 +200,17 @@ class m3LoRaCTP_Sender(m3LoRaCTP_Node):
             if packet.get_mesh():
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
-                random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
+                if packet.get_sleep():
+                    random_sleep = 0
+                else:
+                    random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
                 if packet.get_debug_hops():
                     packet.add_hop(self.__name, self.connector.get_rssi(), random_sleep)
                 packet.enable_hop()
-                sleep(random_sleep)  # Revisar
+                if random_sleep:
+                    sleep(random_sleep)  # Revisar
 
-
-                success = self.__send(packet)
+                success = self.send_lora(packet)
                 if success:
                     self.LAST_SEEN_IDS.append(packet.get_id())
                     self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
