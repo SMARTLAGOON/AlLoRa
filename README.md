@@ -181,21 +181,17 @@ It is the parent class from whom the connectors inherits them base attributes an
 
 It manages the methods to send and receive data using raw LoRa, gives access to the RSSI of the last received package and the MAC address of the device. It also contains the method send_and_wait_response, whose function is to send a packet (usually with a request) and wait for a predefined period of time (WAIT_MAX_TIMEOUT).
 
-### [Embedded_LoRa_LoPy.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/Embedded_LoRa_LoPy.py)
+### [LoPy4_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/LoPy4_connector.py)
 
 This type of connector is very straightforward, it uses the native library for using LoRa from the LoPy4 (Only tested in LoPy4)
 
+### [SX127x_connector](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/SX127.py)
+
+This connector was developed to use in a Raspberry Pi connected to a Dragino LoRa/HPS HAT for RPi v1.4. It uses the SX127x library to manage the Raspberry Pi’s GPIOs in order to control the Dragino and send packages using a LoRa channel. It also works with ESP32 that uses the SX127x.
+
 ### [Wifi_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/Wifi_connector.py)
 
-Is the counterpart of the [m3LoRaCTP-WiFi_adapter](https://www.notion.so/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b),  developed to use in a Raspberry Pi, but also tested on a regular computer. 
-
-### [RPI_Dragino_connector](https://github.com/SMARTLAGOON/m3LoraCTP/tree/main/m3LoRaCTP/Connectors/RPi_Dragino_connector)
-
-- This connector was developed to use in a Raspberry Pi connected to a Dragino LoRa/HPS HAT for RPi v1.4. It uses the SX127x library to manage the Raspberry Pi’s GPIOs in order to control the Dragino and send packages using a LoRa channel.
-
-    More testing is required with this one…
-
-    ### [Dragino_connector.py](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP/Connectors/RPi_Dragino_connector/Dragino_connector.py)
+Is the counterpart of the [m3LoRaCTP-WiFi_adapter](https://github.com/SMARTLAGOON/m3LoraCTP/blob/main/m3LoRaCTP-Adapters),  developed to use in a Raspberry Pi, but also tested on computers running macOS and Windows. 
 
 </details>
     

@@ -1,34 +1,40 @@
 import time
+import ubinascii
+import network
 
 from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.SX127x import board_config, constants
-from m3LoRaCTP.Connectors.SX127x import LoRa
 from m3LoRaCTP.Connectors.Connector import Connector
 
+# Requires PyLora_SX127x_extensions to be installed
+# https://github.com/GRCDEV/PyLora_SX127x_extensions
+from PyLora_SX127x_extensions.pyLora import pyLora
 
 class Dragino_connector(Connector):
 
     def __init__(self, frequency=868, sf=7, mesh_mode=False, debug=False, max_timeout=10):
 
         super().__init__()
-        board_config.BOARD.setup()
-        self.lora = LoRa.LoRa(verbose=False,
-                              do_calibration=True,
-                              calibration_freq=868,
-                              sf=sf,
-                              cr=constants.CODING_RATE.CR4_5,
-                              freq=frequency)
+        self.lora = pyLora( freq = frequency,
+                            sf=sf,
+                            verbose= True)
         self.__WAIT_MAX_TIMEOUT = max_timeout
         self.__DEBUG = debug
         self.__mesh_mode = mesh_mode
         self.lora.setblocking(False)
 
-    def get_rssi(self):
-        return self.lora.get_pkt_rssi_value()
+        wlan_sta = network.WLAN(network.STA_IF)
+        wlan_sta.active(True)
+        wlan_mac = wlan_sta.config('mac')
+        self.__MAC = "70b3" + ubinascii.hexlify(wlan_mac).decode()
+        wlan_sta.active(False)
 
-    def __signal_estimation(self):
+    def get_rssi(self):
+        return self.lora.get_rssi()
+        #return self.lora.get_pkt_rssi_value()
+
+    def signal_estimation(self):
         percentage = 0
-        rssi = self.lora.get_rssi_value()
+        rssi = self.get_rssi()      #self.lora.get_rssi_value()
         if (rssi >= -50):
             percentage = 100
         elif (rssi <= -50) and (rssi >= -100):
@@ -48,8 +54,12 @@ class Dragino_connector(Connector):
         return False
 
     def recv(self, size):
-        packet = self.lora.recv(size)
-        return packet
+        try:
+            self.lora.settimeout(6)
+            packet = self.lora.recv(size)
+            return packet
+        except:
+            print("nothing received or error")
 
     def send_and_wait_response(self, packet):
         packet.set_source(self.get_mac())  # Adding mac address to packet
@@ -71,7 +81,7 @@ class Dragino_connector(Connector):
                     received_data = self.recv(256)
                     if received_data:
                         if self.__DEBUG:
-                            self.__signal_estimation()
+                            self.signal_estimation()
                             print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
                         # if received_data.startswith(b'S:::'):
                         try:

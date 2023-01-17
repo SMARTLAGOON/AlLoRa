@@ -9,14 +9,16 @@ import binascii
 import pycom
 import gc
 
-class LoRa_LoPy_Connector(Connector):
+class LoPy4_connector(Connector):
     MAX_LENGTH_MESSAGE = 255
 
     def __init__(self, mesh_mode=False, debug=False, max_timeout = 100):
 
         super().__init__()
-        self.__lora = LoRa(mode=LoRa.LORA, frequency=self.frequency,
-                            region=LoRa.EU868, sf = self.sf)
+        frequency *= 1000000
+        sf = 7
+        self.__lora = LoRa(mode=LoRa.LORA, frequency=frequency,
+                            region=LoRa.EU868, sf = sf)
         self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         #self.__lora_socket.setblocking(False)
         self.__MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')
