@@ -1,4 +1,4 @@
-from m3LoRaCTP.m3LoRaCTP_Packet import Packet
+from AlLoRa.Packet import Packet
 
 class Connector:
     MAX_LENGTH_MESSAGE = 255
@@ -15,11 +15,19 @@ class Connector:
         self.__DEBUG = debug
         self.mesh_mode = mesh_mode
 
+        self.sf_backup = self.sf
+
     def get_mac(self):
         return self.__MAC
 
-    def set_sf(sf):
+    def set_sf(self, sf):
         pass
+
+    def backup_sf(self):
+        self.sf_backup = self.sf
+
+    def restore_sf(self):
+        self.set_sf(self.sf_backup)
 
     def set_mesh_mode(self, mesh_mode=False):
         self.mesh_mode = mesh_mode

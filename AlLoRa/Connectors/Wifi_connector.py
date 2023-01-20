@@ -3,8 +3,8 @@ import json
 import select
 from time import sleep, time
 
-from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.Connector import Connector
+from AlLoRa.Packet import Packet
+from AlLoRa.Connectors.Connector import Connector
 
 class WiFi_connector(Connector):
 

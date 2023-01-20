@@ -8,7 +8,7 @@ import time
 from network import WLAN, LoRa
 import pycom
 
-from m3LoRaCTP_Packet import Packet
+from AlLoRa_Packet import Packet
 
 class AdapterNode:
 

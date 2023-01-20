@@ -1,8 +1,8 @@
 import pycom
 
-from m3LoRaCTP.Nodes.Sender_Node import m3LoRaCTP_Sender
-from m3LoRaCTP.Connectors.LoPy4_connector import LoPy4_connector
-from m3LoRaCTP.m3LoRaCTP_File import CTP_File
+from AlLoRa.Nodes.Sender import Sender
+from AlLoRa.Connectors.LoPy4_connector import LoPy4_connector
+from AlLoRa.File import CTP_File
 from time import sleep
 
 # For testing
@@ -18,10 +18,10 @@ def clean_timing_file():
 if __name__ == "__main__":
 
 	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
-	connector = LoPy4_connector(frequency = 868, sf = 7)
+	connector = LoPy4_connector()
 
-	# Then, we set up out Sender Node, with name "A", with mesh mode activated
-	lora_node = m3LoRaCTP_Sender(name = "C", connector = connector, mesh_mode = True)
+	# Then, we set up out Sender Node
+	lora_node = Sender(connector, config_file = "LoRa.json")
 
 	# We turn on a led for a second to know that we are doing ok...
 	pycom.rgbled(0x1aa7ec) 	# Picton Blue

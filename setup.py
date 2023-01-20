@@ -12,7 +12,7 @@ DESCRIPTION = 'Modular, mesh, multi-device LoRa Content Transfer Protocol'
 
 # Setting up
 setup(
-    name="m3LoRaCTP",
+    name="AlLoRa",
     version=VERSION,
     author="Benjamín Arratia",
     author_email="<baarruri@disca.upv.es>",

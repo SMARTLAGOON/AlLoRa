@@ -1,7 +1,7 @@
 from time import sleep
 
-from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.Connector import Connector
+from AlLoRa.Packet import Packet
+from AlLoRa.Connectors.Connector import Connector
 from network import LoRa
 import socket
 import binascii
@@ -40,8 +40,6 @@ class LoPy4_connector(Connector):
         return self.__lora.stats()[1]
         
     def send(self, packet):
-        if self.__DEBUG:
-            print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
             if packet.get_mesh():
                 pycom.rgbled(0xb19cd8) # purple

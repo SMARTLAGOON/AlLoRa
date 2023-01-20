@@ -1,15 +1,18 @@
 from time import sleep, time
 
-from m3LoRaCTP.m3LoRaCTP_Packet import Packet
+from AlLoRa.Packet import Packet
 
 try:
     from os import urandom
+    from json import loads, dumps
 except:
     from uos import urandom
+    from ujson import loads, dumps
 
-class m3LoRaCTP_Node:
+class Node:
 
-    def __init__(self, connector):
+    def __init__(self, connector, config_file):
+        self.config_file = config_file
         self.open_backup()
         self.connector = connector
         self.config_connector()
@@ -19,27 +22,36 @@ class m3LoRaCTP_Node:
         self.MAX_IDS_CACHED = 30            # Max number of IDs saved
 
     def open_backup(self):
-        with open("LoRa.txt", "r") as f:
-            lora_config = f.readlines()
+        with open(self.config_file, "r") as f:
+            lora_config = loads(f.read())
 
-        self.__name = lora_config[0].split("=")[1].strip()
-        self.__DEBUG = lora_config[5].split("=")[1].strip() == "True"
-        self.mesh_mode = lora_config[4].split("=")[1].strip() == "True"
-        self.__chunk_size = int(lora_config[3].split("=")[1].strip())
+        self.__name = lora_config['name']
+        self.__DEBUG = lora_config['debug']
+        self.mesh_mode = lora_config['mesh_mode']
+        self.__chunk_size = lora_config['chunk_size']
 
-        freq = int(lora_config[1].split("=")[1].strip())
-        sf = int(lora_config[2].split("=")[1].strip())
-        self.config_connector_dic = {"freq" : freq, "sf": sf}
-        
+        self.config_connector_dic = {"freq" : lora_config['freq'], "sf": lora_config['sf']}
+
         if self.__DEBUG:
-            print(self.__name , freq, sf, self.__chunk_size, self.mesh_mode, self.__DEBUG)
+            print(lora_config)
+
+    def backup_config(self):
+        conf = {"name": self.__name,
+                "freq": self.connector.frequency,
+                "sf": self.connector.sf,
+                "chunk_size": self.__chunk_size,
+                "mesh_mode": self.mesh_mode,
+                "debug": self.__DEBUG}
+        with open(self.config_file, "w") as f:
+            f.write(dumps(conf))
+
 
     def config_connector(self):
-        self.connector.config(frequency = self.config_connector_dic["freq"], 
-                                sf = self.config_connector_dic["sf"], 
-                                mesh_mode = self.mesh_mode, 
+        self.connector.config(frequency = self.config_connector_dic["freq"],
+                                sf = self.config_connector_dic["sf"],
+                                mesh_mode = self.mesh_mode,
                                 debug = self.__DEBUG)
-        
+
         self.__MAC = self.connector.get_mac()[8:]
         print(self.__name, ":", self.__MAC)
 
@@ -78,17 +90,15 @@ class m3LoRaCTP_Node:
             response_packet = self.connector.send_and_wait_response(packet)
             return response_packet
 
-    def send_response(self, response_packet: Packet, destination):
+    def send_response(self, response_packet: Packet):
         if response_packet:
             if self.mesh_mode:
                 response_packet.set_id(self.generate_id())
 
-                if self.__DEBUG:
-                    print("SENT FINAL RESPONSE", response_packet.get_content())
-
-            response_packet.set_destination(destination)
             if self.connector:
                 self.send_lora(response_packet)
+                if self.__DEBUG:
+                    print("SENT:", response_packet.get_content())
 
     def change_sf(self, sf):
         self.connector.backup_sf()

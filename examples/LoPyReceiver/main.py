@@ -1,16 +1,16 @@
 import pycom
 
-from m3LoRaCTP.Nodes.Receiver_Node import m3LoRaCTP_Receiver
-from m3LoRaCTP.Connectors.LoPy4_connector import LoPy4_connector
-from m3LoRaCTP.Digital_Endpoint import Digital_EndPoint
+from AlLoRa.Nodes.Receiver import Receiver
+from AlLoRa.Connectors.LoPy4_connector import LoPy4_connector
+from AlLoRa.Digital_Endpoint import Digital_EndPoint
 
 
 if __name__ == "__main__":
 
 	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
-	connector = LoPy4_connector(frequency = 868, sf = 7)
-	# Then, we set up out Sender Node, with name "A", with mesh mode activated
-	lora_node = m3LoRaCTP_Receiver(connector = connector, mesh_mode=True)
+	connector = LoPy4_connector()
+	# Then, we set up out Receiver Node:
+	lora_node = Receiver(connector, config_file = "LoRa.json")
 
 	# Here we setup a digital_endpoint to manage the connection to the Node
 	node_nickname = "C"

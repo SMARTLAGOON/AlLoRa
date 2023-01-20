@@ -1,4 +1,4 @@
-from m3LoRaCTP.Nodes.Base_Node import m3LoRaCTP_Node, Packet
+from AlLoRa.Nodes.Node import Node, Packet
 from time import time, sleep
 try:
     from time import strftime
@@ -11,10 +11,10 @@ except:
         return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
 
 
-class m3LoRaCTP_Receiver(m3LoRaCTP_Node):
+class Receiver(Node):
 
-    def __init__(self, connector = None, debug_hops = False, NEXT_ACTION_TIME_SLEEP = 0.1):
-        super().__init__(connector)
+    def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, NEXT_ACTION_TIME_SLEEP = 0.1):
+        super().__init__(connector, config_file)
 
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP

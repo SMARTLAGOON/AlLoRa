@@ -5,9 +5,10 @@ import ujson
 import binascii
 import usocket
 import time
-from network import WLAN, LoRa
+from network import LoRa, WLAN
+import pycom
 
-from m3LoRaCTP_Packet import Packet
+from AlLoRa_Packet import Packet
 
 class AdapterNode:
 
@@ -19,7 +20,7 @@ class AdapterNode:
 		# Creation of LoRa socket
 		self.__lora = LoRa(mode=LoRa.LORA, frequency=868000000, region=LoRa.EU868, sf = sf)
 		self.__lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
-		self.__lora_socket.setblocking(False)
+		#self.__lora_socket.setblocking(False)
 
 		self.__WAIT_MAX_TIMEOUT = max_timeout
 		self.__mesh_mode = mesh_mode
@@ -29,14 +30,15 @@ class AdapterNode:
 		#if self.__DEBUG:
 		print(self.__MAC)
 
+		"""
 		wlan = WLAN()
-		wlan.init(mode=WLAN.AP, ssid=ssid, auth=(WLAN.WPA2, password))
+		wlan.init(mode=WLAN.AP, ssid=ssid, auth=(WLAN.WPA2, password))"""
 		#print(wlan.ifconfig(id=1)) #id =1 signifies the AP interface
 		time.sleep(1)
 		# Set up server socket
 		self.serversocket = usocket.socket(usocket.AF_INET, usocket.SOCK_STREAM)
 		self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
-		self.serversocket.bind(("192.168.4.1", 80))
+		self.serversocket.bind(("0.0.0.0", 5550))
 		# Accept maximum of 1 connection at the same time.
 		self.serversocket.listen(1)		#We only need one connection thread since
 										#it is just an rpi_receiver connected,
@@ -60,62 +62,71 @@ class AdapterNode:
 			percentage = 0
 		print('SIGNAL STRENGTH', percentage, '%')
 
-	"""This function waits for a message to be received from a sender using raw LoRa"""
-	def send_and_wait_response(self, packet):
-		packet.set_source(self.__MAC)		# Adding mac address to packet
-		success = self.__send(packet)
-		response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-		if success:
-			timeout = self.__WAIT_MAX_TIMEOUT
-			received = False
-			received_data = b''
-			while(timeout > 0 or received is True):
-				if self.__DEBUG:
-					print("WAIT_RESPONSE() || quedan {} segundos timeout".format(timeout))
-				received_data = self.__recv()
-				if received_data:
-					if self.__DEBUG:
-						self.__signal_estimation()
-						print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
-					#if received_data.startswith(b'S:::'):
-					try:
-						response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-						response_packet.load(received_data)	#.decode('utf-8')
-						if response_packet.get_source() == packet.get_destination():
-							received = True
-							break
-						else:
-							response_packet = Packet(self.__mesh_mode)	# = mesh_mode
-					except Exception as e:
-						print("Corrupted packet received", e, received_data)
-				time.sleep(0.01)
-				timeout -= 1
-		return response_packet
-
-	'''This function send a LoRA-CTP Packet using raw LoRa'''
+	'''This function send a AlLoRa Packet using raw LoRa'''
 	def __send(self, packet):
 		if self.__DEBUG:
 			print("SEND_PACKET() || packet: {}".format(packet.get_content()))
 		if packet.get_length() <= AdapterNode.MAX_LENGTH_MESSAGE:
+			pycom.rgbled(0x007f00) # green
 			self.__lora_socket.send(packet.get_content())	#.encode()
+			pycom.rgbled(0)
 			return True
 		else:
 			print("Error: Packet too big")
 			return False
 
-	def __recv(self):
-		return self.__lora_socket.recv(256)
+	def __recv(self, size=256):
+		try:
+			self.__lora_socket.settimeout(6)
+			data = self.__lora_socket.recv(size)
+			self.__lora_socket.setblocking(False)
+			return data
+		except:
+			pass
+
+	"""This function waits for a message to be received from a sender using raw LoRa"""
+	def send_and_wait_response(self, packet):
+		packet.set_source(self.__MAC)		# Adding mac address to packet
+		success = self.__send(packet)
+		response_packet = Packet(self.__mesh_mode)
+		if success:
+			timeout = self.__WAIT_MAX_TIMEOUT
+			received = False
+			received_data = b''
+			received_data = self.__recv()
+			if received_data:
+				pycom.rgbled(0x00ecff)						# Aquamarine blue
+				if self.__DEBUG:
+					self.__signal_estimation()
+					print("WAIT_WAIT_RESPONSE() || sender_reply: {}".format(received_data))
+				try:
+					response_packet = Packet(self.__mesh_mode)
+					response_packet.load(received_data)
+					if response_packet.get_source() == packet.get_destination():
+						received = True
+					else:
+						response_packet = Packet(self.__mesh_mode)
+				except Exception as e:
+					print("Corrupted packet received", e, received_data)
+		pycom.rgbled(0)
+		return response_packet
 
 	'''
 	This function runs an HTTP API that serves as a LoRa forwarder for the rpi_receiver that connects to it
 	'''
 	def client_API(self):
 		# Accept the connection of the clients
+		if self.__DEBUG:
+			print("Socket accept...")
 		(clientsocket, address) = self.serversocket.accept()
 		gc.collect()
 		clientsocket.settimeout(0)
+		if self.__DEBUG:
+			print("Socket ok...")
 		try:
 			# Receive maximum of 4096 bytes from the client (nothing special with this number)
+			if self.__DEBUG:
+				print("Waiting for next message")
 			r = clientsocket.recv(1024)	#256	#512
 			# If recv() returns with 0 the other end closed the connection
 			if len(r) == 0:
@@ -142,6 +153,7 @@ class AdapterNode:
 						print("HTTP", json_buoy_response)
 					clientsocket.send(http + json_buoy_response)
 		except Exception as e:
+			pycom.rgbled(0)
 			print("Error:", e)
 		# Close the socket and terminate the thread
 		clientsocket.close()

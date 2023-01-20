@@ -1,6 +1,6 @@
-from m3LoRaCTP.Nodes.Gateway_Node import m3LoRaCTP_Gateway
-from m3LoRaCTP.Connectors.Wifi_connector import WiFi_connector
-from m3LoRaCTP.Digital_Endpoint import Digital_EndPoint
+from AlLoRa.Nodes.Gateway import Gateway
+from AlLoRa.Connectors.Wifi_connector import WiFi_connector
+from AlLoRa.Digital_Endpoint import Digital_EndPoint
 
 
 if __name__ == "__main__":
@@ -8,8 +8,8 @@ if __name__ == "__main__":
     connector = WiFi_connector(RECEIVER_API_HOST = "192.168.4.1", RECEIVER_API_PORT = 80)
 
     # Set up the Gateway Node with the connector, we will focus 10 seconds at a time per Node...
-    lora_gateway = m3LoRaCTP_Gateway(mesh_mode = True, debug_hops = False, 
-                                        connector = connector, TIME_PER_ENDPOINT = 10)
+    lora_gateway = Gateway(connector = connector, config_file = "LoRa.json",
+                            debug_hops = False, TIME_PER_ENDPOINT = 10)
 
     # Setting some Sender  Nodes to listen...
     node_nickname = "A"
@@ -20,7 +20,6 @@ if __name__ == "__main__":
     node_mac_address = "70b3d549922f4240"
     node_c = Digital_EndPoint(name=node_nickname, mac_address = node_mac_address, active = True)
 
-    
     digital_endpoints = [node_a, node_c]                    # Put them into a list
     lora_gateway.set_digital_endpoints(digital_endpoints)   # Give them to the gateway
 

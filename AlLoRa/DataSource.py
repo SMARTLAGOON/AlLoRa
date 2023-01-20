@@ -2,7 +2,7 @@ import _thread
 import utime
 import os
 
-from m3LoRaCTP.m3LoRaCTP_File import CTP_File
+from AlLoRa.File import CTP_File
 
 # Do not instanciate this class as pretends to be an abstract one
 class DataSource:

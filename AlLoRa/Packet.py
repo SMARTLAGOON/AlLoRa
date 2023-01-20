@@ -27,122 +27,122 @@ class Packet:
             return False
 
     def __init__(self, mesh_mode):
-        self.__mesh_mode = mesh_mode
+        self.mesh_mode = mesh_mode
 
-        if not self.__mesh_mode:
+        if not self.mesh_mode:
             self.HEADER_SIZE = self.HEADER_SIZE_P2P
             self.HEADER_FORMAT = self.HEADER_FORMAT_P2P
         else:
             self.HEADER_SIZE = self.HEADER_SIZE_MESH
             self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
 
-        self.__source = ''                  # 8 Bytes mac address of the source
-        self.__destination = ''             # 8 Bytes mac address of the destination
+        self.source = ''                  # 8 Bytes mac address of the source
+        self.destination = ''             # 8 Bytes mac address of the destination
 
-        self.__checksum = None              # Checksum
-        self.__payload = b''                # Content of the message
+        self.checksum = None              # Checksum
+        self.payload = b''                # Content of the message
 
-        self.__check = None                 # True if checksum is correct with content
+        self.check = None                 # True if checksum is correct with content
 
         ## Flags:
-        self.__command = None               # Type of command / or Data                         bit: 0, 1
+        self.command = None               # Type of command / or Data                         bit: 0, 1
         # Only for mesh mode
-        self.__mesh = False                 # Mesh On or Off for this Node                      bit: 3
-        self.__sleep = False                # True if should sleep before forwarding message    bit: 4
-        self.__hop = False                  # If packet was forwarder -> 1, else -> 0           bit: 5
-        self.__debug_hops = False           # Overrides payload to get path details (hops)      bit: 6
+        self.mesh = False                 # Mesh On or Off for this Node                      bit: 3
+        self.sleep = False                # True if should sleep before forwarding message    bit: 4
+        self.hop = False                  # If packet was forwarder -> 1, else -> 0           bit: 5
+        self.debug_hops = False           # Overrides payload to get path details (hops)      bit: 6
         # Change settings
-        self.__change_sf = False            # If True, check payload to change SF               bit: 7
+        self.change_sf = False            # If True, check payload to change SF               bit: 7
 
         # For mesh
-        self.__id = None                    # Random number from 0 to 65.535
+        self.id = None                    # Random number from 0 to 65.535
 
     def set_source(self, source: str):
-        self.__source = source
+        self.source = source
 
     def get_source(self):
-        return self.__source
+        return self.source
 
     def set_destination(self, destination: str):
-        self.__destination = destination
+        self.destination = destination
 
     def get_destination(self):
-        return self.__destination
+        return self.destination
 
     def get_command(self):
-        return self.__command
+        return self.command
 
     def set_ok(self):
-        self.__command = "OK"
+        self.command = "OK"
 
     def ask_metadata(self):
-         self.__command = "METADATA"
+         self.command = "METADATA"
 
     def set_metadata(self, length, name):
-        self.__command = "METADATA"
+        self.command = "METADATA"
         metadata = {"LENGTH" : length, "FILENAME": name}
-        self.__payload = dumps(metadata).encode()
+        self.payload = dumps(metadata).encode()
 
     def get_payload(self):
-        return self.__payload
+        return self.payload
 
     def get_metadata(self):
-        if self.__command == "METADATA":
+        if self.command == "METADATA":
             try:
-                return loads(self.__payload)
+                return loads(self.payload)
             except:
                 return None
 
     def ask_data(self, next_chunk):
-        self.__command = "CHUNK"
-        self.__payload = str(next_chunk).encode()
+        self.command = "CHUNK"
+        self.payload = str(next_chunk).encode()
 
     def set_data(self, chunk):
-        self.__command = "DATA"
-        self.__payload = chunk
+        self.command = "DATA"
+        self.payload = chunk
 
     def get_mesh(self):
-        return self.__mesh
+        return self.mesh
 
     def enable_mesh(self):
-        self.__mesh = True
+        self.mesh = True
 
     def disable_mesh(self):
-        self.__mesh = False
+        self.mesh = False
 
     def enable_hop(self):
-        self.__hop = True
+        self.hop = True
 
     def get_hop(self):
-        return self.__hop
+        return self.hop
 
     def get_debug_hops(self):
-        return self.__debug_hops
+        return self.debug_hops
 
     def enable_debug_hops(self):
-        self.__debug_hops = True
+        self.debug_hops = True
 
     def disable_debug_hops(self):
-        self.__debug_hops = False
+        self.debug_hops = False
 
     def enable_sleep(self):
-        self.__sleep = True
+        self.sleep = True
 
     def get_sleep(self):
-        return self.__sleep
+        return self.sleep
 
     def get_change_sf(self):
-        return self.__change_sf
+        return self.change_sf
 
     def set_change_sf(self, sf):
         self.set_ok()
-        self.__change_sf = True
-        self.__payload = dumps(sf).encode()
+        self.change_sf = True
+        self.payload = dumps(sf).encode()
 
     def get_message_path(self):
-        if self.__debug_hops:
+        if self.debug_hops:
             try:
-                return loads(self.__payload)
+                return loads(self.payload)
             except:
                 return None
 
@@ -154,22 +154,22 @@ class Packet:
         else:
             path = [hop]
         self.enable_debug_hops()
-        self.__payload = dumps(path).encode()
+        self.payload = dumps(path).encode()
 
     def add_previous_hops(self, path):
         if isinstance(path, list):
-            self.__payload = dumps(path).encode()
+            self.payload = dumps(path).encode()
 
     def set_id(self, id):
         if id <= 65535:
-            self.__id = id
+            self.id = id
 
     def get_id(self):
-        return self.__id
+        return self.id
 
     def get_length(self):
-        if len(self.__payload) > 0:
-            return self.HEADER_SIZE + len(self.__payload)
+        if len(self.payload) > 0:
+            return self.HEADER_SIZE + len(self.payload)
         else:
             return self.HEADER_SIZE
 
@@ -179,104 +179,104 @@ class Packet:
         return (ha[-3:])
 
     def get_content(self):
-        if self.__command in self.COMMAND:
-            command_bits = self.COMMAND[self.__command]
+        if self.command in self.COMMAND:
+            command_bits = self.COMMAND[self.command]
 
             flags = 0
             if command_bits[0] == "1":
                 flags = flags | (1<<0)
             if command_bits[1] == "1":
                 flags = flags | (1<<1)
-            if self.__mesh:
+            if self.mesh:
                 flags = flags | (1<<3)
-            if self.__sleep:
+            if self.sleep:
                 flags = flags | (1<<4)
-            if self.__hop:
+            if self.hop:
                 flags = flags | (1<<5)
-            if self.__debug_hops:
+            if self.debug_hops:
                 flags = flags | (1<<6)
-            if self.__change_sf:
+            if self.change_sf:
                 flags = flags | (1<<7)
 
-            p = self.__payload
-            self.__checksum = self.__get_checksum(p)
+            p = self.payload
+            self.checksum = self.__get_checksum(p)
 
-            if self.__mesh_mode:
+            if self.mesh_mode:
                 try:
-                    id_bytes = self.__id.to_bytes(2, 'little')
+                    id_bytes = self.id.to_bytes(2, 'little')
                 except:
-                    print(self.__source.encode(), self.__destination.encode(), flags, self.__id, self.__checksum)
+                    print(self.source.encode(), self.destination.encode(), flags, self.id, self.checksum)
                 #print(self.__source, self.__destination, flags, id_bytes, self.__checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.__source.encode(), self.__destination.encode(), flags, id_bytes, self.__checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes, self.checksum)
             else:
                 #print(self.__source, self.__destination, flags,  self.__checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.__source.encode(), self.__destination.encode(), flags,  self.__checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags,  self.checksum)
 
             return h+p
 
     def parse_flags(self, flags: int):
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
         c1 = "1" if (flags >> 1) & 1 == 1 else "0"
-        self.__command = self.COMMAND_BITS[c0+c1]
+        self.command = self.COMMAND_BITS[c0+c1]
 
-        self.__mesh  = (flags >> 3) & 1 == 1
-        self.__sleep = (flags >> 4) & 1 == 1
-        self.__hop = (flags >> 5) & 1 == 1
-        self.__debug_hops = (flags >> 6) & 1 == 1
-        self.__change_sf = (flags >> 7) & 1 == 1
+        self.mesh  = (flags >> 3) & 1 == 1
+        self.sleep = (flags >> 4) & 1 == 1
+        self.hop = (flags >> 5) & 1 == 1
+        self.debug_hops = (flags >> 6) & 1 == 1
+        self.change_sf = (flags >> 7) & 1 == 1
 
     def load(self, packet):
         header  = packet[:self.HEADER_SIZE]
         content = packet[self.HEADER_SIZE:]
 
-        if self.__mesh_mode:
-            self.__source, self.__destination, flags,  id, self.__checksum = struct.unpack(self.HEADER_FORMAT, header)
-            self.__id = int.from_bytes(id, "little")
+        if self.mesh_mode:
+            self.source, self.destination, flags,  id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+            self.id = int.from_bytes(id, "little")
         else:
-             self.__source, self.__destination, flags, self.__checksum = struct.unpack(self.HEADER_FORMAT, header)
+             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
 
-        self.__source = self.__source.decode()
-        self.__destination = self.__destination.decode()
+        self.source = self.source.decode()
+        self.destination = self.destination.decode()
 
         self.parse_flags(flags)
 
-        self.__payload = content
+        self.payload = content
 
-        self.__check = self.__checksum == self.__get_checksum(self.__payload)
-        return self.__check
+        self.check = self.checksum == self.__get_checksum(self.payload)
+        return self.check
 
     def get_dict(self):
-        p = self.__payload
-        self.__checksum = self.__get_checksum(p)
-        d = {"source" : self.__source,
-            "destination" : self.__destination,
-            "command" : self.__command,
-            "checksum" : self.__checksum.decode(),
-            "payload" : self.__payload.decode(),
-            "mesh" : self.__mesh,
-            "hop" : self.__hop,
-            "sleep" : self.__sleep,
-            "debug_hops" : self.__debug_hops,
-            "change_sf" : self.__change_sf,
-            "id" :self.__id,
+        p = self.payload
+        self.checksum = self.__get_checksum(p)
+        d = {"source" : self.source,
+            "destination" : self.destination,
+            "command" : self.command,
+            "checksum" : self.checksum.decode(),
+            "payload" : self.payload.decode(),
+            "mesh" : self.mesh,
+            "hop" : self.hop,
+            "sleep" : self.sleep,
+            "debug_hops" : self.debug_hops,
+            "change_sf" : self.change_sf,
+            "id" :self.id,
             }
         return d
 
     def load_dict(self, d):
-        self.__source = d["source"]
-        self.__destination = d["destination"]
-        self.__command = d["command"]
-        self.__checksum = d["checksum"].encode()
-        self.__payload = d["payload"].encode()
-        self.__mesh = d["mesh"]
-        self.__hop = d["hop"]
-        self.__sleep = d["sleep"]
-        self.__debug_hops = d["debug_hops"]
-        self.__change_sf = d["change_sf"]
-        self.__id = d["id"]
+        self.source = d["source"]
+        self.destination = d["destination"]
+        self.command = d["command"]
+        self.checksum = d["checksum"].encode()
+        self.payload = d["payload"].encode()
+        self.mesh = d["mesh"]
+        self.hop = d["hop"]
+        self.sleep = d["sleep"]
+        self.debug_hops = d["debug_hops"]
+        self.change_sf = d["change_sf"]
+        self.id = d["id"]
 
-        self.__check = self.__checksum == self.__get_checksum(self.__payload)
-        return self.__check
+        self.check = self.checksum == self.__get_checksum(self.payload)
+        return self.check
 
 if __name__ == "__main__":
     mac_address_A = "70b3d5499a76ba3f"[8:]

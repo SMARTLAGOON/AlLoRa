@@ -1,4 +1,4 @@
-from m3LoRaCTP.m3LoRaCTP_File import CTP_File
+from AlLoRa.File import CTP_File
 
 class Digital_EndPoint:
 

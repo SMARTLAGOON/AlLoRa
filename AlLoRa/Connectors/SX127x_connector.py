@@ -2,14 +2,14 @@ import time
 import ubinascii
 import network
 
-from m3LoRaCTP.m3LoRaCTP_Packet import Packet
-from m3LoRaCTP.Connectors.Connector import Connector
+from AlLoRa.Packet import Packet
+from AlLoRa.Connectors.Connector import Connector
 
 # Requires PyLora_SX127x_extensions to be installed
 # https://github.com/GRCDEV/PyLora_SX127x_extensions
 from PyLora_SX127x_extensions.pyLora import pyLora
 
-class Dragino_connector(Connector):
+class SX127x_connector(Connector):
 
     def __init__(self): #max_timeout = 10
         super().__init__()
@@ -26,8 +26,15 @@ class Dragino_connector(Connector):
                             sf=self.sf, verbose= self.__DEBUG)
         self.lora.setblocking(False) 
 
+    def set_sf(self, sf):
+        if self.sf != sf:
+            self.lora.sf(sf)
+            self.sf = sf
+            if self.__DEBUG:
+                print("SF Changed to: ", self.sf)
+
     def get_rssi(self):
-        return self.lora.get_rssi() #self.lora.get_pkt_rssi_value()
+        return self.lora.get_rssi()
 
     def send(self, packet):
         if self.__DEBUG:

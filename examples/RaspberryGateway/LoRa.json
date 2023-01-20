@@ -1,0 +1,8 @@
+{
+    "name": "G",
+    "debug": true,
+    "mesh_mode": true,
+    "chunk_size": 235,
+    "freq": 868,
+    "sf": 7
+}
