@@ -1,25 +1,25 @@
-# AlLoRa:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
+# ****AlLoRa:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
 
 The code in this repository contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
 
 ~~Details of the protocol can be found in this paper: (soon)~~
 
 ## Readme on Notion!
-> For a better experience, you can check our awesome **Notion** description of the code [here...](https://barratia.notion.site/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)
+> For a better experience, you can check our awesome **Notion** description of the code [here...](https://www.notion.so/barratia/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)
 
 ## Content
 - [Folders](#folders)
   - [AlLoRa](#msup3suploractp)
     - [Nodes](#nodes)
-      - [Base_Node.py](#base_nodepy)
-      - [Sender_Node.py](#sender_nodepy)
-      - [Receiver_Node.py](#receiver_nodepy)
-      - [Gateway_Node.py](#gateway_nodepy)
+      - [Node.py](#base_nodepy)
+      - [Sender.py](#sender_nodepy)
+      - [Receiver.py](#receiver_nodepy)
+      - [Gateway.py](#gateway_nodepy)
     - [Connectors](#connectors)
-    - [→ Datasource.py](#-datasourcepy)
-    - [→ Digital_Endpoint.py](#-digital_endpointpy)
-    - [→ AlLoRa_File.py](#-AlLoRa_filepy)
-    - [→ AlLoRa_Packet.py](#-AlLoRa_packetpy)
+    - [→ Datasource.py](#datasourcepy)
+    - [→ Digital_Endpoint.py](#digital_endpointpy)
+    - [→ File.py](#-AlLoRa_filepy)
+    - [→ Packet.py](#-AlLoRa_packetpy)
   - [Adapters](#adapters)
     - [AlLoRa-WiFi_adapter](#AlLoRa-wifi_adapter)
   - [Examples](#examples)
@@ -328,7 +328,7 @@ The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf
 
 ## → Packet Structure
 
-The  [AlLoRa_Packet](https://github.com/SMARTLAGOON/BuoySoftware/blob/ModuLoRa/AlLoRa/AlLoRa_Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
+The  [Packet](https://github.com/SMARTLAGOON/BuoySoftware/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
 
 For compatibility’s sake, It is designed to have a maximum of 255 Bytes, that is the maximum size of a LoRa message on a LoPy4.
 
