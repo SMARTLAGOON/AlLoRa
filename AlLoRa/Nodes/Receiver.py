@@ -19,27 +19,27 @@ class Receiver(Node):
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
 
-    def ask_ok(self, mac_address, mesh):
+    def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode)
-        packet.set_destination(mac_address)
-        packet.set_ok()
-        if mesh:
+        packet.set_destination(destination)
+        if mesh_active:
             packet.enable_mesh()
+            if not sleep_mesh:
+                packet.disable_sleep()
+        return packet
+
+    def ask_ok(self, packet: Packet):
+        packet.set_ok()
         response_packet = self.send_request(packet)
         if self.save_hops(response_packet):
             return  (1, "hop_catch.json"), response_packet.get_hop()
         if response_packet.get_command() == Packet.OK:
             hop = response_packet.get_hop()
             return True, hop
-        else:
-            return None, None
+        return None, None
 
-    def ask_metadata(self, mac_address, mesh):
-        packet = Packet(self.mesh_mode)
-        packet.set_destination(mac_address)
+    def ask_metadata(self, packet: Packet):
         packet.ask_metadata()
-        if mesh:
-            packet.enable_mesh()
         response_packet = self.send_request(packet)
         if self.save_hops(response_packet):
             return  (1, "hop_catch.json"), response_packet.get_hop()
@@ -52,15 +52,10 @@ class Receiver(Node):
                 return (length, filename), hop
             except:
                 return None, None
-        else:
-            return None, None
+        return None, None
 
-    def ask_data(self, mac_address, mesh, next_chunk):
-        packet = Packet(self.mesh_mode)
-        packet.set_destination(mac_address)
+    def ask_data(self, packet: Packet, next_chunk):
         packet.ask_data(next_chunk)
-        if mesh:
-            packet.enable_mesh()
         response_packet = self.send_request(packet)
         if self.save_hops(response_packet):
             return b"0", response_packet.get_hop()
@@ -76,28 +71,30 @@ class Receiver(Node):
 
             except:
                 return None, None
-        else:
-            return None, None
+        return None, None
 
     def listen_to_endpoint(self, digital_endpoint, listening_time, return_file=False):
         mac = digital_endpoint.get_mac_address()
+        sleep_mesh = digital_endpoint.get_sleep()
         t0 = time()
         in_time = True
         while (in_time):
+            packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
+
             if digital_endpoint.state == "REQUEST_DATA_STATE":
-                metadata, hop = self.ask_metadata(mac, digital_endpoint.get_mesh())
+                metadata, hop = self.ask_metadata(packet_request)
                 digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
 
             elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
                 next_chunk = digital_endpoint.get_next_chunk()
                 if next_chunk is not None:
-                    data, hop = self.ask_data(mac, digital_endpoint.get_mesh(), next_chunk)
+                    data, hop = self.ask_data(packet_request, next_chunk)
                     file = digital_endpoint.set_data(data, hop, self.mesh_mode)
                     if file and return_file:
                         return file
 
             elif digital_endpoint.state == "OK":
-                ok, hop = self.ask_ok(mac, digital_endpoint.get_mesh())
+                ok, hop = self.ask_ok(packet_request)
                 digital_endpoint.connected(ok, hop, self.mesh_mode)
 
             in_time = True if time() - t0 < listening_time else False
@@ -124,6 +121,8 @@ class Receiver(Node):
                 packet.set_change_sf(new_sf)
                 if digital_endpoint.get_mesh():
                     packet.enable_mesh()
+                    if not digital_endpoint.get_sleep():
+                        packet.disable_sleep()
                 response_packet = self.send_request(packet)
                 if response_packet.get_command() == Packet.OK:
                     sf_response = int(response_packet.get_payload().decode().split('"')[1])

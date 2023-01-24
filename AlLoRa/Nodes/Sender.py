@@ -75,11 +75,13 @@ class Sender(Node):
                         response_packet.set_destination(packet.get_source())
                         response_packet.set_ok()
 
-                        if packet.get_change_sf:
+                        if packet.get_change_sf():
                             new_sf = packet.get_payload().decode()
                             response_packet.set_change_sf(new_sf)
                         if self.mesh_mode and packet.get_mesh() and packet.get_hop():
                             response_packet.enable_mesh()
+                            if not packet.get_sleep():
+                                response_packet.disable_sleep()
                         if packet.get_debug_hops():
                             response_packet.add_previous_hops(packet.get_message_path())
                             response_packet.add_hop(self.__name, self.connector.get_rssi(), 0)
@@ -88,7 +90,6 @@ class Sender(Node):
                         if new_sf:
                             self.change_sf(int(new_sf))
                             self.sf_trial = 3
-
                         return False
                 else:
                     self.__forward(packet)
@@ -129,11 +130,14 @@ class Sender(Node):
         response_packet.set_source(self.__MAC)
         response_packet.set_destination(packet.get_source())
 
-        if self.mesh_mode and packet.get_mesh() and packet.get_hop():
-            response_packet.enable_mesh()
+        if self.mesh_mode:
+            if packet.get_mesh() and packet.get_hop():
+                response_packet.enable_mesh()
+                if not packet.get_sleep():
+                    response_packet.disable_sleep()
 
         new_sf = None
-        if self.change_sf:
+        if self.sf_trial:
             self.sf_trial = False
             self.backup_config()
 
@@ -153,8 +157,9 @@ class Sender(Node):
 
             if not self.__file.first_sent:
                 self.__file.report_SST(True)
+            return response_packet, new_sf
 
-        elif command == Packet.METADATA:    # handle for new file
+        if command == Packet.METADATA:    # handle for new file
             response_packet.set_metadata(self.__file.get_length(), self.__file.get_name())
 
             if self.__file.metadata_sent:
@@ -163,16 +168,17 @@ class Sender(Node):
                     print("asked again for Metadata...")
             else:
                 self.__file.metadata_sent = True
+            return response_packet, new_sf
 
-        elif command == Packet.OK:
+        if command == Packet.OK:
             response_packet.set_ok()
 
             if packet.get_change_sf():
                 new_sf = packet.get_payload().decode()
                 response_packet.set_change_sf(new_sf)
-            else:
-                if self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
-                    self.__file.sent_ok()
+            elif self.__file.first_sent and not self.__file.last_sent:	# If some chunks are already sent...
+                self.__file.sent_ok()
+            return response_packet, new_sf
 
         return response_packet, new_sf
 
@@ -181,10 +187,11 @@ class Sender(Node):
             if packet.get_mesh():
                 if self.__DEBUG:
                     print("FORWARDED", packet.get_content())
+                
+                random_sleep = 0
                 if packet.get_sleep():
-                    random_sleep = 0
-                else:
                     random_sleep = (urandom(1)[0] % 5 + 1) * 0.1
+                    
                 if packet.get_debug_hops():
                     packet.add_hop(self.__name, self.connector.get_rssi(), random_sleep)
                 packet.enable_hop()

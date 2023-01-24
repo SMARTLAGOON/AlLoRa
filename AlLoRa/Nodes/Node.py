@@ -70,12 +70,11 @@ class Node:
         return id
 
     def check_id_list(self, id):
-        if id not in self.LAST_SEEN_IDS:
-            self.LAST_SEEN_IDS.append(id)
-            self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
-            return True
-        else:
+        if id in self.LAST_SEEN_IDS:
             return False
+        self.LAST_SEEN_IDS.append(id)
+        self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
+        return True
 
     def send_lora(self, packet):
         return self.connector.send(packet)

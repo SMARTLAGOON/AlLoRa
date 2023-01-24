@@ -7,7 +7,7 @@ class Digital_EndPoint:
     OK = "OK"
 
     def __init__(self, name: str, mac_address: str, active: bool = True, 
-                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10):
+                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10, sleep_mesh: bool = True):
         self.name = name
         self.mac_address = mac_address[8:]
         self.active = active
@@ -16,6 +16,7 @@ class Digital_EndPoint:
         self.state = Digital_EndPoint.OK
 
         self.mesh = False
+        self.sleep_mesh = sleep_mesh
         self.retransmission_counter = 0
         self.MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
 
@@ -39,6 +40,9 @@ class Digital_EndPoint:
         self.mesh = False
         self.retransmission_counter = 0
         print("BUOY {}: DISABLING MESH".format(self.name))
+
+    def get_sleep(self):
+        return self.sleep_mesh
 
     def count_retransmission(self):
         if not self.get_mesh():
