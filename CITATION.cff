@@ -1,0 +1,29 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: AlLoRa
+message: 'Modular, mesh, multi-device LoRa Content Transfer Protocol'
+type: software
+authors:
+  - given-names: Benjamin
+    family-names: Arratia
+    email: baarruri@disca.upv.es
+    orcid: 'https://orcid.org/0000-0001-7869-053X'
+    affiliation: UPV
+repository-code: 'https://github.com/SMARTLAGOON/AlLoRa'
+abstract: >-
+  A modular, low-power, long-range communication protocol
+  based on LoRa that allows monitoring of remote natural
+  areas 
+keywords:
+  - IoT
+  - LoRa
+  - Mesh
+  - Environmental Intelligence
+  - Green Connectivity
+  - LPWAN
+  - Micropython
+license: GPL-3.0
+version: 1.0.0
+date-released: '2023-02-10'
