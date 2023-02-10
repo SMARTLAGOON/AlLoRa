@@ -25,5 +25,6 @@ keywords:
   - LPWAN
   - Micropython
 license: GPL-3.0
+commit: 699e005f9b86992a1d6588ab6d6688ab14bff53d
 version: 1.0.0
 date-released: '2023-02-10'
