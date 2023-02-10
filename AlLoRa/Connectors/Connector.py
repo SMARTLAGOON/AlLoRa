@@ -13,7 +13,6 @@ class Connector:
 
         self.__WAIT_MAX_TIMEOUT = max_timeout
         self.__DEBUG = debug
-        self.mesh_mode = mesh_mode
 
         self.sf_backup = self.sf
 
