@@ -17,27 +17,27 @@ class SX127x_connector(Connector):
         wlan_sta = network.WLAN(network.STA_IF)
         wlan_sta.active(True)
         wlan_mac = wlan_sta.config('mac')
-        self.__MAC = "70b3" + ubinascii.hexlify(wlan_mac).decode()
+        self.MAC = "70b3" + ubinascii.hexlify(wlan_mac).decode()
         wlan_sta.active(False)
 
-    def config(self, frequency = 868, sf=7, mesh_mode=False, debug=False, max_timeout = 6):  #max_timeout = 10
-        super().config(frequency, sf, mesh_mode, debug, max_timeout)
+    def config(self, name = "S", frequency = 868, sf=7, mesh_mode=False, debug=False, max_timeout = 6):  #max_timeout = 10
+        super().config(name, frequency, sf, mesh_mode, debug, max_timeout)
         self.lora = pyLora(freq = self.frequency,
-                            sf=self.sf, verbose= self.__DEBUG)
+                            sf=self.sf, verbose= self.debug)
         self.lora.setblocking(False) 
 
     def set_sf(self, sf):
         if self.sf != sf:
             self.lora.sf(sf)
             self.sf = sf
-            if self.__DEBUG:
+            if self.debug:
                 print("SF Changed to: ", self.sf)
 
     def get_rssi(self):
         return self.lora.get_rssi()
 
     def send(self, packet):
-        if self.__DEBUG:
+        if self.debug:
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
             try:
@@ -49,15 +49,15 @@ class SX127x_connector(Connector):
                 self.lora.setblocking(False)
                 return False
         else:
-            if self.__DEBUG:
+            if self.debug:
                 print("Error: Packet too big")
             return False
 
-    def recv(self, size=256):
+    def recv(self, focus_time=12):
         try:
-            self.lora.settimeout(self.__WAIT_MAX_TIMEOUT)
-            data = self.lora.recv(size)
+            self.lora.settimeout(focus_time)
+            data = self.lora.recv(Connector.MAX_LENGTH_MESSAGE)
             return data
         except:
-            if self.__DEBUG:
+            if self.debug:
                 print("nothing received or error")

@@ -10,48 +10,48 @@ class DataSource:
 
     def __init__(self, file_chunk_size: int, file_queue_size=25, sleep_between_readings=60):
 
-        self.__STOP_THREAD = True
-        self.__IS_STARTED = False
+        self.STOP_THREAD = True
+        self.IS_STARTED = False
 
-        self.__file_queue = []
-        self.__file_queue_size = file_queue_size
-        self.__file_chunk_size = file_chunk_size
+        self.file_queue = []
+        self.file_queue_size = file_queue_size
+        self.file_chunk_size = file_chunk_size
 
-        self.__get_next_file_called = False
-        self.__SECONDS_BETWEEN_READINGS = sleep_between_readings
+        self.et_next_file_called = False
+        self.SECONDS_BETWEEN_READINGS = sleep_between_readings
 
-        self.__backup_file = None
+        self.backup_file = None
 
 
     def _get_file_chunk_size(self):
-        return self.__file_chunk_size
+        return self.file_chunk_size
 
 
-    def __add_to_queue(self, file: CTP_File):
-        if len(self.__file_queue) >= self.__file_queue_size:
-            self.__file_queue.pop(0)
+    def add_to_queue(self, file: CTP_File):
+        if len(self.file_queue) >= self.file_queue_size:
+            self.file_queue.pop(0)
         repeated = False
-        for f in self.__file_queue:
+        for f in self.file_queue:
             if f.get_name() == file.get_name():
                 repeated = True
                 break
         if repeated is False:
-            self.__file_queue.append(file)
+            self.file_queue.append(file)
 
 
-    def __read(self):
-        while self.__STOP_THREAD is False:
+    def read(self):
+        while self.STOP_THREAD is False:
             try:
                 file = self._read_datasource()
                 if file is not None:
-                    self.__add_to_queue(file=file)
+                    self.add_to_queue(file=file)
                 else:
                     print("skipped file, it is None")
-                utime.sleep(self.__SECONDS_BETWEEN_READINGS)
+                utime.sleep(self.SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
-        self.__IS_STARTED = False
-        print(self.__STOP_THREAD)
+        self.IS_STARTED = False
+        print(self.STOP_THREAD)
 
 
     def _read_datasource(self) -> CTP_File:
@@ -63,25 +63,25 @@ class DataSource:
 
     def start(self):
         self._prepare()
-        self.__STOP_THREAD = False
-        self.__IS_STARTED = True
-        _thread.start_new_thread(self.__read, ())
+        self.STOP_THREAD = False
+        self.IS_STARTED = True
+        _thread.start_new_thread(self.read, ())
 
 
     def stop(self):
-        self.__STOP_THREAD = True
-        print(self.__STOP_THREAD)
+        self.STOP_THREAD = True
+        print(self.STOP_THREAD)
 
     def is_started(self):
-        return self.__IS_STARTED
+        return self.IS_STARTED
 
     '''
     Everytime this function is called, it assumes the file is already consumed, so a deleting is performed.
     '''
     def get_next_file(self):
         try:
-            backup_file = self.__file_queue.pop(0)
-            self.__backup(file=backup_file)
+            backup_file = self.file_queue.pop(0)
+            self.backup(file=backup_file)
             return backup_file
         except IndexError as e:
             return None
@@ -96,13 +96,13 @@ class DataSource:
             content = None
             with open("./content-backup", "r") as f:
                 content = f.read()
-            rescued_file = CTP_File(name='{}'.format(filename), content=bytearray(content), chunk_size=self.__file_chunk_size)
+            rescued_file = CTP_File(name='{}'.format(filename), content=bytearray(content), chunk_size=self.file_chunk_size)
             return rescued_file
         except OSError as e:
             print("The backup could not be restored", e)
 
 
-    def __backup(self, file: CTP_File):
+    def backup(self, file: CTP_File):
         try:
             os.remove("./filename-backup.txt")
             os.remove("./content-backup")

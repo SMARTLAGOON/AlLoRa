@@ -1,2 +1,0 @@
-ssid=Smartlagoon
-auth=Smartlagoon2022

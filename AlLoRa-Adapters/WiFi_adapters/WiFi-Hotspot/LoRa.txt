@@ -1,5 +1,0 @@
-name=hotspot
-freq=868000000
-sf=7
-mesh_mode=False
-debug=True

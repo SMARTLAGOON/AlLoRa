@@ -176,7 +176,7 @@ class Packet:
         else:
             return self.HEADER_SIZE
 
-    def __get_checksum(self, data):
+    def et_checksum(self, data):
         h = hashlib.sha256(data)
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
@@ -202,17 +202,17 @@ class Packet:
                 flags = flags | (1<<7)
 
             p = self.payload
-            self.checksum = self.__get_checksum(p)
+            self.checksum = self.et_checksum(p)
 
             if self.mesh_mode:
                 try:
                     id_bytes = self.id.to_bytes(2, 'little')
                 except:
                     print(self.source.encode(), self.destination.encode(), flags, self.id, self.checksum)
-                #print(self.__source, self.__destination, flags, id_bytes, self.__checksum, p)
+                #print(self.source, self.destination, flags, id_bytes, self.checksum, p)
                 h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes, self.checksum)
             else:
-                #print(self.__source, self.__destination, flags,  self.__checksum, p)
+                #print(self.source, self.destination, flags,  self.checksum, p)
                 h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags,  self.checksum)
 
             return h+p
@@ -245,12 +245,12 @@ class Packet:
 
         self.payload = content
 
-        self.check = self.checksum == self.__get_checksum(self.payload)
+        self.check = self.checksum == self.et_checksum(self.payload)
         return self.check
 
     def get_dict(self):
         p = self.payload
-        self.checksum = self.__get_checksum(p)
+        self.checksum = self.et_checksum(p)
         d = {"source" : self.source,
             "destination" : self.destination,
             "command" : self.command,
@@ -278,7 +278,7 @@ class Packet:
         self.change_sf = d["change_sf"]
         self.id = d["id"]
 
-        self.check = self.checksum == self.__get_checksum(self.payload)
+        self.check = self.checksum == self.et_checksum(self.payload)
         return self.check
 
 if __name__ == "__main__":

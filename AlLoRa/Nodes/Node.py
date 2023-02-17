@@ -1,14 +1,12 @@
-from time import sleep, time
-
-from AlLoRa.Packet import Packet
-
 try:
-    from os import urandom
-    from json import loads, dumps
-except:
     from uos import urandom
     from ujson import loads, dumps
+except:
+    from os import urandom
+    from json import loads, dumps
 
+from AlLoRa.Packet import Packet
+    
 class Node:
 
     def __init__(self, connector, config_file):
@@ -21,45 +19,48 @@ class Node:
         self.LAST_SEEN_IDS = list()         # IDs from others
         self.MAX_IDS_CACHED = 30            # Max number of IDs saved
 
+        self.sf_trial = None
+
+
     def open_backup(self):
         with open(self.config_file, "r") as f:
             lora_config = loads(f.read())
 
-        self.__name = lora_config['name']
-        self.__DEBUG = lora_config['debug']
+        self.name = lora_config['name']
+        self.debug = lora_config['debug']
         self.mesh_mode = lora_config['mesh_mode']
-        self.__chunk_size = lora_config['chunk_size']
+        self.chunk_size = lora_config['chunk_size']
 
-        self.config_connector_dic = {"freq" : lora_config['freq'], "sf": lora_config['sf']}
+        self.config_connector_dic = lora_config['connector']    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
 
-        if self.__DEBUG:
+        if self.debug:
             print(lora_config)
 
     def backup_config(self):
-        conf = {"name": self.__name,
-                "freq": self.connector.frequency,
-                "sf": self.connector.sf,
-                "chunk_size": self.__chunk_size,
+        conf = {"name": self.name,
+                "chunk_size": self.chunk_size,
                 "mesh_mode": self.mesh_mode,
-                "debug": self.__DEBUG}
+                "debug": self.debug,
+                "connector" : self.connector.backup_config()}
         with open(self.config_file, "w") as f:
             f.write(dumps(conf))
-
 
     def config_connector(self):
         self.connector.config(frequency = self.config_connector_dic["freq"],
                                 sf = self.config_connector_dic["sf"],
                                 mesh_mode = self.mesh_mode,
-                                debug = self.__DEBUG)
+                                debug = self.debug,
+                                min_timeout =  self.config_connector_dic["min_timeout"],
+                                max_timeout = self.config_connector_dic["max_timeout"])
 
-        self.__MAC = self.connector.get_mac()[8:]
-        print(self.__name, ":", self.__MAC)
+        self.MAC = self.connector.get_mac()[8:]
+        print(self.name, ":", self.MAC)
 
     def get_mesh_mode(self):
         return self.mesh_mode
 
-    def __is_for_me(self, packet: Packet):
-        return packet.get_destination() == self.__MAC
+    def is_for_me(self, packet: Packet):
+        return packet.get_destination() == self.MAC
 
     def generate_id(self):
         id = -1
@@ -85,19 +86,17 @@ class Node:
             if self.debug_hops:
                 packet.enable_debug_hops()
 
-        if self.connector:
-            response_packet = self.connector.send_and_wait_response(packet)
-            return response_packet
+        response_packet = self.connector.send_and_wait_response(packet)
+        return response_packet
 
     def send_response(self, response_packet: Packet):
         if response_packet:
             if self.mesh_mode:
                 response_packet.set_id(self.generate_id())
-
-            if self.connector:
-                self.send_lora(response_packet)
-                if self.__DEBUG:
-                    print("SENT:", response_packet.get_content())
+            
+            self.send_lora(response_packet)
+            if self.debug:
+                print("SENT:", response_packet.get_content())
 
     def change_sf(self, sf):
         self.connector.backup_sf()
