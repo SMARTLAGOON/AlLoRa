@@ -1,8 +1,13 @@
 {
     "name": "R",
-    "debug": true,
-    "mesh_mode": true,
     "chunk_size": 235,
-    "freq": 868,
-    "sf": 7
-}
+    "mesh_mode": false,
+    "debug": false,
+    "connector": {
+      "sf": 7,
+      "freq": 868,
+      "min_timeout": 0.5,
+      "max_timeout": 12
+      }
+  }
+  

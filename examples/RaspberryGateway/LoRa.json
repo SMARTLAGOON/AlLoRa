@@ -1,8 +1,11 @@
 {
     "name": "G",
-    "debug": true,
-    "mesh_mode": true,
+    "debug": false,
+    "mesh_mode": false,
     "chunk_size": 235,
+    "connector":{
     "freq": 868,
-    "sf": 7
+    "sf": 7,
+    "min_timeout": 0.5,
+    "max_timeout": 12}
 }
