@@ -1,5 +1,7 @@
 # ****AlLoRa:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
 
+![logo](readme_assets/logo.png)
+
 The code in this repository contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
 
 ~~Details of the protocol can be found in this paper: (soon)~~
