@@ -1,4 +1,3 @@
-#from lora_adapter import AdapterNode
 from AlLoRa.Nodes.Adapter import Adapter
 from AlLoRa.Connectors.LoPy4_connector import LoPy4_connector
 from AlLoRa.Interfaces.Wifi_hotspot import WiFi_Hotspot_Interface

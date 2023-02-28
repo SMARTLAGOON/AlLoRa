@@ -176,7 +176,7 @@ class Packet:
         else:
             return self.HEADER_SIZE
 
-    def et_checksum(self, data):
+    def get_checksum(self, data):
         h = hashlib.sha256(data)
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
@@ -202,7 +202,7 @@ class Packet:
                 flags = flags | (1<<7)
 
             p = self.payload
-            self.checksum = self.et_checksum(p)
+            self.checksum = self.get_checksum(p)
 
             if self.mesh_mode:
                 try:
@@ -245,12 +245,12 @@ class Packet:
 
         self.payload = content
 
-        self.check = self.checksum == self.et_checksum(self.payload)
+        self.check = self.checksum == self.get_checksum(self.payload)
         return self.check
 
     def get_dict(self):
         p = self.payload
-        self.checksum = self.et_checksum(p)
+        self.checksum = self.get_checksum(p)
         d = {"source" : self.source,
             "destination" : self.destination,
             "command" : self.command,
@@ -278,7 +278,7 @@ class Packet:
         self.change_sf = d["change_sf"]
         self.id = d["id"]
 
-        self.check = self.checksum == self.et_checksum(self.payload)
+        self.check = self.checksum == self.get_checksum(self.payload)
         return self.check
 
 if __name__ == "__main__":
