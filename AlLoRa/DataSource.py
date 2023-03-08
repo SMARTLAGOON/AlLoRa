@@ -17,13 +17,12 @@ class DataSource:
         self.file_queue_size = file_queue_size
         self.file_chunk_size = file_chunk_size
 
-        self.et_next_file_called = False
         self.SECONDS_BETWEEN_READINGS = sleep_between_readings
 
         self.backup_file = None
 
 
-    def _get_file_chunk_size(self):
+    def get_file_chunk_size(self):
         return self.file_chunk_size
 
 
@@ -42,7 +41,7 @@ class DataSource:
     def read(self):
         while self.STOP_THREAD is False:
             try:
-                file = self._read_datasource()
+                file = self.read_datasource()
                 if file is not None:
                     self.add_to_queue(file=file)
                 else:
@@ -54,15 +53,15 @@ class DataSource:
         print(self.STOP_THREAD)
 
 
-    def _read_datasource(self) -> CTP_File:
+    def read_datasource(self) -> CTP_File:
         pass
 
 
-    def _prepare(self):
+    def prepare(self):
         pass
 
     def start(self):
-        self._prepare()
+        self.prepare()
         self.STOP_THREAD = False
         self.IS_STARTED = True
         _thread.start_new_thread(self.read, ())
