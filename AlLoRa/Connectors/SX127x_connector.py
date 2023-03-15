@@ -17,7 +17,7 @@ class SX127x_connector(Connector):
         wlan_sta = network.WLAN(network.STA_IF)
         wlan_sta.active(True)
         wlan_mac = wlan_sta.config('mac')
-        self.MAC = "70b3" + ubinascii.hexlify(wlan_mac).decode()
+        self.MAC = ubinascii.hexlify(wlan_mac).decode()[-8:]
         wlan_sta.active(False)
 
     def config(self, name = "S", frequency = 868, sf=7, mesh_mode=False, debug=False,  min_timeout = 0.5, max_timeout = 6):  #max_timeout = 10

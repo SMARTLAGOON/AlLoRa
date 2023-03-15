@@ -1,3 +1,4 @@
 /trials
 .DS_Store
 *.pyc
+.vscode

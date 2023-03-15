@@ -1,4 +1,5 @@
 from AlLoRa.Nodes.Node import Node, Packet
+from AlLoRa.Digital_Endpoint import Digital_Endpoint
 from time import time, sleep
 try:
     from time import strftime
@@ -73,7 +74,9 @@ class Receiver(Node):
                 return None, None
         return None, None
 
-    def listen_to_endpoint(self, digital_endpoint, listening_time, return_file=False):
+    def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time, 
+                            print_file=False, save_file=False):
+        
         mac = digital_endpoint.get_mac_address()
         sleep_mesh = digital_endpoint.get_sleep()
         t0 = time()
@@ -90,8 +93,11 @@ class Receiver(Node):
                 if next_chunk is not None:
                     data, hop = self.ask_data(packet_request, next_chunk)
                     file = digital_endpoint.set_data(data, hop, self.mesh_mode)
-                    if file and return_file:
-                        return file
+                    if file:   
+                        if print_file:
+                            print(file.get_content())
+                        if save_file:
+                            file.save(mac)
 
             elif digital_endpoint.state == "OK":
                 ok, hop = self.ask_ok(packet_request)

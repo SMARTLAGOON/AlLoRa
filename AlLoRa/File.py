@@ -2,8 +2,10 @@ import gc
 from  math import ceil
 try:
     from utime import ticks_ms as time
+    import uos as os
 except:
     from time import time
+    import os
 gc.enable()
 
 '''
@@ -61,6 +63,15 @@ class CTP_File:
                 self.content += self.chunks[i].decode('utf-8')
             except KeyError as e:
                 self.missing_chunks.append(i)
+
+    # Check if the folder exists and create it if not, then save the file on it
+    def save(self, path):
+        try:
+            os.mkdir(path)
+        except Exception as e:
+            pass
+        with open("{}/{}".format(path, self.name), "wb") as f:
+            f.write(self.get_content().encode('utf-8'))
 
     # Sender methods
     def get_length(self):

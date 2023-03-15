@@ -1,11 +1,12 @@
 from AlLoRa.Packet import Packet
+from AlLoRa.Connectors.Connector import Connector
 
 class Interface:
 
     def __init__(self):
         pass
 
-    def setup(self, connector, debug, config):
+    def setup(self, connector: Connector, debug, config):
         self.connector = connector
         self.debug = debug
         self.config_parameters = config

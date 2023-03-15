@@ -14,7 +14,7 @@ The code in this repository contains a toolbox that allows transferring content 
 
 ## Content
 - [Folders](#folders)
-  - [AlLoRa](#msup3suploractp)
+  - [AlLoRa](#AlLoRa)
     - [Nodes](#nodes)
       - [Node.py](#base_nodepy)
       - [Sender.py](#sender_nodepy)
@@ -67,7 +67,7 @@ The code in this repository contains a toolbox that allows transferring content 
    <details>
    <summary><b><u>Usage</u></b></summary>
 
-   ### [Sender](https://github.com/SMARTLAGOON/BuoySoftware/blob/ModuLoRa/AlLoRa/Nodes/Sender.py) usage:
+   ### [Sender](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Nodes/Sender.py) usage:
    1. Instantiation:
 
       For the user, the Sender must be instantiated with the same parameters explained in [Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), plus:
@@ -333,7 +333,7 @@ The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf
 
 ## → Packet Structure
 
-The  [Packet](https://github.com/SMARTLAGOON/BuoySoftware/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
+The  [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
 
 For compatibility’s sake, It is designed to have a maximum of 255 Bytes, that is the maximum size of a LoRa message on a LoPy4.
 

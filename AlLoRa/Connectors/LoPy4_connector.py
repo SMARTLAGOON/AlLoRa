@@ -12,7 +12,7 @@ class LoPy4_connector(Connector):
 
     def __init__(self):
         super().__init__()
-        self.MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')
+        self.MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[-8:]
 
     def config(self, name = "L", frequency = 868, sf=7,
                 mesh_mode=False, debug=False,  min_timeout = 0.5, max_timeout = 6): #max_timeout = 100

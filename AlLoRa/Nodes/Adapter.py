@@ -1,11 +1,13 @@
 import gc
 from AlLoRa.Nodes.Node import Node, Packet, urandom, loads, dumps
 from AlLoRa.File import CTP_File
+from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.Interfaces.Interface import Interface
 from time import sleep, time
 
 class Adapter(Node):
 
-    def __init__(self, connector, interface, config_file = "LoRa.json"):
+    def __init__(self, connector: Connector, interface: Interface, config_file = "LoRa.json"):
         super().__init__(connector, config_file)
         gc.enable()
         self.sf_trial = None

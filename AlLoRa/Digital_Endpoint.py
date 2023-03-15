@@ -1,19 +1,19 @@
 from AlLoRa.File import CTP_File
 
-class Digital_EndPoint:
+class Digital_Endpoint:
 
     REQUEST_DATA_STATE = "REQUEST_DATA_STATE"
     PROCESS_CHUNK_STATE = "PROCESS_CHUNK_STATE"
     OK = "OK"
 
-    def __init__(self, name: str, mac_address: str, active: bool = True, 
-                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10, sleep_mesh: bool = True):
+    def __init__(self, name: str, mac_address: str, active: bool = True, sleep_mesh: bool = True,
+                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10):
         self.name = name
-        self.mac_address = mac_address[8:]
+        self.mac_address = mac_address[-8:]
         self.active = active
         self.current_file = None
 
-        self.state = Digital_EndPoint.OK
+        self.state = Digital_Endpoint.OK
 
         self.mesh = False
         self.sleep_mesh = sleep_mesh
@@ -34,12 +34,12 @@ class Digital_EndPoint:
 
     def enable_mesh(self):
         self.mesh = True
-        print("BUOY {}: ENABLING MESH".format(self.name))
+        print("Node {}: ENABLING MESH".format(self.name))
 
     def disable_mesh(self):
         self.mesh = False
         self.retransmission_counter = 0
-        print("BUOY {}: DISABLING MESH".format(self.name))
+        print("Node {}: DISABLING MESH".format(self.name))
 
     def get_sleep(self):
         return self.sleep_mesh
@@ -51,7 +51,7 @@ class Digital_EndPoint:
                 self.enable_mesh()
 
     def reset_retransmission_counter(self, hop): #packet
-        if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this buoy
+        if not self.get_mesh():                        # If mesh mode is deactivated and I receive a message from this node
             self.retransmission_counter = 0           # Reset counter, going well...
         else:
             if not hop:
@@ -67,7 +67,7 @@ class Digital_EndPoint:
         if ok:
             if mesh_mode:
                 self.reset_retransmission_counter(hop)
-            self.state = Digital_EndPoint.REQUEST_DATA_STATE
+            self.state = Digital_Endpoint.REQUEST_DATA_STATE
         else:
             if mesh_mode:
                 self.count_retransmission()
@@ -79,7 +79,7 @@ class Digital_EndPoint:
             if mesh_mode:
                 self.reset_retransmission_counter(hop)
             
-            self.state = Digital_EndPoint.PROCESS_CHUNK_STATE
+            self.state = Digital_Endpoint.PROCESS_CHUNK_STATE
         else:
             if mesh_mode:
                 self.count_retransmission()
@@ -101,5 +101,5 @@ class Digital_EndPoint:
                 self.count_retransmission()
         
         if len(self.current_file.get_missing_chunks()) <= 0:
-            self.state = Digital_EndPoint.OK
+            self.state = Digital_Endpoint.OK
             return self.current_file

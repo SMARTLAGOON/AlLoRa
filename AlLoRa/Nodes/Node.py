@@ -6,10 +6,11 @@ except:
     from json import loads, dumps
 
 from AlLoRa.Packet import Packet
+from AlLoRa.Connectors.Connector import Connector
     
 class Node:
 
-    def __init__(self, connector, config_file):
+    def __init__(self, connector: Connector, config_file):
         self.config_file = config_file
         self.open_backup()
         self.connector = connector
@@ -53,7 +54,7 @@ class Node:
                                 min_timeout =  self.config_connector_dic["min_timeout"],
                                 max_timeout = self.config_connector_dic["max_timeout"])
 
-        self.MAC = self.connector.get_mac()[8:]
+        self.MAC = self.connector.get_mac()[-8:]
         print(self.name, ":", self.MAC)
 
     def get_mesh_mode(self):
