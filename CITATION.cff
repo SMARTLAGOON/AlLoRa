@@ -3,7 +3,9 @@
 
 cff-version: 1.2.0
 title: AlLoRa
-message: 'Modular, mesh, multi-device LoRa Content Transfer Protocol'
+message: >-
+  Modular, mesh and multi-device Advanced LoRa Content
+  Transfer Protocol
 type: software
 authors:
   - given-names: Benjamin
@@ -11,6 +13,9 @@ authors:
     email: baarruri@disca.upv.es
     orcid: 'https://orcid.org/0000-0001-7869-053X'
     affiliation: UPV
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.7741246
 repository-code: 'https://github.com/SMARTLAGOON/AlLoRa'
 abstract: >-
   A modular, low-power, long-range communication protocol
@@ -25,6 +30,6 @@ keywords:
   - LPWAN
   - Micropython
 license: GPL-3.0
-commit: 699e005f9b86992a1d6588ab6d6688ab14bff53d
-version: 1.0.0
-date-released: '2023-02-10'
+commit: 98541a9fe4800f58e76b1a88df2df2f2b13c5c18
+version: 1.1.0
+date-released: '2023-03-16'
