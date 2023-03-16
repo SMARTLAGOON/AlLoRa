@@ -57,7 +57,7 @@ class Connector:
         return None
 
     def send_and_wait_response(self, packet):
-        packet.set_source(self.MAC[8:])  # Adding mac address to packet
+        packet.set_source(self.get_mac())  # Adding mac address to packet
         focus_time = self.adaptive_timeout
         send_success = self.send(packet)
         #if not send_success:
@@ -79,7 +79,7 @@ class Connector:
                 print("WAIT_RESPONSE({}) || sender_reply: {}".format(self.adaptive_timeout, received_data))
             try:
                 response_packet.load(received_data)
-                if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.MAC[8:]:
+                if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
                     if len(received_data) > response_packet.HEADER_SIZE + 60:	# Hardcoded for only chunks
                         self.adaptive_timeout = max(self.adaptive_timeout * 0.8 + td * 0.21, self.min_timeout)
                     if response_packet.get_debug_hops():

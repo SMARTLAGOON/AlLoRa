@@ -18,7 +18,7 @@ class Gateway(Receiver):
         self.TIME_PER_ENDPOINT = TIME_PER_ENDPOINT
         self.nodes_file = nodes_file
         self.digital_endpoints = []
-        return self.add_digital_endpoints(self.nodes_file)
+        self.add_digital_endpoints(self.nodes_file)
     
     def set_digital_endpoints(self, digital_endpoints):
         self.digital_endpoints = digital_endpoints
