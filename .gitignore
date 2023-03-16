@@ -1,4 +1,8 @@
 /trials
 .DS_Store
 *.pyc
+<<<<<<< Updated upstream
 .vscode
+=======
+.vscode/settings.json
+>>>>>>> Stashed changes
