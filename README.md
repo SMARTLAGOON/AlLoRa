@@ -1,6 +1,6 @@
 # ****AlLoRa:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
 
-
+[![DOI](https://zenodo.org/badge/509513450.svg)](https://zenodo.org/badge/latestdoi/509513450)
 <p align="center">
     <img src="readme_assets/logo.png"  width="50%">
 </p>
