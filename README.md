@@ -8,10 +8,10 @@ Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://z
 
 The code in this repository contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
 
-~~Details of the protocol can be found in this paper: (soon)~~
+Details of the protocol can be found in this paper: [A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
 
 ## Readme on Notion!
-> For a better experience, you can check our awesome **Notion** description of the code [here...](https://www.notion.so/barratia/m3LoRaCTP-ec6d1adaabcb44b39bb59d41bdf75b9b)
+> For a better experience, you can check our awesome **Notion** description of the code [here...](https://barratia.notion.site/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)
 
 ## Content
 - [Folders](#folders)
