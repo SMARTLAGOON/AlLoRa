@@ -1,6 +1,7 @@
 import utime
 import time
 from machine import UART
+import struct
 from AlLoRa.Packet import Packet
 from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Connectors.Connector import Connector
@@ -57,6 +58,45 @@ class Serial_Interface(Interface):
                             if self.debug:
                                 print("No response...")
 				
+            except Exception as e:
+                   if self.debug:
+                         print("Error: {}".format(e))
+
+    # Wait for command from Node, if the length of the packet is 2, then it is a command
+    # If the length is higher than 2, then it is a packet to be sent over LoRa
+    def client_API_Sender(self):
+        while True:
+            time.sleep(1)
+            try:
+                if self.uart.any():
+                    received_data = self.uart.read(255)
+                    if self.debug:
+                            print("Received data: ", received_data)
+                    packet_from_sender = Packet(self.connector.mesh_mode)
+                    check = packet_from_sender.load(received_data)  # Maybe meter en try/except
+                    if check:
+                            success = self.connector.send(packet_from_sender)
+                            if success: # reply success by serial
+                                if self.debug:
+                                    print("Packet sent successfully")
+                                self.uart.write(b'OK')
+
+                    elif received_data.startswith("listen:"):
+                        focus_time = int(data.split(":")[1])
+                        if self.debug:
+                            print("Listening...")
+                        packet = Packet(mesh_mode = self.mesh_mode)
+                        data = self.connector.recv(focus_time)
+                        try:
+                            if packet.load(data):
+                                response = packet.get_content()
+                                print("Sending serial: ", len(response), " -> {}".format(response))
+                                self.uart.write(packet.get_content())
+                        except Exception as e:
+                            if self.debug:
+                                print("Error loading: ", data, " -> ",e)
+                            return None
+                        
             except Exception as e:
                    if self.debug:
                          print("Error: {}".format(e))
