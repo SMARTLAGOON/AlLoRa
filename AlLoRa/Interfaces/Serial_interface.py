@@ -81,7 +81,7 @@ class Serial_Interface(Interface):
                                     print("Packet sent successfully")
                                 self.uart.write(b'OK')
 
-                    elif received_data.startswith("listen:"):
+                    elif received_data.startswith("Listen:"):
                         focus_time = int(data.split(":")[1])
                         if self.debug:
                             print("Listening...")
@@ -95,7 +95,7 @@ class Serial_Interface(Interface):
                         except Exception as e:
                             if self.debug:
                                 print("Error loading: ", data, " -> ",e)
-                            return None
+                            self.uart.write(b'Error')
                         
             except Exception as e:
                    if self.debug:

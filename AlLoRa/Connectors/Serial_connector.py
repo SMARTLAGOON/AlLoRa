@@ -69,7 +69,7 @@ class Serial_connector(Connector):
     def recv(self, focus_time=12):
         try:
             # pack listen command and focus_time
-            command = "Listen:{0}\n".format(focus_time)
+            command = "Listen:{0}".format(focus_time)
             self.serial.write(command.encode('utf-8'))
             sleep(1)
             # wait for response or timeout (focus time)
