@@ -14,33 +14,29 @@ Analogous class to Lopy's one but instead of making chunks, this one reassembles
 class CTP_File:
 
     def __init__(self, name: str = None, content: bytearray = None, chunk_size: int = None, length: int = None, report=False):
-        try:
-            self.name = name
-            if content:
-                self.assembly_needed = False
-                self.content = content
-                self.length = len(content)
-                self.chunk_size = chunk_size
-                self.chunk_counter = ceil(self.length/self.chunk_size)
+        self.name = name
+        if content:
+            self.assembly_needed = False
+            self.content = content
+            self.length = len(content)
+            self.chunk_size = chunk_size
+            self.chunk_counter = ceil(self.length/self.chunk_size)
 
-                self.retransmission = 0
-                self.last_chunk_sent = None
-                self.sent = False
-                self.metadata_sent = False
-                self.first_sent = None
-       	        self.last_sent = None
-            else:
-                self.assembly_needed = True
-                self.content = bytearray()  # should be and empty bytearray
-                self.length = length # Length in chunks
-                self.chunks = dict()
-                self.missing_chunks = list()
+            self.retransmission = 0
+            self.last_chunk_sent = None
 
-                self.report = report
-        except Exception as e:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-                print(exc_type, fname, exc_tb.tb_lineno)
+            self.sent = False
+            self.metadata_sent = False
+            self.first_sent = None
+            self.last_sent = None
+        else:
+            self.assembly_needed = True
+            self.content = bytearray()  # should be and empty bytearray
+            self.length = length # Length in chunks
+            self.chunks = dict()
+            self.missing_chunks = list()
+
+        self.report = report
 
     def get_name(self):
         return self.name
@@ -64,7 +60,7 @@ class CTP_File:
         self.missing_chunks = list()
         for i in range(0, self.length):
             try:
-                self.content.extend(self.chunks[i])
+                self.content += self.chunks[i]
             except KeyError as e:
                 self.missing_chunks.append(i)
 
