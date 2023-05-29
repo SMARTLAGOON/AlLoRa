@@ -31,7 +31,7 @@ class Adapter(Node):
             f.write(dumps(conf))
 
     def run(self):
-        THREAD_EXIT = False		#Thread exit flag
+        THREAD_EXIT = False
         while True:
             try:
                 if THREAD_EXIT:
@@ -42,3 +42,5 @@ class Adapter(Node):
             except KeyboardInterrupt as e:
                 THREAD_EXIT = True
                 print("THREAD_EXIT")
+            except Exception as e:
+                print("Error: {}".format(e))

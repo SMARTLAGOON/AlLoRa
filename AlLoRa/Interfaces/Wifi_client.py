@@ -3,7 +3,7 @@ from network import WLAN
 from utime import sleep
 import usocket
 from ujson import loads, dumps
-#import pycom
+import pycom
 
 from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Packet import Packet
@@ -43,7 +43,7 @@ class WiFi_Client_Interface(Interface):
             self.wlan.init(mode=WLAN.STA)
             # configuration below MUST match your home router settings!!# (ip, subnet_mask, gateway, DNS_server)
             self.wlan.ifconfig(config=(self.ip, self.subnet_mask, self.gateway, self.DNS_server)) # (ip, subnet_mask, gateway, DNS_server)
-        
+
         self.connect()
         #print(wlan.ifconfig(id=1)) #id =1 signifies the AP interface
         sleep(1)
@@ -65,12 +65,12 @@ class WiFi_Client_Interface(Interface):
                 self.wlan.connect(ssid=self.ssid, auth=(WLAN.WPA2, self.psw), timeout=5000)
                 print("connecting",end='')
                 while not self.wlan.isconnected():
-                    self.time.sleep(1)
+                    sleep(1)
                     print(".",end='')
                 print("connected")
-                #pycom.rgbled(0x007f00) # green
-                #sleep(3)
-                #pycom.rgbled(0)
+                pycom.rgbled(0x007f00) # green
+                sleep(3)
+                pycom.rgbled(0)
                 if self.debug:
                     print(self.wlan.ifconfig())
             except Exception as e:

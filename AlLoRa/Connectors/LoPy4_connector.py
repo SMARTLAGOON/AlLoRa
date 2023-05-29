@@ -42,18 +42,18 @@ class LoPy4_connector(Connector):
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
             if self.debug:
                 print("SEND_PACKET(SF: {}) || packet: {}".format(self.sf, packet.get_content()))
-                if packet.get_mesh():
-                    pycom.rgbled(0xb19cd8) # purple
-                else:
-                    pycom.rgbled(0x007f00) # green
+            if packet.get_mesh():
+                pycom.rgbled(0xb19cd8) # purple
+            else:
+                pycom.rgbled(0x007f00) # green
             try:
                 self.lora_socket.send(packet.get_content())	#.encode()
-                if self.debug:
-                    pycom.rgbled(0)        # off
+                #if self.debug:
+                pycom.rgbled(0)        # off
                 return True
             except:
-                if self.debug:
-                    pycom.rgbled(0)        # off
+                #if self.debug:
+                pycom.rgbled(0)        # off
                 return False
         else:
             if self.debug:
