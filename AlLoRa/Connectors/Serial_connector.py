@@ -54,7 +54,7 @@ class Serial_connector(Connector):
             content = packet.get_content()
             if self.debug:
                 print("Sending: ", content) 
-            self.serial.write(content.encode('utf-8'))
+            self.serial.write(content)
             sleep(1)
             status_report = self.serial.read(255)
             if self.debug:
@@ -68,12 +68,13 @@ class Serial_connector(Connector):
     # Ask Serial Adapter to listen for a packet for a certain amount of time and then wait for the response
     def recv(self, focus_time=12):
         try:
+            #focus_time=100
             # pack listen command and focus_time
             command = "Listen:{0}".format(focus_time)
             self.serial.write(command.encode('utf-8'))
             sleep(1)
             # wait for response or timeout (focus time)
-            wait = focus_time
+            wait = focus_time - 1
             while wait > 0:
                 if self.serial.in_waiting:
                     break

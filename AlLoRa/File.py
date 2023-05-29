@@ -32,7 +32,7 @@ class CTP_File:
             self.last_sent = None
         else:
             self.assembly_needed = True
-            self.content = str()  # should be and empty bytearray
+            self.content = bytearray()  # should be and empty bytearray
             self.length = length # Length in chunks
             self.chunks = dict()
             self.missing_chunks = list()
@@ -56,11 +56,11 @@ class CTP_File:
         self.chunks[order] = chunk
 
     def assembly(self):
-        self.content = str()
+        self.content = bytearray()
         self.missing_chunks = list()
         for i in range(0, self.length):
             try:
-                self.content += self.chunks[i].decode('utf-8')
+                self.content += self.chunks[i]
             except KeyError as e:
                 self.missing_chunks.append(i)
 
@@ -71,7 +71,7 @@ class CTP_File:
         except Exception as e:
             pass
         with open("{}/{}".format(path, self.name), "wb") as f:
-            f.write(self.get_content().encode('utf-8'))
+            f.write(self.get_content())
 
     # Sender methods
     def get_length(self):
@@ -85,7 +85,7 @@ class CTP_File:
         if self.last_chunk_sent:
             self.check_retransmission(position)
         self.last_chunk_sent = position
-        return bytes(self.content[position*self.chunk_size : position*self.chunk_size + self.chunk_size]).decode()
+        return bytes(self.content[position*self.chunk_size : position*self.chunk_size + self.chunk_size])
 
     def check_retransmission(self, requested_chunk):
         if requested_chunk == self.last_chunk_sent:

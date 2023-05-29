@@ -64,6 +64,7 @@ class Sender(Node):
 
     def establish_connection(self, try_for=None):
         while True:
+            print("establish")
             new_sf = None
             packet = self.listen_receiver()
             if packet:
