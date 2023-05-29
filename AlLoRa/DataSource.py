@@ -1,9 +1,6 @@
 import _thread
+import utime
 import os
-try:
-    import utime as time
-except:
-    import time
 
 from AlLoRa.File import CTP_File
 
@@ -30,8 +27,10 @@ class DataSource:
 
 
     def add_to_queue(self, file: CTP_File):
+        
         if len(self.file_queue) >= self.file_queue_size:
             self.file_queue.pop(0)
+            
         repeated = False
         for f in self.file_queue:
             if f.get_name() == file.get_name():
@@ -49,7 +48,7 @@ class DataSource:
                     self.add_to_queue(file=file)
                 else:
                     print("skipped file, it is None")
-                time.sleep(self.SECONDS_BETWEEN_READINGS)
+                utime.sleep(self.SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
         self.IS_STARTED = False
@@ -83,10 +82,10 @@ class DataSource:
     '''
     def get_next_file(self):
         try:
-            backup_file = self.file_queue.pop(0)
-            self.backup(file=backup_file)
+            backup_file = self.file_queue.pop(0) # ER: I don't think is should be managed with an exception, not a good practice
+            #self.backup(file=backup_file) # ER: is raising exception with compressed files
             return backup_file
-        except IndexError as e:
+        except Exception as e:
             return None
 
 

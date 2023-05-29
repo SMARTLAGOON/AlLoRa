@@ -56,8 +56,11 @@ class Receiver(Node):
         return None, None
 
     def ask_data(self, packet: Packet, next_chunk):
+        print("ASKING DATA")
         packet.ask_data(next_chunk)
         response_packet = self.send_request(packet)
+        print("Response Packet: ", response_packet)
+        print("packet command: ", response_packet.get_command())
         if self.save_hops(response_packet):
             return b"0", response_packet.get_hop()
         if response_packet.get_command() == Packet.DATA:
@@ -68,9 +71,11 @@ class Receiver(Node):
                         return None, None
                 chunk = response_packet.get_payload()
                 hop = response_packet.get_hop()
+                print("CHUNK + HOP: ", chunk, "->", hop)
                 return chunk, hop
 
-            except:
+            except Exception as e:
+                print("ASKING DATA ERROR: {}".format(e))
                 return None, None
         return None, None
 
@@ -90,6 +95,7 @@ class Receiver(Node):
 
             elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
                 next_chunk = digital_endpoint.get_next_chunk()
+                print("ASKING CHUNK: {}".format(next_chunk))
                 if next_chunk is not None:
                     data, hop = self.ask_data(packet_request, next_chunk)
                     file = digital_endpoint.set_data(data, hop, self.mesh_mode)

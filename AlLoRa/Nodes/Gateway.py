@@ -34,14 +34,13 @@ class Gateway(Receiver):
                     retries = node['MAX_RETRIES_BEFORE_MESH']
                 except:
                     retries = 10
-                if node['active']:
-                    self.digital_endpoints.append(Digital_Endpoint(name=node['name'], 
+                self.digital_endpoints.append(Digital_Endpoint(name=node['name'], 
                                                             mac_address = node['mac_address'], 
                                                             active = node['active'], 
                                                             sleep_mesh=node['sleep_mesh'],
                                                             MAX_RETRANSMISSIONS_BEFORE_MESH=retries))
                                                             
-                    count_nodes += 1
+                count_nodes += 1
             return count_nodes
         except:
             print("Could not load nodes from file: {}, please set manually or add missing file".format(path))
