@@ -48,7 +48,7 @@ class Gateway(Receiver):
             return False
 
     def check_digital_endpoints(self, print_file_content=False, save_files=False):
-        print("Listening to {} endpoint(s)!".format(len(self.digital_endpoints)))
+        print("Listening to {} endpoints!".format(len(self.digital_endpoints)))
         while True:
             for digital_endpoint in self.digital_endpoints:
                 self.listen_to_endpoint(digital_endpoint, self.TIME_PER_ENDPOINT, 

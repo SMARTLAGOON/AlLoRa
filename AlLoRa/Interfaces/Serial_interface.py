@@ -84,7 +84,7 @@ class Serial_Interface(Interface):
         focus_time = int(received_data.split(":")[1])
         if self.debug:
             print("Listening...")
-        packet = Packet(mesh_mode=self.connector.mesh_mode)
+        packet = Packet(mesh_mode=self.mesh_mode)
         data = self.connector.recv(focus_time)
         if data:
             if self.debug:
