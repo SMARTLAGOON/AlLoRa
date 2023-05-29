@@ -51,7 +51,7 @@ class DataSource:
                     self.add_to_queue(file=file)
                 else:
                     print("skipped file, it is None")
-                utime.sleep(self.SECONDS_BETWEEN_READINGS)
+                time.sleep(self.SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
         self.IS_STARTED = False
