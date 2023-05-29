@@ -2,7 +2,6 @@ import utime
 import time
 from machine import UART
 import struct
-import sys
 from AlLoRa.Packet import Packet
 from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Connectors.Connector import Connector
@@ -37,58 +36,63 @@ class Serial_Interface(Interface):
     def client_API(self):
         while True:
             time.sleep(1)
-            if self.uart.any():
-                received_data = self.uart.read(255)
-                mode_handler(received_data)
-
-    def handle_listener_mode(self, received_data):
-        packet_from_rpi = Packet(self.connector.mesh_mode)
-        check = packet_from_rpi.load(received_data)
-        if self.debug:
-            print("Received data: ", received_data, check)
-        if check:
-            response_packet = self.connector.send_and_wait_response(packet_from_rpi)
-            if response_packet:
-                if response_packet.get_command():
-                    response = response_packet.get_content()
-                    print("Sending serial: ", len(response), " -> {}".format(response))
-                    self.uart.write(response_packet.get_content())
-            else:
-                if self.debug:
-                    print("No response...")
-
-    def handle_sender_mode(self, received_data):
-        packet_from_sender = Packet(self.connector.mesh_mode)
-        try:
-            packet_from_sender.load(received_data)
-            self.send_packet(packet_from_sender)
-        except: 
-            if received_data.startswith("Listen:"):
-                self.listen_and_process(received_data)
-
-    def send_packet(self, packet_from_sender):
-        success = self.connector.send(packet_from_sender)
-        if success:
-            if self.debug:
-                print("Packet sent successfully")
-            self.uart.write(b'OK')
-
-    def listen_and_process(self, received_data):
-        focus_time = int(received_data.split(":")[1])
-        if self.debug:
-            print("Listening...")
-        packet = Packet(mesh_mode=self.connector.mesh_mode)
-        data = self.connector.recv(focus_time)
-        if data:
-            if self.debug:
-                print("Received data: ", data)
             try:
-                packet.load(data)
-                response = packet.get_content()
-                print("Sending serial: ", len(response), " -> {}".format(response))
-                self.uart.write(response)
+                if self.uart.any():
+                    received_data = self.uart.read(255)
+                    packet_from_rpi = Packet(self.connector.mesh_mode)
+                    check = packet_from_rpi.load(received_data)
+                    if self.debug:
+                        print("Received data: ", received_data, check)
+                    if check:
+                        response_packet = self.connector.send_and_wait_response(packet_from_rpi)
+                        if response_packet:
+                            if response_packet.get_command():
+                                response = response_packet.get_content()
+                                print("Sending serial: ", len(response), " -> {}".format(response))
+                                self.uart.write(response_packet.get_content())
+                        else:
+                            if self.debug:
+                                print("No response...")
+				
             except Exception as e:
-                if self.debug:
-                    print("Error loading: ", data, " -> ", e)
-                self.uart.write(b'Error')
+                   if self.debug:
+                         print("Error: {}".format(e))
 
+    # Wait for command from Node, if the length of the packet is 2, then it is a command
+    # If the length is higher than 2, then it is a packet to be sent over LoRa
+    def client_API_Sender(self):
+        while True:
+            time.sleep(1)
+            try:
+                if self.uart.any():
+                    received_data = self.uart.read(255)
+                    if self.debug:
+                            print("Received data: ", received_data)
+                    packet_from_sender = Packet(self.connector.mesh_mode)
+                    check = packet_from_sender.load(received_data)  # Maybe meter en try/except
+                    if check:
+                            success = self.connector.send(packet_from_sender)
+                            if success: # reply success by serial
+                                if self.debug:
+                                    print("Packet sent successfully")
+                                self.uart.write(b'OK')
+
+                    elif received_data.startswith("Listen:"):
+                        focus_time = int(received_data.split(":")[1])
+                        if self.debug:
+                            print("Listening...")
+                        packet = Packet(mesh_mode = self.connector.mesh_mode)
+                        data = self.connector.recv(focus_time)
+                        try:
+                            if packet.load(data):
+                                response = packet.get_content()
+                                print("Sending serial: ", len(response), " -> {}".format(response))
+                                self.uart.write(packet.get_content())
+                        except Exception as e:
+                            if self.debug:
+                                print("Error loading: ", data, " -> ",e)
+                            self.uart.write(b'Error')
+                        
+            except Exception as e:
+                   if self.debug:
+                         print("Error: {}".format(e))
