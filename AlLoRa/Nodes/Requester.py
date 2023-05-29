@@ -12,7 +12,7 @@ except:
         return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
 
 
-class Receiver(Node):
+class Requester(Node):
 
     def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, NEXT_ACTION_TIME_SLEEP = 0.1):
         super().__init__(connector, config_file)

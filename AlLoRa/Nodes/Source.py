@@ -6,7 +6,7 @@ try:
 except:
     from time import sleep, time
 
-class Sender(Node):
+class Source(Node):
 
     def __init__(self, connector, config_file = "LoRa.json"):
         super().__init__(connector, config_file)
