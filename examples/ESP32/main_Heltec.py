@@ -1,4 +1,4 @@
-from AlLoRa.Nodes.Sender import Sender
+from AlLoRa.Nodes.Source import Source
 from AlLoRa.Connectors.SX127x_connector import SX127x_connector
 from AlLoRa.File import CTP_File
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
 	connector = SX127x_connector()
 
 	# Then, we set up out Sender Node, giving it the connector and the path for the configuration file
-	lora_node = Sender(connector, config_file = "LoRa.json")
+	lora_node = Source(connector, config_file = "LoRa.json")
 
 	chunk_size = lora_node.get_chunk_size()		# We use it to create the files to be sent...
 

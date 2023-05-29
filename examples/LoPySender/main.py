@@ -1,6 +1,6 @@
 import pycom
 
-from AlLoRa.Nodes.Sender import Sender
+from AlLoRa.Nodes.Source import Source
 from AlLoRa.Connectors.LoPy4_connector import LoPy4_connector
 from AlLoRa.File import CTP_File
 from time import sleep
@@ -21,7 +21,7 @@ if __name__ == "__main__":
 	connector = LoPy4_connector()
 
 	# Then, we set up out Sender Node
-	lora_node = Sender(connector, config_file = "LoRa.json")
+	lora_node = Source(connector, config_file = "LoRa.json")
 
 	# We turn on a led for a second to know that we are doing ok...
 	pycom.rgbled(0x1aa7ec) 	# Picton Blue

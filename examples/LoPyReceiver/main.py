@@ -1,6 +1,6 @@
 import pycom
 
-from AlLoRa.Nodes.Receiver import Receiver
+from AlLoRa.Nodes.Requester import Requester
 from AlLoRa.Connectors.LoPy4_connector import LoPy4_connector
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
@@ -10,7 +10,7 @@ if __name__ == "__main__":
 	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
 	connector = LoPy4_connector()
 	# Then, we set up out Receiver Node:
-	lora_node = Receiver(connector, config_file = "LoRa.json")
+	lora_node = Requester(connector, config_file = "LoRa.json")
 
 	# Here we setup a digital_endpoint to manage the connection to the Node
 	node_nickname = "C"

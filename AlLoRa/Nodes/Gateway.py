@@ -5,10 +5,10 @@ except:
     from os import urandom
     from json import loads, dumps
 
-from AlLoRa.Nodes.Receiver import Receiver
+from AlLoRa.Nodes.Requester import Requester
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
-class Gateway(Receiver):
+class Gateway(Requester):
 
     def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, 
                     NEXT_ACTION_TIME_SLEEP = 0.1, 

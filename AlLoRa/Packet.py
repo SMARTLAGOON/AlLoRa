@@ -20,11 +20,11 @@ class Packet:
     COMMAND = {DATA: "00", OK: "01", CHUNK: "10", METADATA: "11"}
     COMMAND_BITS = {"00": DATA, "01": OK, "10": CHUNK, "11": METADATA}
 
-    def check_command(command):
+    @staticmethod
+    def check_command(command: str) -> bool:
         if command in Packet.COMMAND:
             return True
-        else:
-            return False
+        return False
 
     def __init__(self, mesh_mode):
         self.mesh_mode = mesh_mode
