@@ -67,6 +67,7 @@ class DataSource:
         self.prepare()
         self.STOP_THREAD = False
         self.IS_STARTED = True
+        print("DataSource Starting!")
         _thread.start_new_thread(self.read, ())
 
 
@@ -94,7 +95,7 @@ class DataSource:
             filename = ""
             with open("./filename-backup.txt", "r") as f:
                 filename = f.read()
- 
+
             content = None
             with open("./content-backup", "r") as f:
                 content = f.read()
@@ -110,9 +111,9 @@ class DataSource:
             os.remove("./content-backup")
         except OSError:
             pass
- 
+
         with open("./filename-backup.txt", "w") as f:
             f.write(file.get_name())
- 
+
         with open("./content-backup", "w") as f:
             f.write(file.get_content())
