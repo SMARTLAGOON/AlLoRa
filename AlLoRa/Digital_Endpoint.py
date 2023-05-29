@@ -80,6 +80,7 @@ class Digital_Endpoint:
                 self.reset_retransmission_counter(hop)
             
             self.state = Digital_Endpoint.PROCESS_CHUNK_STATE
+            print("State:{}".format(self.state))
         else:
             if mesh_mode:
                 self.count_retransmission()
@@ -88,7 +89,8 @@ class Digital_Endpoint:
         try:
             self.current_chunk = self.current_file.get_missing_chunks()[0]
             return self.current_chunk
-        except:
+        except Exception as e:
+            print("ERROR IN GET_NEXT_CHUNK: {}".format(e))
             return None
 
     def set_data(self, data, hop, mesh_mode):  
