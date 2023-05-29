@@ -1,9 +1,6 @@
 import _thread
+import utime
 import os
-try:
-    import utime as time
-except:
-    import time
 
 from AlLoRa.File import CTP_File
 
@@ -49,7 +46,7 @@ class DataSource:
                     self.add_to_queue(file=file)
                 else:
                     print("skipped file, it is None")
-                time.sleep(self.SECONDS_BETWEEN_READINGS)
+                utime.sleep(self.SECONDS_BETWEEN_READINGS)
             except KeyboardInterrupt as e:
                 self.stop()
         self.IS_STARTED = False

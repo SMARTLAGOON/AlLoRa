@@ -54,7 +54,7 @@ class Serial_connector(Connector):
             content = packet.get_content()
             if self.debug:
                 print("Sending: ", content) 
-            self.serial.write(content.encode('utf-8'))
+            self.serial.write(content)
             sleep(1)
             status_report = self.serial.read(255)
             if self.debug:

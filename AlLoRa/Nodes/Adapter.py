@@ -42,3 +42,16 @@ class Adapter(Node):
             except KeyboardInterrupt as e:
                 THREAD_EXIT = True
                 print("THREAD_EXIT")
+                
+    def run_sender(self):
+        THREAD_EXIT = False		#Thread exit flag
+        while True:
+            try:
+                if THREAD_EXIT:
+                    break
+                self.interface.client_API_Sender()  # change name
+                gc.collect()
+
+            except KeyboardInterrupt as e:
+                THREAD_EXIT = True
+                print("THREAD_EXIT")
