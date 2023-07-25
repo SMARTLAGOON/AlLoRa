@@ -1,6 +1,5 @@
 from AlLoRa.Nodes.Gateway import Gateway
 from AlLoRa.Connectors.Wifi_connector import WiFi_connector
-from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
 
 if __name__ == "__main__":

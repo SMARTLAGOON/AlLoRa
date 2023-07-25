@@ -68,6 +68,6 @@ class WiFi_Hotspot_Interface(Interface):
                     clientsocket.send(http + json_response)
         except Exception as e:
             if self.debug:
-                print("Error:", e)
+                print("Error Wifi hotspot:", e)
         # Close the socket and terminate the thread
         clientsocket.close()

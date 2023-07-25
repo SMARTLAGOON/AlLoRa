@@ -4,7 +4,6 @@
 import  sys, gc
 from AlLoRa.Nodes.Gateway import Gateway
 from AlLoRa.Connectors.Serial_connector import Serial_connector
-from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
 
 if __name__ == "__main__":

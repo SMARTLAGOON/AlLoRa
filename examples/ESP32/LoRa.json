@@ -8,7 +8,7 @@
       "sf": 7,
       "freq": 868,
       "min_timeout": 0.5,
-      "max_timeout": 12,
+      "max_timeout": 12
       }
   }
   

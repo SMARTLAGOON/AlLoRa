@@ -43,4 +43,4 @@ class Adapter(Node):
                 THREAD_EXIT = True
                 print("THREAD_EXIT")
             except Exception as e:
-                print("Error: {}".format(e))
+                print("Error in Adapter: {}".format(e))
