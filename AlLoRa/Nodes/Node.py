@@ -25,17 +25,17 @@ class Node:
 
     def open_backup(self):
         with open(self.config_file, "r") as f:
-            lora_config = loads(f.read())
+            self.config = loads(f.read())
 
-        self.name = lora_config['name']
-        self.debug = lora_config['debug']
-        self.mesh_mode = lora_config['mesh_mode']
-        self.chunk_size = lora_config['chunk_size']
+        self.name = self.config.get('name', "N")
+        self.debug = self.config.get('debug', False)
+        self.mesh_mode = self.config.get('mesh_mode', False)
+        self.chunk_size = self.config.get('chunk_size', 235)
 
-        self.config_connector_dic = lora_config['connector']    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
+        self.config_connector_dic = self.config.get('connector', None)    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
 
         if self.debug:
-            print(lora_config)
+            print(self.config)
 
     def backup_config(self):
         conf = {"name": self.name,
@@ -47,12 +47,7 @@ class Node:
             f.write(dumps(conf))
 
     def config_connector(self):
-        self.connector.config(frequency = self.config_connector_dic["freq"],
-                                sf = self.config_connector_dic["sf"],
-                                mesh_mode = self.mesh_mode,
-                                debug = self.debug,
-                                min_timeout =  self.config_connector_dic["min_timeout"],
-                                max_timeout = self.config_connector_dic["max_timeout"])
+        self.connector.config(self.config_connector_dic)
 
         self.MAC = self.connector.get_mac()[-8:]
         print(self.name, ":", self.MAC)

@@ -6,19 +6,29 @@ class Digital_Endpoint:
     PROCESS_CHUNK_STATE = "PROCESS_CHUNK_STATE"
     OK = "OK"
 
-    def __init__(self, name: str, mac_address: str, active: bool = True, sleep_mesh: bool = True,
-                        MAX_RETRANSMISSIONS_BEFORE_MESH: int = 10):
-        self.name = name
-        self.mac_address = mac_address[-8:]
-        self.active = active
-        self.current_file = None
+    def __init__(self, config):
+        # JSON Example:
+        # {
+        #     "name": "N",
+        #     "mac_address": "00000000",
+        #     "active": true,
+        #     "sleep_mesh": true,
+        #     "listening_time": 30,
+        #     "MAX_RETRANSMISSIONS_BEFORE_MESH": 10
+        # }
+        if config:
+            self.name = config.get('name', "N")
+            self.mac_address = config.get('mac_address'[-8:], "00000000")
+            self.active = config.get('active', True)
+            self.sleep_mesh = config.get('sleep_mesh', True)
+            self.listening_time = config.get('listening_time', 30)
+            self.MAX_RETRANSMISSIONS_BEFORE_MESH = config.get('MAX_RETRANSMISSIONS_BEFORE_MESH', 10)
 
         self.state = Digital_Endpoint.OK
+        self.current_file = None
 
-        self.mesh = False
-        self.sleep_mesh = sleep_mesh
-        self.retransmission_counter = 0
-        self.MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
+        self.mesh = False   # Mesh mode starts disabled
+        self.retransmission_counter = 0 # When it reaches MAX_RETRANSMISSIONS_BEFORE_MESH, mesh mode is enabled
 
     def get_name(self):
         return self.name

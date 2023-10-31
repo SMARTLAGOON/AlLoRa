@@ -14,9 +14,18 @@ class LoPy4_connector(Connector):
         super().__init__()
         self.MAC = binascii.hexlify(LoRa().mac()).decode('utf-8')[-8:]
 
-    def config(self, name = "L", frequency = 868, sf=7,
-                mesh_mode=False, debug=False,  min_timeout = 0.5, max_timeout = 6): #max_timeout = 100
-        super().config(name, frequency, sf, mesh_mode, debug, min_timeout, max_timeout)
+    def config(self, config_json):
+        # JSON Example:
+        # {
+        #     "name": "L",
+        #     "frequency": 868,
+        #     "sf": 7,
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6
+        # }
+        super().config(config_json)
         self.lora = LoRa(mode=LoRa.LORA, frequency=self.frequency*1000000,
                             region=LoRa.EU868, sf = self.sf)
         self.lora_socket = socket.socket(socket.AF_LORA, socket.SOCK_RAW)

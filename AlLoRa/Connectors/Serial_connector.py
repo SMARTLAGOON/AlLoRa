@@ -6,14 +6,30 @@ from AlLoRa.Connectors.Connector import Connector
 
 class Serial_connector(Connector):
 
-    def __init__(self, serial_port = "/dev/ttyAMA3", baud = 9600, timeout = 1):
+    def __init__(self):
         super().__init__()
-        self.SERIAL_PORT = serial_port
-        self.BAUD_RATE = baud
-        self.timeout = timeout
-        self.serial = serial.Serial(self.SERIAL_PORT, self.BAUD_RATE, timeout=self.timeout)
         
-
+    def config(self, config_json):  #max_timeout = 10
+        # JSON Example:
+        # {
+        #     "name": "N",
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6
+        #     "serial_port": "/dev/ttyAMA3",
+        #     "baud": 9600,
+        #     "timeout": 1
+        # }
+        super().config(config_json)
+        if self.config_parameters:
+            self.serial_port = self.config_parameters.get('serial_port', "/dev/ttyAMA3")
+            self.baud = self.config_parameters.get('baud', 9600)
+            self.timeout = self.config_parameters.get('timeout', 1)
+            self.serial = serial.Serial(self.serial_port, self.baud, timeout=self.timeout)
+            if self.debug:
+                print("Serial Connector configure: serial_port: {}, baud: {}, timeout: {}".format(self.serial_port, self.baud, self.timeout))
+        
     def send_and_wait_response(self, packet: Packet) -> Packet:
         if self.debug:
             print("send and wait")
@@ -26,8 +42,6 @@ class Serial_connector(Connector):
                 if self.debug:
                     print("Sending: ", content) 
                 
-                #self.serial.write(content)
-                #received_data = self.serial.read(255)
                 self.write_serial(content)
                 received_data = self.read_serial()
                 

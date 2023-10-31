@@ -13,27 +13,36 @@ class Connector:
     def __init__(self):
         self.MAC = "00000000"
 
-    def config(self, name="N", frequency = 868, sf=7, mesh_mode=False, debug=False, min_timeout = 0.5, max_timeout = 6):
-        self.name = name
-        self.frequency = frequency
-        self.sf = sf
-        self.mesh_mode = mesh_mode
-
-        self.debug = debug
-
-        self.min_timeout = min_timeout
-        self.max_timeout = max_timeout
-        self.adaptive_timeout = self.min_timeout
-        self.backup_timeout = self.adaptive_timeout
-
-        self.sf_backup = self.sf
+    def config(self, config_json):
+        # JSON Example:
+        # {
+        #     "name": "N",
+        #     "frequency": 868,
+        #     "sf": 7,
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6
+        # }
+        self.config_parameters = config_json
+        if self.config_parameters:
+            self.name = self.config_parameters.get('name', "N")
+            self.frequency = self.config_parameters.get('frequency', 868)
+            self.sf = self.config_parameters.get('sf', 7)
+            self.mesh_mode = self.config_parameters.get('mesh_mode', False)
+            self.debug = self.config_parameters.get('debug', False)
+            self.min_timeout = self.config_parameters.get('min_timeout', 0.5)
+            self.max_timeout = self.config_parameters.get('max_timeout', 6)
+            
+            self.adaptive_timeout = self.min_timeout
+            self.backup_timeout = self.adaptive_timeout
+            self.sf_backup = self.sf
+        else:
+            if self.debug:
+                print("Error: No config parameters")
 
     def backup_config(self):
-        return {"freq": self.frequency,
-                "sf": self.sf,
-                "min_timeout":  self.min_timeout,
-                "max_timeout":  self.max_timeout
-                }
+        return self.config_parameters
 
     def get_mac(self):
         return self.MAC

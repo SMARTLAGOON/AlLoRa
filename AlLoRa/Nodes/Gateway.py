@@ -13,6 +13,20 @@ class Gateway(Requester):
     def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, 
                     NEXT_ACTION_TIME_SLEEP = 0.1, 
                     TIME_PER_ENDPOINT = 10, nodes_file = "Nodes.json"):
+        #JSON Example:
+        # {
+        #     "name": "G",
+        #     "frequency": 868,
+        #     "sf": 7,
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6,
+        #     "result_path": "Results/",
+        #     "nodes_file": "Nodes.json",
+        #     "time_per_endpoint": 10
+        # }
+
         super().__init__(connector,  config_file, debug_hops = debug_hops,
                             NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP)
         self.TIME_PER_ENDPOINT = TIME_PER_ENDPOINT
@@ -35,12 +49,7 @@ class Gateway(Requester):
                 except:
                     retries = 10
                 if node['active']:
-                    self.digital_endpoints.append(Digital_Endpoint(name=node['name'], 
-                                                                mac_address = node['mac_address'], 
-                                                                active = node['active'], 
-                                                                sleep_mesh=node['sleep_mesh'],
-                                                                MAX_RETRANSMISSIONS_BEFORE_MESH=retries))
-                                                                
+                    self.digital_endpoints.append(Digital_Endpoint(node))                                            
                     count_nodes += 1
             return count_nodes
         except:
@@ -51,7 +60,7 @@ class Gateway(Requester):
         print("Listening to {} endpoints!".format(len(self.digital_endpoints)))
         while True:
             for digital_endpoint in self.digital_endpoints:
-                self.listen_to_endpoint(digital_endpoint, self.TIME_PER_ENDPOINT, 
+                self.listen_to_endpoint(digital_endpoint, digital_endpoint.listening_time, 
                                         print_file=print_file_content, save_file=save_files)
 
                    

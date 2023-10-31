@@ -8,15 +8,36 @@ from AlLoRa.Connectors.Connector import Connector
 
 class WiFi_connector(Connector):
 
-    def __init__(self, RECEIVER_API_HOST, RECEIVER_API_PORT, SOCKET_TIMEOUT=10, 
-                    SOCKET_RECV_SIZE=10000,  PACKET_RETRY_SLEEP=0.5, logger_error=None):
+    def __init__(self):
         super().__init__()
-        self.SOCKET_TIMEOUT = SOCKET_TIMEOUT
-        self.RECEIVER_API_HOST = RECEIVER_API_HOST
-        self.RECEIVER_API_PORT = RECEIVER_API_PORT
-        self.SOCKET_RECV_SIZE = SOCKET_RECV_SIZE
-        self.logger_error = logger_error
-        self.PACKET_RETRY_SLEEP = PACKET_RETRY_SLEEP
+
+    def config(self, config_json):
+        # JSON Example:
+        # {
+        #     "name": "N",
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6
+        #     "receiver_api_host": "192.168.4.1",
+        #     "receiver_api_port": 80,
+        #     "socket_timeout": 10,
+        #     "socket_recv_size": 10000,
+        #     "packet_retry_sleep": 0.5,
+        #     "logger_error": None
+        # }
+        super().config(config_json)
+        if self.config_parameters:
+            self.RECEIVER_API_HOST = self.config_parameters.get('receiver_api_host', "192.168.4.1")
+            self.RECEIVER_API_PORT = self.config_parameters.get('receiver_api_port', 80)
+            self.SOCKET_TIMEOUT = self.config_parameters.get('socket_timeout', 10)
+            self.SOCKET_RECV_SIZE = self.config_parameters.get('socket_recv_size', 10000)
+            self.PACKET_RETRY_SLEEP = self.config_parameters.get('packet_retry_sleep', 0.5)
+            self.logger_error = self.config_parameters.get('logger_error', None)
+            if self.debug:
+                print("Serial Connector configure: receiver_api_host: {}, receiver_api_port: {}, socket_timeout: {}, socket_recv_size: {}, packet_retry_sleep: {}".format(self.RECEIVER_API_HOST, 
+                self.RECEIVER_API_PORT, self.SOCKET_TIMEOUT, self.SOCKET_RECV_SIZE, self.PACKET_RETRY_SLEEP))
+
 
     def send_and_wait_response(self, packet: Packet) -> Packet:
         json_response = None

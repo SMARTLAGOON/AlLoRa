@@ -20,8 +20,8 @@ class SX127x_connector(Connector):
         self.MAC = ubinascii.hexlify(wlan_mac).decode()[-8:]
         wlan_sta.active(False)
 
-    def config(self, name = "S", frequency = 868, sf=7, mesh_mode=False, debug=False,  min_timeout = 0.5, max_timeout = 6):  #max_timeout = 10
-        super().config(name, frequency, sf, mesh_mode, debug, min_timeout, max_timeout)
+    def config(self, config_json):
+        super().config(config_json)
         self.lora = pyLora(freq = self.frequency,
                             sf=self.sf, verbose= self.debug)
         self.lora.setblocking(False) 

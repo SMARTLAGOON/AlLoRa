@@ -2,10 +2,12 @@ from AlLoRa.Nodes.Node import Node, Packet
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
 from time import time, sleep
 try:
+    import os
     from time import strftime
     def get_time():
         return strftime("%Y-%m-%d_%H:%M:%S")
 except:
+    import uos as os
     from utime import localtime
     def get_time():
         tt = localtime()
@@ -16,9 +18,27 @@ class Requester(Node):
 
     def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, NEXT_ACTION_TIME_SLEEP = 0.1):
         super().__init__(connector, config_file)
-
+        # JSON Example:
+        # {
+        #     "name": "G",
+        #     "frequency": 868,
+        #     "sf": 7,
+        #     "mesh_mode": false,
+        #     "debug": false,
+        #     "min_timeout": 0.5,
+        #     "max_timeout": 6,
+        #     "result_path": "Results",
+        # }
+        
         self.debug_hops = debug_hops
         self.NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP
+        if self.config:
+            self.result_path = self.config.get('result_path', "Results")
+            try:
+                os.mkdir(result_path)
+            except Exception as e:
+                if self.debug:
+                    print("Error creating result path: {}".format(e))
 
     def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode)
@@ -83,6 +103,7 @@ class Requester(Node):
                             print_file=False, save_file=False):
         
         mac = digital_endpoint.get_mac_address()
+        save_to = self.result_path + "/" + mac
         sleep_mesh = digital_endpoint.get_sleep()
         t0 = time()
         in_time = True
@@ -103,7 +124,7 @@ class Requester(Node):
                         if print_file:
                             print(file.get_content())
                         if save_file:
-                            file.save(mac)
+                            file.save(save_to)
 
             elif digital_endpoint.state == "OK":
                 ok, hop = self.ask_ok(packet_request)
