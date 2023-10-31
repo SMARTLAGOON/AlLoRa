@@ -1,8 +1,8 @@
 from AlLoRa.Packet import Packet
+import gc
 try:
     from utime import sleep, ticks_ms as time
     from uos import urandom
-    import gc
 except:
     from time import sleep, time
     from os import urandom

@@ -134,6 +134,8 @@ class Requester(Node):
             sleep(self.NEXT_ACTION_TIME_SLEEP)
 
     def save_hops(self, packet):
+        if packet is None:
+            return False
         if packet.get_debug_hops():
             hops = packet.get_message_path()
             id = packet.get_id()

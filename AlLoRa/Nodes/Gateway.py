@@ -60,7 +60,11 @@ class Gateway(Requester):
         print("Listening to {} endpoints!".format(len(self.digital_endpoints)))
         while True:
             for digital_endpoint in self.digital_endpoints:
-                self.listen_to_endpoint(digital_endpoint, digital_endpoint.listening_time, 
+                try:
+                    self.listen_to_endpoint(digital_endpoint, digital_endpoint.listening_time, 
                                         print_file=print_file_content, save_file=save_files)
+                except Exception as e:
+                    if self.debug:
+                        print("Error listening to endpoint: {}".format(e))
 
                    
