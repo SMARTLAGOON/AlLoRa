@@ -18,7 +18,7 @@ class Digital_Endpoint:
         # }
         if config:
             self.name = config.get('name', "N")
-            self.mac_address = config.get('mac_address'[-8:], "00000000")
+            self.mac_address = config.get('mac_address', "00000000")[-8:]
             self.active = config.get('active', True)
             self.sleep_mesh = config.get('sleep_mesh', True)
             self.listening_time = config.get('listening_time', 30)

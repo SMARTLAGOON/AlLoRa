@@ -28,7 +28,7 @@ class Node:
             self.config = loads(f.read())
 
         self.name = self.config.get('name', "N")
-        self.debug = self.config.get('debug', False)
+        self.debug = self.config.get('debug', True)
         self.mesh_mode = self.config.get('mesh_mode', False)
         self.chunk_size = self.config.get('chunk_size', 235)
 

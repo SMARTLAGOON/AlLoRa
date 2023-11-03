@@ -49,8 +49,11 @@ class Gateway(Requester):
                 except:
                     retries = 10
                 if node['active']:
-                    self.digital_endpoints.append(Digital_Endpoint(node))                                            
+                    active_node = Digital_Endpoint(node)
+                    self.digital_endpoints.append(active_node)                                            
                     count_nodes += 1
+                    if self.debug:
+                        print("Node {} added!".format(active_node.mac_address))
             return count_nodes
         except:
             print("Could not load nodes from file: {}, please set manually or add missing file".format(path))

@@ -35,7 +35,7 @@ class Requester(Node):
         if self.config:
             self.result_path = self.config.get('result_path', "Results")
             try:
-                os.mkdir(result_path)
+                os.mkdir(self.result_path)
             except Exception as e:
                 if self.debug:
                     print("Error creating result path: {}".format(e))
