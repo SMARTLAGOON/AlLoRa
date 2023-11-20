@@ -29,21 +29,18 @@ jobs:
         run: echo "VERSION_BUMP=${{ github.event.inputs.versionType }}" >> $GITHUB_ENV
 
       - name: Bump version and push tag
+        id: tag_version
         uses: anothrNick/github-tag-action@1.36.0
         with:
-          tag_prefix: "v" # Our tags include the 'v' prefix
-          # Uncomment the following line if you want to test without pushing the tags
-          # dry_run: true
-          # Use the input to set the version bump type
+          tag_prefix: "v" # Tags will include the 'v' prefix
           bump: ${{ env.VERSION_BUMP }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update version in setup.py
         run: |
-          TAG_VERSION=$(echo ${{ steps.tag_version.outputs.new_tag }} | sed 's/^v//')
-          echo "New version is $TAG_VERSION"
-          sed -i'' -e "s/^VERSION = .*/VERSION = '$TAG_VERSION'/" setup.py
+          TAG_VERSION=${{ steps.tag_version.outputs.new_tag }}
+          sed -i'' -e "s/^VERSION = .*/VERSION = '${TAG_VERSION#v}'/" setup.py
         if: steps.tag_version.outputs.new_tag != ''
 
       - name: Set up Python
@@ -60,10 +57,32 @@ jobs:
         run: |
           python -m build
 
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag_version.outputs.new_tag }}
+          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          draft: false
+          prerelease: false
+
+      - name: Upload Wheel File to GitHub Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./dist/AlLoRa-${{ steps.tag_version.outputs.new_tag }}-py3-none-any.whl
+          asset_name: AlLoRa-${{ steps.tag_version.outputs.new_tag }}-py3-none-any.whl
+          asset_content_type: application/octet-stream
+
       - name: Publish package to TestPyPI
         if: steps.tag_version.outputs.new_tag != ''
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/  # Make sure to use TestPyPI for testing
+          repository_url: https://test.pypi.org/legacy/
+
