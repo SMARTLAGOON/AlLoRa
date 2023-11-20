@@ -30,20 +30,16 @@ jobs:
           sed -i'' -e "s/^VERSION = .*/VERSION = '${{ env.NEW_VERSION }}'/" setup.py
           echo "setup.py updated to version ${{ env.NEW_VERSION }}"
 
-      - name: Fetch latest changes from remote
-        run: git fetch
-      
       - name: Commit updated setup.py
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -am "Update version to ${{ env.NEW_VERSION }}" || echo "No changes to commit"
-      
-      - name: Rebase onto latest main branch
-        run: git rebase origin/main
-      
-      - name: Push changes
-        run: git push origin HEAD:${{ github.ref }}
+          git fetch
+          git rebase origin/${{ github.ref }}
+          git push origin HEAD:${{ github.ref }}
+        env:
+          NEW_VERSION: ${{ github.event.inputs.version }}
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -61,8 +57,12 @@ jobs:
 
       - name: Create and push new tag
         run: |
-          git tag -a "v${{ env.NEW_VERSION }}" -m "Release version v${{ env.NEW_VERSION }}"
-          git push origin "v${{ env.NEW_VERSION }}"
+          echo "TAG_NAME=v${{ env.NEW_VERSION }}" >> $GITHUB_ENV
+          git tag -a "$TAG_NAME" -m "Release version $TAG_NAME"
+          git push origin "$TAG_NAME"
+        env:
+          NEW_VERSION: ${{ github.event.inputs.version }}
+          TAG_NAME: ''
 
       - name: Create GitHub Release
         id: create_release
@@ -70,8 +70,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
+          tag_name: ${{ env.TAG_NAME }}
+          release_name: Release ${{ env.TAG_NAME }}
           draft: false
           prerelease: false
 
@@ -81,16 +81,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
+          asset_path: ./dist/*.whl
           asset_name: AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
           asset_content_type: application/octet-stream
 
-
       - name: Publish package to PyPI
-        if: steps.tag_version.outputs.new_tag != ''
+        if: env.TAG_NAME != ''
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-          # The repository_url is not needed for the official PyPI as it's the default value
 
