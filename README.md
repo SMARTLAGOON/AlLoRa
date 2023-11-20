@@ -1,4 +1,4 @@
-# ****AlLoRa:**** modular, mesh, multi-device ****LoRa Content Transfer Protocol****
+# ****AlLoRa:**** Advance layer LoRa
 
 Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://zenodo.org/badge/latestdoi/509513450)
 
@@ -10,6 +10,9 @@ The code in this repository contains a toolbox that allows transferring content 
 
 Details of the protocol can be found in this paper: [A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
 
+We're also developing a GPT assistant, [AlLoRa Genius](https://chat.openai.com/g/g-rOGxxA1BZ-allora-genius), to assist with understanding and utilizing the AlLoRa protocol more effectively.
+
+
 ## Readme on Notion!
 > For a better experience, you can check our awesome **Notion** description of the code [here...](https://barratia.notion.site/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)
 
@@ -18,8 +21,8 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
   - [AlLoRa](#AlLoRa)
     - [Nodes](#nodes)
       - [Node.py](#base_nodepy)
-      - [Sender.py](#sender_nodepy)
-      - [Receiver.py](#receiver_nodepy)
+      - [Source.py](#Source_nodepy)
+      - [Requester.py](#Requester_nodepy)
       - [Gateway.py](#gateway_nodepy)
     - [Connectors](#connectors)
     - [→ Datasource.py](#datasourcepy)
@@ -61,17 +64,17 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
 
   The main methods in this class are send_request and send_response.
 
-  ### [Sender.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Sender.py)
+  ### [Source.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Source.py)
 
-  It is a structure whose purpose, as its name implies, is to send one or more [Files](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) . It waits and listens for requests from a [Receiver](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) or [Gateway](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) Node and syncs with them to send blocks (we call them chunks) of bytes of a [File,](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  until it finishes and is ready to send another one.  
+  It is a structure whose purpose, as its name implies, is to send one or more [Files](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) . It waits and listens for requests from a [Requester](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) or [Gateway](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) Node and syncs with them to send blocks (we call them chunks) of bytes of a [File,](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  until it finishes and is ready to send another one.  
 
    <details>
    <summary><b><u>Usage</u></b></summary>
 
-   ### [Sender](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Nodes/Sender.py) usage:
+   ### [Source](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Nodes/Source.py) usage:
    1. Instantiation:
 
-      For the user, the Sender must be instantiated with the same parameters explained in [Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), plus:
+      For the user, the Source must be instantiated with the same parameters explained in [Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), plus:
 
       -name: A nickname for the Node, it shouldn’t be too large, we recommend a maximum of 3 characters, for the testing we used one letter (Nodes “A”, “B”, “C”…)
       
@@ -79,7 +82,7 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
 
  2. Establish Connection: 
 
-    The first thing to do with the Sender is to use the establish_connection method. It will wait until a message for itself arrives, in order to sync with the Receiver/Gateway Node.
+    The first thing to do with the Source is to use the establish_connection method. It will wait until a message for itself arrives, in order to sync with the Requester/Gateway Node.
 
  3. Set a File:
 
@@ -93,9 +96,9 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
  ### Example:
 
  ```python
- from AlLoRa.Nodes.Sender import ASender
+ from AlLoRa.Nodes.Source import ASource
 
- lora_node = AlLoRa_Sender(name = "A", connector = connector,
+ lora_node = AlLoRa_Source(name = "A", connector = connector,
           chunk_size = 235, mesh_mode = True, debug = False)
 
  lora_node.establish_connection()
@@ -104,21 +107,21 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
  ```
  </details>
 
- ### [Receiver.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Receiver.py)
+ ### [Requester.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Requester.py)
 
- It is a structure whose purpose, as its name implies, is to receive [Files](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b). It asks information to a [Sender](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  and listens for the responses. In order to communicate with an specific Node, the Receiver must have the information of this endpoint, for this,  we use the [Digital_Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) class, who contains the MAC Address of the endpoint and manages the states of the communication and generates the complete [File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) when the receiver finishes collecting all the chunks.
+ It is a structure whose purpose, as its name implies, is to receive [Files](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b). It asks information to a [Source](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  and listens for the responses. In order to communicate with an specific Node, the Requester must have the information of this endpoint, for this,  we use the [Digital_Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) class, who contains the MAC Address of the endpoint and manages the states of the communication and generates the complete [File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) when the Requester finishes collecting all the chunks.
 
  <details>
  <summary><b><u>Usage</u></b></summary>
 
- ### [Receiver](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) usage:
+ ### [Requester](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) usage:
 
  1. Instantiation:
 
- For the user, the Receiver must be instantiated with the same parameters explained in [Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), plus:
+ For the user, the Requester must be instantiated with the same parameters explained in [Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), plus:
 
-- debug_hops (optional):  If True, the Senders will override the message to be sent and register the message path (or hops between Nodes), more information about this [here](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b).
-- NEXT_ACTION_TIME_SLEEP (optional): Is the time (in seconds) between actions for the receiver in order to listen to the sender. The default is 0.1 seconds, but you can experiment with this number if you want.
+- debug_hops (optional):  If True, the Sources will override the message to be sent and register the message path (or hops between Nodes), more information about this [here](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b).
+- NEXT_ACTION_TIME_SLEEP (optional): Is the time (in seconds) between actions for the Requester in order to listen to the Source. The default is 0.1 seconds, but you can experiment with this number if you want.
 2. Listen to endpoint:
 
     Once instantiated, we can use the method listen_to_endpoint, who needs a [Digital_Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to operate and a listening_time. We can use a loop to ensure that the [File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to be received arrives completely, but we can also use this listening_time to avoid getting stuck for too long while waiting for it to arrive.
@@ -127,9 +130,9 @@ Details of the protocol can be found in this paper: [A modular and mesh-capable 
 ### Example:
 
 ```python
-from AlLoRa.Nodes.Receiver import Receiver
+from AlLoRa.Nodes.Requester import Requester
 
-lora_node = Receiver(connector = connector, mesh_mode = True, debug = False)
+lora_node = Requester(connector = connector, mesh_mode = True, debug = False)
 
 lora_node.listen_to_endpoint(digital_endpoint, 300)
 
@@ -141,7 +144,7 @@ content = ctp_file.get_content()
 
 ### [Gateway.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Gateway.py)
 
-It is a practically a [Receiver Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) (actually, it inherits from it) but it has the capability to manage multiple [Sender Nodes](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), receiving a list of [Digital_Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  to check.
+It is a practically a [Requester Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) (actually, it inherits from it) but it has the capability to manage multiple [Source Nodes](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), receiving a list of [Digital_Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  to check.
  <details>
  <summary><b><u>Usage</u></b></summary>
 
@@ -149,7 +152,7 @@ It is a practically a [Receiver Node](https://www.notion.so/AlLoRa-ec6d1adaabcb4
 
 1. Instantiation:
 
-    For the user, the Gateway must be instantiated with the same parameters explained in [Receiver](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) plus:
+    For the user, the Gateway must be instantiated with the same parameters explained in [Requester](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) plus:
 
     - TIME_PER_ENDPOINT: Time in seconds to focus per Node to listen, the default is 10 seconds.
 2. Set list of [Digital_Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b):
@@ -203,19 +206,19 @@ Is the counterpart of the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/A
     
 ### → [Datasource.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/DataSource.py)
 
-A Datasource is a handy class that can be use to manage the files to be send. It is supposed to be used to feed Files to send to a Sender Nodes.
+A Datasource is a handy class that can be use to manage the files to be send. It is supposed to be used to feed Files to send to a Source Nodes.
 
 ### → [Digital_Endpoint.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Digital_Endpoint.py)
 
-Contains the MAC Address of the endpoint to communicate with and manages the states of the communication. It also manages the generation of the complete [File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) when the receiver finishes collecting all the chunks.
+Contains the MAC Address of the endpoint to communicate with and manages the states of the communication. It also manages the generation of the complete [File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) when the Requester finishes collecting all the chunks.
 
 It also manages the “state” or phase in which the transfer is. 
 
 ### → [AlLoRa_File.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/AlLoRa_File.py)
 
-It is the class who focus on the actual File to be sent or received. It can be used to obtain the chunks of the content to transfer to the Sender Nodes and also assembly all the blocks received to obtain the complete File in the Receiver/Gateway side.
+It is the class who focus on the actual File to be sent or received. It can be used to obtain the chunks of the content to transfer to the Source Nodes and also assembly all the blocks received to obtain the complete File in the Requester/Gateway side.
 
-It can be instantiated with content (byte array) to be used by the Sender to transmit the content, or it can also be instantiated as a “container”, in order to receive the chunks and finally assemble it to obtain the whole content, in the Receiver side.
+It can be instantiated with content (byte array) to be used by the Source to transmit the content, or it can also be instantiated as a “container”, in order to receive the chunks and finally assemble it to obtain the whole content, in the Requester side.
 
 ### → [AlLoRa_Packet.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/AlLoRa_Packet.py)
 
@@ -282,17 +285,17 @@ It operates in this way:
 <details>
 <summary>Contain examples of uses of the AlLoRa code.</summary>
 
-### [LoPy Sender](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPySender)
+### [LoPy Source](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPySource)
 
-A simple implementation of a Sender Node use case, it sends increasingly larger files of numbers.
+A simple implementation of a Source Node use case, it sends increasingly larger files of numbers.
 
-### [LoPy Receiver](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPyReceiver)
+### [LoPy Requester](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPyRequester)
 
-A simple implementation of a Receiver Node use case, it ask a Sender Node for information and listen to the responses
+A simple implementation of a Requester Node use case, it ask a Source Node for information and listen to the responses
 
 ### [Raspberry Gateway](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/RaspberryGateway)
 
-An implementation of a Gateway Node using Raspberry Pi (or a desktop computer), it access LoRa using the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Adapters/AlLoRa-WiFi_adapter) and listens to two Sender Nodes and prints the content when a whole File is received.
+An implementation of a Gateway Node using Raspberry Pi (or a desktop computer), it access LoRa using the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Adapters/AlLoRa-WiFi_adapter) and listens to two Source Nodes and prints the content when a whole File is received.
 
 </details>
 
@@ -302,13 +305,13 @@ An implementation of a Gateway Node using Raspberry Pi (or a desktop computer), 
   <img width="700" src="readme_assets/figures/Untitled.png">
 </p>
 
-As we can see in the image above, the protocol is structured in a symmetrical way. At the left we have the Sender side, with a [Sender Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  that receives a [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  to be sent from a [Data Source](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), and uses a [Connector](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to access LoRa to send [AlLoRa Packets](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b). 
+As we can see in the image above, the protocol is structured in a symmetrical way. At the left we have the Source side, with a [Source Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  that receives a [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)  to be sent from a [Data Source](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), and uses a [Connector](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to access LoRa to send [AlLoRa Packets](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b). 
 
-At the right we have the Receiver side, with a [Receiver Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) that receives a [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), that provides the Sender information, in order to listen to it to receive the [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), it also uses a [Connector](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to access LoRa to receive the [AlLoRa Packets](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), that contains the chunks (blocks of bytes) of the content transmitted.
+At the right we have the Requester side, with a [Requester Node](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) that receives a [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), that provides the Source information, in order to listen to it to receive the [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), it also uses a [Connector](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) to access LoRa to receive the [AlLoRa Packets](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), that contains the chunks (blocks of bytes) of the content transmitted.
 
 ## → Communication logic
 
-The system follow a logic of requests from the Receiver to the Sender. Depending of the state of the state of the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), the Receiver will send requests to the specific Sender and wait a time for an answer or reply. If the answer does not arrive or it arrives with corruptions, the Receiver Node will repeat the request until the message arrives correctly (with a timeout when necessary).
+The system follow a logic of requests from the Requester to the Source. Depending of the state of the state of the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), the Requester will send requests to the specific Source and wait a time for an answer or reply. If the answer does not arrive or it arrives with corruptions, the Requester Node will repeat the request until the message arrives correctly (with a timeout when necessary).
 
 The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) operates with the following states or phases of the communication:
 
@@ -316,19 +319,19 @@ The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf
 
 1. **Establish connection**
     
-    Every Digital Endpoint start in this state, is sends a simple packet with the command “ok” and waits until a “ok” from the sender is received, then, it continues to the next state. 
+    Every Digital Endpoint start in this state, is sends a simple packet with the command “ok” and waits until a “ok” from the Source is received, then, it continues to the next state. 
     
 2. **Ask metadata**:
     
-    This is the first step for receiving a [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), it asks the Sender for the metadata of the content to be received and waits until a Packet arrives with the name and the number of chunks of the content. In this stage, the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) creates an empty [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) object that will act as a container for the incoming chunks. If successful, it continues to the next state.
+    This is the first step for receiving a [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), it asks the Source for the metadata of the content to be received and waits until a Packet arrives with the name and the number of chunks of the content. In this stage, the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) creates an empty [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) object that will act as a container for the incoming chunks. If successful, it continues to the next state.
     
 3. **Ask for data**
     
-    In this state, the Receiver will sequentially ask for the chunks necessary to obtain the whole content. When a chunk arrives, it will feed the [AlLoRa](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) object until it collected all. When the [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) is complete, it will be assembled and the content will be ready to access or saved.
+    In this state, the Requester will sequentially ask for the chunks necessary to obtain the whole content. When a chunk arrives, it will feed the [AlLoRa](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) object until it collected all. When the [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) is complete, it will be assembled and the content will be ready to access or saved.
     
 4. **Final acknowledge**
     
-    In order to maintain the synchronization between the Nodes, a final acknowledge will be sent, and the system will wait until the Sender replies with an “ok” command.
+    In order to maintain the synchronization between the Nodes, a final acknowledge will be sent, and the system will wait until the Source replies with an “ok” command.
 
 **More information about how the [commands work](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) in the Packet Structure section*
 
@@ -340,7 +343,7 @@ For compatibility’s sake, It is designed to have a maximum of 255 Bytes, that 
 
 The header size is variable depending on the enabled mode (mesh or point-2-point), but both have in common a header of 20 Bytes, the first 16 Bytes contain the first 8 characters of the MAC Address of the source and destination Nodes. 1 Byte is destined to the message’s command and flags (explained in more detail [below](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)). Another 3 Bytes are destined to the Checksum of the content, it is used to check if the content has arrived correctly or if it has some type of corruption. 
 
-Finally, if the system is working in [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) (detailed below), an additional 2 Bytes are used to store a message ID. The ID is a random number between 0 and 65.535 (the range of values that can be represented in binary using 2 Bytes) and it is used to manage the retransmissions when in mesh mode and to avoid chunk duplication in the receiver.
+Finally, if the system is working in [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) (detailed below), an additional 2 Bytes are used to store a message ID. The ID is a random number between 0 and 65.535 (the range of values that can be represented in binary using 2 Bytes) and it is used to manage the retransmissions when in mesh mode and to avoid chunk duplication in the Requester.
 
 <div align="center">
 <table>
@@ -387,8 +390,8 @@ style="display: block; margin: 0 auto" />
     
     - **00 → DATA:** The command activated when the payload contains a requested chunk.
     - **01 → OK:** The acknowledgement command, it is used to establish connection between nodes or notify of the correct reception of the final chunk of the content being received. It usually implies that the payload is empty.
-    - **10 →  CHUNK:** This command is used by the Receiver/Gateway to ask for a chunk of the content being received. The chunk number is stored in the payload, so the Sender can know what block is being requested.
-    - **11 → METADATA:** This command is used by the Receiver/Gateway to ask for the metadata of the file to be received. If this is the case, the payload of the request will be empty. It is also used by the Sender to answer the request of metadata. In this case the payload contains the name and size of the File to sent.
+    - **10 →  CHUNK:** This command is used by the Requester/Gateway to ask for a chunk of the content being received. The chunk number is stored in the payload, so the Source can know what block is being requested.
+    - **11 → METADATA:** This command is used by the Requester/Gateway to ask for the metadata of the file to be received. If this is the case, the payload of the request will be empty. It is also used by the Source to answer the request of metadata. In this case the payload contains the name and size of the File to sent.
 - **Retransmission bit**: Not being used for the moment
     
 - **Mesh bit**: 1 bit that indicates if the message is supposed to be forwarded or not (more about this in the [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) segment).
@@ -400,9 +403,9 @@ style="display: block; margin: 0 auto" />
 
 ## → Mesh mode
 
-If the communication protocol has the mesh mode activated, the communication will work exactly the same as described [before](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), but in the case of a request don’t being answered by a Sender for a specific number of times (set by the user), the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) will jump to “retransmission mode”. Activating the mesh bit in the Packet in order to tell the other Nodes in the system to retransmit the message if received, to extend the reach of the system and try to establish the communication with the missing Node.
+If the communication protocol has the mesh mode activated, the communication will work exactly the same as described [before](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), but in the case of a request don’t being answered by a Source for a specific number of times (set by the user), the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) will jump to “retransmission mode”. Activating the mesh bit in the Packet in order to tell the other Nodes in the system to retransmit the message if received, to extend the reach of the system and try to establish the communication with the missing Node.
 
-If a Sender Node receives a Packet that is not for itself, it usually discards it and keep listening for request directed to it. But with the mesh bit activated, it will forward it to help reach the real destination. For this forwarding, the Node sleeps for a random time between 0.1 and 1 second before sending it. This reduces the possibility of collisions between Packets when multiple Nodes are active and in reach between them. Each time a Packet is forwarded, the Hop bit of it will be activated in order to announce that it actually went through other devices during its path. When the destination Node receives its message, it notices that the message arrived using the “retransmission mode” and creates a response Packet with the mesh bit activated, because it assumes that if it arrived like this, it is probably that the response will reach the Gateway jumping through the same path. In this case, the Node doesn’t sleep before sending the response, prioritizing always the sender Node being requested something.
+If a Source Node receives a Packet that is not for itself, it usually discards it and keep listening for request directed to it. But with the mesh bit activated, it will forward it to help reach the real destination. For this forwarding, the Node sleeps for a random time between 0.1 and 1 second before sending it. This reduces the possibility of collisions between Packets when multiple Nodes are active and in reach between them. Each time a Packet is forwarded, the Hop bit of it will be activated in order to announce that it actually went through other devices during its path. When the destination Node receives its message, it notices that the message arrived using the “retransmission mode” and creates a response Packet with the mesh bit activated, because it assumes that if it arrived like this, it is probably that the response will reach the Gateway jumping through the same path. In this case, the Node doesn’t sleep before sending the response, prioritizing always the Source Node being requested something.
 
 If the response Packet arrives with the Hop bit off to the Gateway, it means that it didn't go through any other Node in order response to the request, indicating that the retransmission maybe are not needed. In this cases the Gateway will deactivate the “retransmission mode” of this specific Digital Endpoint.
 
@@ -410,7 +413,7 @@ In order to avoid duplication and over retransmission of messages that could col
 
 ## → Debug Hops
 
-The debug hops is an option available to activate when instantiating a Receiver or Gateway Node, and is a useful tool to check the path of a Packet when using the Mesh mode. It overrides the messages and focus on register in the payload each time the Packet goes through a Node. This information can be later retrieved in the Receiver/Gateway Node’s device’s memory and can be used to make decisions about the distribution of the Nodes in the area to cover.
+The debug hops is an option available to activate when instantiating a Requester or Gateway Node, and is a useful tool to check the path of a Packet when using the Mesh mode. It overrides the messages and focus on register in the payload each time the Packet goes through a Node. This information can be later retrieved in the Requester/Gateway Node’s device’s memory and can be used to make decisions about the distribution of the Nodes in the area to cover.
 
 The output of this process generates a log_rssi.txt file that looks like this:
 
@@ -571,7 +574,7 @@ In order to run an example, if you are using a Python compatible device, you sho
     - If you want to use VS Code, here are the official Pycom instructions: [Visual Studio Code](https://docs.pycom.io/gettingstarted/software/vscode/)
 
 
-    Once you have everything installed and working, you should be able to connect your LoPy4 + expansion board (Pygate  and Pysense 2.0 X for the sender and the receiver respectively) to your computer using an USB cable and PyMakr should recognise it.
+    Once you have everything installed and working, you should be able to connect your LoPy4 + expansion board (Pygate  and Pysense 2.0 X for the Source and the Requester respectively) to your computer using an USB cable and PyMakr should recognise it.
     </details>
 
 *   <details>
