@@ -75,9 +75,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/*.whl
+          asset_path: ./dist/AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
           asset_name: AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
           asset_content_type: application/octet-stream
+
 
       - name: Publish package to TestPyPI
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
