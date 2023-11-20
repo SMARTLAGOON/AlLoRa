@@ -11,10 +11,9 @@ name: Python Package Release
 on:
   workflow_dispatch:
     inputs:
-      versionType:
-        description: 'Version type to bump (major, minor, patch)'
+      version:
+        description: 'Enter the new version (e.g., 1.2.1)'
         required: true
-        default: 'patch'
 
 jobs:
   release:
@@ -25,29 +24,13 @@ jobs:
         with:
           fetch-depth: 0  # Ensures all tags are fetched
 
-      - name: Set version bump type
-        run: echo "VERSION_BUMP=${{ github.event.inputs.versionType }}" >> $GITHUB_ENV
-
-      - name: Bump version and push tag
-        id: tag_version
-        uses: anothrNick/github-tag-action@1.36.0
-        with:
-          tag_prefix: "v" # Tags will include the 'v' prefix
-          bump: ${{ env.VERSION_BUMP }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set new version
+        run: echo "NEW_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
 
       - name: Update version in setup.py
         run: |
-          TAG_VERSION=${{ steps.tag_version.outputs.new_tag }}
-          echo "New version is ${TAG_VERSION#v}"
-          echo "Contents of setup.py before update:"
-          cat setup.py
-          sed -i "s/^VERSION = .*/VERSION = '${TAG_VERSION#v}'/" setup.py
-          echo "Contents of setup.py after update:"
-          cat setup.py
-        if: steps.tag_version.outputs.new_tag != ''
-
+          echo "New version is $NEW_VERSION"
+          sed -i'' -e "s/^VERSION = .*/VERSION = '$NEW_VERSION'/" setup.py
 
       - name: Set up Python
         uses: actions/setup-python@v3
@@ -63,14 +46,21 @@ jobs:
         run: |
           python -m build
 
+      - name: Create and push new tag
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git tag -a "v$NEW_VERSION" -m "Release version v$NEW_VERSION"
+          git push origin "v$NEW_VERSION"
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ steps.tag_version.outputs.new_tag }}
-          release_name: Release ${{ steps.tag_version.outputs.new_tag }}
+          tag_name: "v$NEW_VERSION"
+          release_name: Release v$NEW_VERSION
           draft: false
           prerelease: false
 
@@ -80,15 +70,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/AlLoRa-${{ steps.tag_version.outputs.new_tag }}-py3-none-any.whl
-          asset_name: AlLoRa-${{ steps.tag_version.outputs.new_tag }}-py3-none-any.whl
+          asset_path: ./dist/AlLoRa-$NEW_VERSION-py3-none-any.whl
+          asset_name: AlLoRa-$NEW_VERSION-py3-none-any.whl
           asset_content_type: application/octet-stream
 
       - name: Publish package to TestPyPI
-        if: steps.tag_version.outputs.new_tag != ''
+        if: github.event.inputs.version != ''
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
           password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository_url: https://test.pypi.org/legacy/
-
