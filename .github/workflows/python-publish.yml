@@ -70,9 +70,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/AlLoRa-$NEW_VERSION-py3-none-any.whl
-          asset_name: AlLoRa-$NEW_VERSION-py3-none-any.whl
+          asset_path: ./dist/AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
+          asset_name: AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
           asset_content_type: application/octet-stream
+
 
       - name: Publish package to TestPyPI
         if: github.event.inputs.version != ''
