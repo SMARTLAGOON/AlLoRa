@@ -30,14 +30,20 @@ jobs:
           sed -i'' -e "s/^VERSION = .*/VERSION = '${{ env.NEW_VERSION }}'/" setup.py
           echo "setup.py updated to version ${{ env.NEW_VERSION }}"
 
+      - name: Fetch latest changes from remote
+        run: git fetch
+      
       - name: Commit updated setup.py
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git commit -am "Update version to ${{ env.NEW_VERSION }}" || echo "No changes to commit"
-          git push origin HEAD:${{ github.ref }}
-        env:
-          NEW_VERSION: ${{ github.event.inputs.version }}
+      
+      - name: Rebase onto latest main branch
+        run: git rebase origin/main
+      
+      - name: Push changes
+        run: git push origin HEAD:${{ github.ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v3
