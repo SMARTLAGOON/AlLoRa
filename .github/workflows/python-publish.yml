@@ -80,9 +80,11 @@ jobs:
           asset_content_type: application/octet-stream
 
 
-      - name: Publish package to TestPyPI
+      - name: Publish package to PyPI
+        if: steps.tag_version.outputs.new_tag != ''
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository_url: https://test.pypi.org/legacy/
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          # The repository_url is not needed for the official PyPI as it's the default value
+
