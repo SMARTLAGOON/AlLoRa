@@ -40,8 +40,14 @@ jobs:
       - name: Update version in setup.py
         run: |
           TAG_VERSION=${{ steps.tag_version.outputs.new_tag }}
-          sed -i'' -e "s/^VERSION = .*/VERSION = '${TAG_VERSION#v}'/" setup.py
+          echo "New version is ${TAG_VERSION#v}"
+          echo "Contents of setup.py before update:"
+          cat setup.py
+          sed -i "s/^VERSION = .*/VERSION = '${TAG_VERSION#v}'/" setup.py
+          echo "Contents of setup.py after update:"
+          cat setup.py
         if: steps.tag_version.outputs.new_tag != ''
+
 
       - name: Set up Python
         uses: actions/setup-python@v3
