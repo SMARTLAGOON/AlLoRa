@@ -61,6 +61,9 @@ jobs:
         run: |
           python -m build
 
+      - name: Identify built wheel file
+        run: echo "WHEEL_FILE=$(ls dist/*.whl)" >> $GITHUB_ENV
+
       - name: Create and push new tag
         run: |
           git tag -a "v${{ env.NEW_VERSION }}" -m "Release version v${{ env.NEW_VERSION }}"
@@ -85,9 +88,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/*.whl
-          asset_name: AlLoRa-${{ env.NEW_VERSION }}-py3-none-any.whl
+          asset_path: ${{ env.WHEEL_FILE }}
+          asset_name: ${{ env.WHEEL_FILE }}
           asset_content_type: application/octet-stream
+
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
