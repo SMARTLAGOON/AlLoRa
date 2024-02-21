@@ -2,7 +2,7 @@
     "name": "A",
     "chunk_size": 235,
     "mesh_mode": false,
-    "debug": false,
+    "debug": true,
     "connector": {
       "sf": 7,
       "freq": 868,
@@ -10,4 +10,3 @@
       "max_timeout": 12
       }
  }
-  

@@ -120,6 +120,3 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Error Serial Recv: ", e)
             return None
-
-            
-

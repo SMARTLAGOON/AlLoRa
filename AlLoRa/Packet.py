@@ -57,6 +57,12 @@ class Packet:
         # For mesh
         self.id = None                    # Random number from 0 to 65.535
 
+    def __repr__(self):
+        return f"Packet(mesh_mode={self.mesh_mode}, source='{self.source}', destination='{self.destination}', " \
+               f"checksum={self.checksum}, payload={self.payload}, check={self.check}, command={self.command}, " \
+               f"mesh={self.mesh}, sleep={self.sleep}, hop={self.hop}, debug_hops={self.debug_hops}, " \
+               f"change_sf={self.change_sf}, id={self.id})"
+
     def set_source(self, source: str):
         self.source = source
 
@@ -255,7 +261,7 @@ class Packet:
             "destination" : self.destination,
             "command" : self.command,
             "checksum" : self.checksum.decode(),
-            "payload" : self.payload.decode(),
+            "payload" : binascii.b2a_base64(self.payload).decode().strip() if self.payload else None,
             "mesh" : self.mesh,
             "hop" : self.hop,
             "sleep" : self.sleep,
@@ -270,7 +276,7 @@ class Packet:
         self.destination = d["destination"]
         self.command = d["command"]
         self.checksum = d["checksum"].encode()
-        self.payload = d["payload"].encode()
+        self.payload = binascii.a2b_base64(d["payload"]) if d["payload"] else b''
         self.mesh = d["mesh"]
         self.hop = d["hop"]
         self.sleep = d["sleep"]

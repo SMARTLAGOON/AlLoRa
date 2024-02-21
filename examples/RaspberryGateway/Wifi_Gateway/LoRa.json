@@ -1,6 +1,6 @@
 {
     "name": "G",
-    "debug": false,
+    "debug": true,
     "mesh_mode": false,
     "chunk_size": 235,
     "connector":{

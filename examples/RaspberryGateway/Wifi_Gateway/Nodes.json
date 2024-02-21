@@ -15,6 +15,12 @@
       "name": "CAM",
       "mac_address": "bd462e74",
       "sleep_mesh" : true,
+      "active": false
+    }, 
+    {
+      "name": "GPS",
+      "mac_address": "75dbb244",
+      "sleep_mesh" : true,
       "active": true
     }
   
