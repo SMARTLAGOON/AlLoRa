@@ -64,7 +64,7 @@ class Source(Node):
 
     def establish_connection(self, try_for=None):
         while True:
-            print("establish")
+            print("Establish")
             new_sf = None
             packet = self.listen_receiver()
             if packet:
@@ -95,6 +95,8 @@ class Source(Node):
                             self.sf_trial = 3
                         return False
                 else:
+                    if self.debug:
+                        print("Not for me, my mac is: ", self.MAC, " and packet mac is: ", packet.get_destination())
                     self.forward(packet)
             gc.collect()
             if try_for is not None:

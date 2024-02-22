@@ -58,10 +58,9 @@ class Packet:
         self.id = None                    # Random number from 0 to 65.535
 
     def __repr__(self):
-        return f"Packet(mesh_mode={self.mesh_mode}, source='{self.source}', destination='{self.destination}', " \
-               f"checksum={self.checksum}, payload={self.payload}, check={self.check}, command={self.command}, " \
-               f"mesh={self.mesh}, sleep={self.sleep}, hop={self.hop}, debug_hops={self.debug_hops}, " \
-               f"change_sf={self.change_sf}, id={self.id})"
+        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
+            self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
+            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)
 
     def set_source(self, source: str):
         self.source = source

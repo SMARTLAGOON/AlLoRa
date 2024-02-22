@@ -108,30 +108,33 @@ class Requester(Node):
         t0 = time()
         in_time = True
         while (in_time):
-            packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
+            try: 
+                packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
 
-            if digital_endpoint.state == "REQUEST_DATA_STATE":
-                metadata, hop = self.ask_metadata(packet_request)
-                digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
+                if digital_endpoint.state == "REQUEST_DATA_STATE":
+                    metadata, hop = self.ask_metadata(packet_request)
+                    digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
 
-            elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
-                next_chunk = digital_endpoint.get_next_chunk()
-                print("ASKING CHUNK: {}".format(next_chunk))
-                if next_chunk is not None:
-                    data, hop = self.ask_data(packet_request, next_chunk)
-                    file = digital_endpoint.set_data(data, hop, self.mesh_mode)
-                    if file:   
-                        if print_file:
-                            print(file.get_content())
-                        if save_file:
-                            file.save(save_to)
+                elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
+                    next_chunk = digital_endpoint.get_next_chunk()
+                    print("ASKING CHUNK: {}".format(next_chunk))
+                    if next_chunk is not None:
+                        data, hop = self.ask_data(packet_request, next_chunk)
+                        file = digital_endpoint.set_data(data, hop, self.mesh_mode)
+                        if file:   
+                            if print_file:
+                                print(file.get_content())
+                            if save_file:
+                                file.save(save_to)
 
-            elif digital_endpoint.state == "OK":
-                ok, hop = self.ask_ok(packet_request)
-                digital_endpoint.connected(ok, hop, self.mesh_mode)
+                elif digital_endpoint.state == "OK":
+                    ok, hop = self.ask_ok(packet_request)
+                    digital_endpoint.connected(ok, hop, self.mesh_mode)
 
-            in_time = True if time() - t0 < listening_time else False
-            sleep(self.NEXT_ACTION_TIME_SLEEP)
+                in_time = True if time() - t0 < listening_time else False
+                sleep(self.NEXT_ACTION_TIME_SLEEP)
+            except Exception as e:
+                print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
 
     def save_hops(self, packet):
         if packet is None:

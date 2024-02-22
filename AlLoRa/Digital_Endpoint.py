@@ -6,7 +6,9 @@ class Digital_Endpoint:
     PROCESS_CHUNK_STATE = "PROCESS_CHUNK_STATE"
     OK = "OK"
 
-    def __init__(self, config):
+    def __init__(self, config=None, name="N", mac_address="00000000", active=True, 
+                    sleep_mesh=True, listening_time=30, 
+                    MAX_RETRANSMISSIONS_BEFORE_MESH=10):
         # JSON Example:
         # {
         #     "name": "N",
@@ -23,6 +25,13 @@ class Digital_Endpoint:
             self.sleep_mesh = config.get('sleep_mesh', True)
             self.listening_time = config.get('listening_time', 30)
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = config.get('MAX_RETRANSMISSIONS_BEFORE_MESH', 10)
+        else:
+            self.name = name
+            self.mac_address = mac_address[-8:]
+            self.active = active
+            self.sleep_mesh = sleep_mesh
+            self.listening_time = listening_time
+            self.MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
 
         self.state = Digital_Endpoint.OK
         self.current_file = None
