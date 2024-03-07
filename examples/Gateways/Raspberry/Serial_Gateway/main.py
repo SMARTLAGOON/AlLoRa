@@ -7,7 +7,7 @@ from AlLoRa.Connectors.Serial_connector import Serial_connector
 
 
 if __name__ == "__main__":
-	connector = Serial_connector(serial_port = '/dev/ttyACM0', baud= '115200', timeout=1)
+	connector = Serial_connector()
 	allora_gateway = Gateway(connector, config_file= "LoRa.json", debug_hops= False, TIME_PER_ENDPOINT=10)
 
 	# Listen to the digital_endpoints and print and save the files as they come in

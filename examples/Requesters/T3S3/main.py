@@ -5,9 +5,9 @@ from AlLoRa.Connectors.SX127x_connector import SX127x_connector
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
 gc.enable()
-if __name__ == "__main__":
 
-	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
+def run():
+	# First, we set the connector (basic connection to access to the LoRa module)
 	connector = SX127x_connector()
 	# Then, we set up out Receiver Node:
 	lora_node = Requester(connector, config_file = "LoRa.json")
@@ -30,3 +30,5 @@ if __name__ == "__main__":
 		del file_content
 		gc.collect()
 		time.sleep(10)
+
+run()

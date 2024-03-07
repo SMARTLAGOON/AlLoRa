@@ -7,5 +7,8 @@
     "freq": 868,
     "sf": 7,
     "min_timeout": 0.5,
-    "max_timeout": 12}
+    "max_timeout": 12, 
+    "serial_port": "/dev/ttyUS0",
+    "baud": 9600,
+    "timeout" : 1}
 }
