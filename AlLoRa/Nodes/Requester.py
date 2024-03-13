@@ -39,6 +39,11 @@ class Requester(Node):
             except Exception as e:
                 if self.debug:
                     print("Error creating result path: {}".format(e))
+        
+        self.status["Status"] = "WAIT"
+        self.status["Signal"] = "-"
+        self.status["Chunk"] = "-"
+        self.status["File"] = "-"
 
     def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode)
@@ -70,17 +75,20 @@ class Requester(Node):
                 hop = response_packet.get_hop()
                 length = metadata["LENGTH"]
                 filename = metadata["FILENAME"]
+                if self.subscribers:
+                    self.status['File'] = filename
                 return (length, filename), hop
             except:
                 return None, None
         return None, None
 
     def ask_data(self, packet: Packet, next_chunk):
-        print("ASKING DATA")
+        if self.debug:
+            print("ASKING DATA")
         packet.ask_data(next_chunk)
         response_packet = self.send_request(packet)
-        print("Response Packet: ", response_packet)
-        print("packet command: ", response_packet.get_command())
+        if self.debug:
+            print("Response Packet: ", response_packet)
         if self.save_hops(response_packet):
             return b"0", response_packet.get_hop()
         if response_packet.get_command() == Packet.DATA:
@@ -103,6 +111,8 @@ class Requester(Node):
                             print_file=False, save_file=False):
         
         mac = digital_endpoint.get_mac_address()
+        if subscribers:
+            self.status['MAC'] = mac
         save_to = self.result_path + "/" + mac
         sleep_mesh = digital_endpoint.get_sleep()
         t0 = time()
@@ -117,11 +127,12 @@ class Requester(Node):
 
                 elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
                     next_chunk = digital_endpoint.get_next_chunk()
-                    print("ASKING CHUNK: {}".format(next_chunk))
+                    if self.debug:
+                        print("ASKING CHUNK: {}".format(next_chunk))
                     if next_chunk is not None:
                         data, hop = self.ask_data(packet_request, next_chunk)
                         file = digital_endpoint.set_data(data, hop, self.mesh_mode)
-                        if file:   
+                        if file:
                             if print_file:
                                 print(file.get_content())
                             if save_file:
@@ -132,6 +143,11 @@ class Requester(Node):
                     digital_endpoint.connected(ok, hop, self.mesh_mode)
 
                 in_time = True if time() - t0 < listening_time else False
+                if self.subscribers:
+                    self.status['Status'] = digital_endpoint.state
+                    self.status['Signal'] = self.connector.get_rssi()
+                    self.notify_subscribers()
+
                 sleep(self.NEXT_ACTION_TIME_SLEEP)
             except Exception as e:
                 print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
@@ -155,7 +171,7 @@ class Requester(Node):
         if 7 <= new_sf <= 12:
             while True:
                 packet = Packet(self.mesh_mode)
-                packet.set_destination(digital_endpoint.get_mac_address())
+                packet.set_destination(digital_endpoint.get_mac_addsress())
                 packet.set_change_sf(new_sf)
                 if digital_endpoint.get_mesh():
                     packet.enable_mesh()

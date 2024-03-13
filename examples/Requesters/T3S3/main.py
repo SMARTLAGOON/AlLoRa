@@ -9,7 +9,7 @@ gc.enable()
 def run():
 	# First, we set the connector (basic connection to access to the LoRa module)
 	connector = SX127x_connector()
-	# Then, we set up out Receiver Node:
+	# Then, we set up out Requester Node:
 	lora_node = Requester(connector, config_file = "LoRa.json")
 
 	# Here we setup a digital_endpoint to manage the connection to the Node

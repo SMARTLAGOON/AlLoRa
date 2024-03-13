@@ -14,13 +14,17 @@ class Node:
         self.config_file = config_file
         self.open_backup()
         self.connector = connector
-        self.config_connector()
 
         self.LAST_IDS = list()              # IDs from my mesagges
         self.LAST_SEEN_IDS = list()         # IDs from others
         self.MAX_IDS_CACHED = 30            # Max number of IDs saved
 
         self.sf_trial = None
+
+        self.subscribers = []
+        self.status = {}
+
+        self.config_connector()
 
 
     def open_backup(self):
@@ -48,8 +52,10 @@ class Node:
 
     def config_connector(self):
         self.connector.config(self.config_connector_dic)
+        self.connector.debug = self.debug
 
         self.MAC = self.connector.get_mac()[-8:]
+        self.status["MAC"] = self.MAC
         print(self.name, ":", self.MAC)
 
     def get_mesh_mode(self):
@@ -93,6 +99,8 @@ class Node:
             self.send_lora(response_packet)
             if self.debug:
                 print("SENT:", response_packet.get_content())
+            if self.subscribers:
+                self.notify_subscribers()
 
     def change_sf(self, sf):
         self.connector.backup_sf()
@@ -100,3 +108,16 @@ class Node:
 
     def restore_sf(self):
         self.connector.restore_sf()
+
+    # Subscribers stuff:
+    def register_subscriber(self, subscriber):
+        if subscriber not in self.subscribers:
+            self.subscribers.append(subscriber)
+
+    def unregister_subscriber(self, subscriber):
+        if subscriber in self.subscribers:
+            self.subscribers.remove(subscriber)
+
+    def notify_subscribers(self):
+        for subscriber in self.subscribers:
+            subscriber.update(self.status)

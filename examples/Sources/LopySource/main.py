@@ -20,7 +20,7 @@ if __name__ == "__main__":
 	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
 	connector = LoPy4_connector()
 
-	# Then, we set up out Sender Node
+	# Then, we set up out Source Node
 	lora_node = Source(connector, config_file = "LoRa.json")
 
 	# We turn on a led for a second to know that we are doing ok...

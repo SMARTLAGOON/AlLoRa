@@ -46,7 +46,7 @@ class CTP_File:
             self.assembly()
         return self.content
 
-    # Receiver methods
+    # Requester methods
     def get_missing_chunks(self) -> list:
         self.assembly()
         return self.missing_chunks
@@ -73,7 +73,7 @@ class CTP_File:
         with open("{}/{}".format(path, self.name), "wb") as f:
             f.write(self.get_content())
 
-    # Sender methods
+    # Source methods
     def get_length(self):
         return self.chunk_counter
 

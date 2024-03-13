@@ -19,6 +19,13 @@ class Source(Node):
 
         self.file = None
 
+        # For subscribers
+        #self.status = {"Status": "WAIT", "Signal": 0, "Chunk": "-", "File": "-"}
+        self.status["Status"] = "WAIT"
+        self.status["Signal"] = "-"
+        self.status["Chunk"] = "-"
+        self.status["File"] = "-"
+
     def get_chunk_size(self):
         return self.chunk_size
 
@@ -34,7 +41,7 @@ class Source(Node):
         self.file.metadata_sent = True
 
     #This function ensures that a received message matches the criteria of any expected message.
-    def listen_receiver(self):
+    def listen_requester(self):
         packet = Packet(mesh_mode = self.mesh_mode)
         data = self.connector.recv()
         try:
@@ -42,7 +49,10 @@ class Source(Node):
                 return None
         except Exception as e:
             if self.debug:
-                print("Error loading: ", data, " -> ",e)
+                if data:
+                    print("No received data...")
+                else:
+                    print("Error loading: ", data, " -> ",e)
             return None
 
         if self.mesh_mode:
@@ -57,8 +67,9 @@ class Source(Node):
                     print(e)
 
         if self.debug:
-            self.connector.signal_estimation()
-            print('LISTEN_RECEIVER() || received_content', packet.get_content())
+            percentage = self.connector.get_rssi()
+            print('LISTEN_REQUESTER() || received_content', packet.get_content())
+            self.status['Signal'] = percentage
 
         return packet
 
@@ -66,7 +77,7 @@ class Source(Node):
         while True:
             print("Establish")
             new_sf = None
-            packet = self.listen_receiver()
+            packet = self.listen_requester()
             if packet:
                 if self.is_for_me(packet):
                     command = packet.get_command()
@@ -90,6 +101,11 @@ class Source(Node):
                             response_packet.add_hop(self.name, self.connector.get_rssi(), 0)
 
                         self.send_response(response_packet)
+                        
+                        if self.subscribers:
+                            self.status['Status'] = 'OK'
+                            self.notify_subscribers() 
+
                         if new_sf:
                             self.change_sf(int(new_sf))
                             self.sf_trial = 3
@@ -106,7 +122,7 @@ class Source(Node):
 
     def send_file(self):
         while not self.file.sent:
-            packet = self.listen_receiver()
+            packet = self.listen_requester()
             if packet:
                 if self.is_for_me(packet=packet):
                     response_packet, new_sf = self.response(packet)
@@ -155,6 +171,9 @@ class Source(Node):
         if command == Packet.CHUNK:
             requested_chunk = int(packet.get_payload().decode())
             response_packet.set_data(self.file.get_chunk(requested_chunk))
+            if self.subscribers:
+                self.status['Chunk'] = requested_chunk
+                self.status['Status'] = 'CHUNK'
 
             if self.debug:
                 print("RC: {}".format(requested_chunk))
@@ -164,7 +183,12 @@ class Source(Node):
             return response_packet, new_sf
 
         if command == Packet.METADATA:    # handle for new file
-            response_packet.set_metadata(self.file.get_length(), self.file.get_name())
+            filename = self.file.get_name()
+            response_packet.set_metadata(self.file.get_length(), filename)
+            if self.subscribers:
+                self.status['File'] = filename
+                self.status['Status'] = 'Metadata'
+                self.status['Chunk'] = '-'
 
             if self.file.metadata_sent:
                 self.file.retransmission += 1

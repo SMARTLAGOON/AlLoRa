@@ -85,7 +85,7 @@ class Connector:
             response_packet = Packet(self.mesh_mode)
             if self.debug:
                 self.signal_estimation()
-                print("WAIT_RESPONSE({}) || sender_reply: {}".format(self.adaptive_timeout, received_data))
+                print("WAIT_RESPONSE({}) || source_reply: {}".format(self.adaptive_timeout, received_data))
             try:
                 response_packet.load(received_data)
                 if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
@@ -118,3 +118,4 @@ class Connector:
         elif (rssi < 100):
             percentage = 0
         print('SIGNAL STRENGTH', percentage, '%')
+        return percentage

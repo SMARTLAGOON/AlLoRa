@@ -26,7 +26,7 @@ gc.enable()
 if __name__ == "__main__":
     # First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
     connector = SX127x_connector()
-    # Then, we set up out Receiver Node:
+    # Then, we set up out Requester Node:
     lora_node = Requester(connector, config_file = "LoRa.json")
 
     # Here we setup a digital_endpoint to manage the connection to the Node

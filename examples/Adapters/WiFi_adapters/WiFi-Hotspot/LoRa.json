@@ -12,7 +12,7 @@
     },
 
   "interface": {
-    "ssid": "smartlagoon_land_receiver",
+    "ssid": "smartlagoon_land_requester",
     "psw": "smartlagoonX98ASasd00de2l",
     "host": "192.168.4.1",
     "port": 80

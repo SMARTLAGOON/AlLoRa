@@ -39,7 +39,7 @@ if __name__ == "__main__":
 	# First, we set the connector (basyc LoRa-LoPy connection to access to the LoPy's LoRa libraries)
 	connector = SX127x_connector()
 
-	# Then, we set up out Sender Node, giving it the connector and the path for the configuration file
+	# Then, we set up out Source Node, giving it the connector and the path for the configuration file
 	lora_node = Source(connector, config_file = "LoRa.json")
 
 	chunk_size = lora_node.get_chunk_size()		# We use it to create the files to be sent...

@@ -13,6 +13,7 @@ class Adapter(Node):
         self.sf_trial = None
         self.interface = interface
         self.config_interface()
+        self.status["Signal"] = "-"
 
     def config_interface(self):
         with open(self.config_file, "r") as f:
@@ -36,8 +37,11 @@ class Adapter(Node):
             try:
                 if THREAD_EXIT:
                     break
-                self.interface.client_API()  # change name
-                gc.collect()
+                success = self.interface.client_API()  # change name
+                if success:
+                    self.status["Signal"] = self.connector.get_rssi()
+                    self.notify_subscribers()
+                    gc.collect()
 
             except KeyboardInterrupt as e:
                 THREAD_EXIT = True
