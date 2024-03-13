@@ -5,6 +5,7 @@ from ujson import loads, dumps
 
 try:
     # Attempt to import Pycom-specific modules
+    import pycom
     from network import WLAN
     PYCOM = True
 except ImportError:
@@ -16,7 +17,7 @@ from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Packet import Packet
 
 class WiFi_Hotspot_Interface(Interface):
-    
+
     def __init__(self):
         super().__init__()
         self.wlan = None

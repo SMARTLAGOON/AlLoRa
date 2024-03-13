@@ -4,6 +4,9 @@ import usocket
 from utime import sleep
 from ujson import loads, dumps
 
+from AlLoRa.Interfaces.Interface import Interface
+from AlLoRa.Packet import Packet
+
 # Attempt to import Pycom-specific modules and set a flag
 PYCOM = False
 try:
@@ -15,11 +18,8 @@ except ImportError:
     import network
     PYCOM = False
 
-from AlLoRa.Interfaces.Interface import Interface
-from AlLoRa.Packet import Packet
-
 class WiFi_Client_Interface(Interface):
-    
+
     def __init__(self):
         super().__init__()
 

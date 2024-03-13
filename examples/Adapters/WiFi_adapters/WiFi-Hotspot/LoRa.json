@@ -12,8 +12,8 @@
     },
 
   "interface": {
-    "ssid": "smartlagoon_land_requester",
-    "psw": "smartlagoonX98ASasd00de2l",
+    "ssid": "AlLoRa_Network",
+    "psw": "AlLoRa_Network",
     "host": "192.168.4.1",
     "port": 80
     }
