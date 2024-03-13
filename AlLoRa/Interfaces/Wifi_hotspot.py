@@ -3,6 +3,9 @@ import usocket
 from utime import sleep
 from ujson import loads, dumps
 
+from AlLoRa.Interfaces.Interface import Interface
+from AlLoRa.Packet import Packet
+
 try:
     # Attempt to import Pycom-specific modules
     import pycom
@@ -12,9 +15,6 @@ except ImportError:
     # Fallback for generic MicroPython
     import network
     PYCOM = False
-
-from AlLoRa.Interfaces.Interface import Interface
-from AlLoRa.Packet import Packet
 
 class WiFi_Hotspot_Interface(Interface):
 
@@ -46,9 +46,6 @@ class WiFi_Hotspot_Interface(Interface):
         self.serversocket.setsockopt(usocket.SOL_SOCKET, usocket.SO_REUSEADDR, 1)
         self.serversocket.bind((self.host, self.port))
         self.serversocket.listen(1)  # Accept a maximum of 1 connection at the same time
-
-    # The rest of your class methods...
-
 
     def client_API(self):
         # Accept the connection of the clients

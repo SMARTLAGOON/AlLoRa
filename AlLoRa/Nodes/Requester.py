@@ -40,10 +40,11 @@ class Requester(Node):
                 if self.debug:
                     print("Error creating result path: {}".format(e))
         
-        self.status["Status"] = "WAIT"
-        self.status["Signal"] = "-"
-        self.status["Chunk"] = "-"
-        self.status["File"] = "-"
+        self.status["Status"] = "WAIT"  # Status of the requester
+        self.status["Signal"] = "-" # Signal strength
+        self.status["Chunk"] = "-"  # Chunk being received
+        self.status["File"] = "-"   # File name being received
+        self.status["SMAC"] = "-"   # Source MAC
 
     def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode)
@@ -111,8 +112,8 @@ class Requester(Node):
                             print_file=False, save_file=False):
         
         mac = digital_endpoint.get_mac_address()
-        if subscribers:
-            self.status['MAC'] = mac
+        if self.subscribers:
+            self.status['SMAC'] = mac
         save_to = self.result_path + "/" + mac
         sleep_mesh = digital_endpoint.get_sleep()
         t0 = time()
