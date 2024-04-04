@@ -29,94 +29,86 @@ class Serial_connector(Connector):
             self.serial = serial.Serial(self.serial_port, self.baud, timeout=self.timeout)
             if self.debug:
                 print("Serial Connector configure: serial_port: {}, baud: {}, timeout: {}".format(self.serial_port, self.baud, self.timeout))
-        
-    def send_and_wait_response(self, packet: Packet) -> Packet:
-        if self.debug:
-            print("send and wait")
-        retry = True
-        max_retries = 1
-        response_packet = Packet(self.mesh_mode)
-        while max_retries > 0 and retry:
-            try:
-                content = packet.get_content()
-                if self.debug:
-                    print("Sending: ", content) 
-                
-                self.write_serial(content)
-                received_data = self.read_serial()
-                
-                if received_data:
-                    response_packet = Packet(self.mesh_mode)
-                    check = response_packet.load(received_data)   
-                    if check:
-                        if self.debug:
-                            print("Receiving: ", response_packet.get_content())
-                        retry = False
-                
-            except Exception as e:
-                retry = True
-                if self.debug:
-                    print("Error S&W: ", e)
-            finally:
-                max_retries -= 1
-
-        return response_packet
     
-    # Communicate with Serial Adapter and wait for status response
-    def write_serial(self, content):
-        # Prepend the length of the content to the content itself
-        length = len(content)
-        length_bytes = length.to_bytes(4, 'big')  # Convert length to 4 bytes
-        message = length_bytes + content
-        self.serial.write(message)
-        sleep(0.1)
-
-    def read_serial(self):
-        # Read the length of the content
-        length_bytes = self.serial.read(4)  # Read 4 bytes for the length
-        length = int.from_bytes(length_bytes, 'big')  # Convert bytes to int
-        # Now read the content
-        content = self.serial.read(length)
-        return content
-
-    def send(self, packet: Packet):
+    def send_command(self, command):
+        # Send command and wait for response
         try:
-            content = packet.get_content()
-            if self.debug:
-                print("Sending: ", content) 
-            self.write_serial(content)
-            status_report = self.read_serial()
-            if self.debug:
-                print("Status: ", status_report)
-            return status_report
+            self.serial.write(command)
+            # Wait for ack response
+            response = self.serial.readline()
+            sleep(0.1)
+            return response
         except Exception as e:
-            if self.debug:
-                print("Error Serial Send: ", e)
+            print("Error sending command: ", e)
             return None
 
-    # Ask Serial Adapter to listen for a packet for a certain amount of time and then wait for the response
-    def recv(self, focus_time=12):
+    def serial_receive(self, focus_time):
+        start_time = time()
+        while True:
+            if self.serial.in_waiting:  # Check if there is data in the buffer
+                received_data = self.serial.readline()
+                return received_data
+            if time() - start_time > focus_time:
+                print("Timeout waiting for response.")
+                return None
+
+    def send_and_wait_response(self, packet: Packet) -> Packet:
+        packet.set_source(self.get_mac())  # Adding mac address to packet
+        command = b"S&W:" + packet.get_content()
+        response = self.send_command(command)
+        # Response should be ACK:adaptive_timeout
+        if not response:
+            return None
         try:
-            #focus_time=100
-            # pack listen command and focus_time
-            command = "Listen:{0}".format(focus_time)
-            self.write_serial(command.encode('utf-8'))
-            #self.serial.write(command.encode('utf-8'))
-            # wait for response or timeout (focus time)
-            sleep(0.1)
-            start_time = time()
-            while True:
-                if self.serial.in_waiting:
-                    break
-                if time() - start_time > focus_time:
-                    raise TimeoutError("No response received within focus time")
-               
-                
-            received_data = self.read_serial()
-            if self.debug:
-                print("Received: ", received_data)
-            return received_data
+            response = response.decode("utf-8")
+            if response.startswith("ACK:"):
+                response = response.split(":")[1]
+                self.adaptive_timeout = float(response)
+                # Now wait for the actual response
+                focus_time = self.adaptive_timeout
+                received_data = self.serial_receive(focus_time)
+                if received_data:
+                    response_packet = Packet(self.mesh_mode)
+                    check = response_packet.load(received_data)
+                    if check:
+                        return response_packet
+                    else:
+                        if self.debug:
+                            print("Error loading packet")
+                else:
+                    if self.debug:
+                        print("No data received")
+            else:
+                if self.debug:
+                    print("No ACK received")
         except Exception as e:
             if self.debug:
-                print("Error Serial Recv: ", e)
+                print("Error S&W: ", e)
+
+    def send(self, packet: Packet):
+        packet.set_source(self.get_mac())  # Adding mac address to packet
+        command = b"Send:" + packet.get_content()
+        response = self.send_command(command)
+        try:
+            response = response.decode("utf-8")
+            if response == "OK":
+                return True
+            else:
+                return False
+        except Exception as e:
+            print("Error sending packet: ", e)
+            return False
+
+    def recv(self, focus_time=12):
+        command = "Listen:{0}".format(focus_time)
+        response = self.send_command(command.encode('utf-8'))
+        try:
+            response = response.decode("utf-8")
+            if response == "OK":
+                received_data = self.serial_receive(focus_time)
+                return received_data
+            else:
+                return None
+        except Exception as e:
+            print("Error receiving data: ", e)
             return None

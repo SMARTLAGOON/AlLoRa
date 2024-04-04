@@ -33,83 +33,69 @@ class Serial_Interface(Interface):
                                                                                                                                 self.baud, self.tx, self.rx, self.bits, self.parity, self.stop))
         utime.sleep(1)
 
-    def write_serial(self, content:bytes):
-        # Prepend the length of the content to the content itself
-        length = len(content)
-        length_bytes = length.to_bytes(4, 'big')  # Convert length to 4 bytes
-        message = length_bytes + content
-        print("Sending serial: ", len(message), " -> {}".format(message))
-        self.uart.write(message)
-
-    def read_serial(self):
-        # Read the length of the content
-        if self.uart.any() >= 4:
-            length_bytes = self.uart.read(4)  # Read 4 bytes for the length
-            length = int.from_bytes(length_bytes, 'big')  # Convert bytes to int
-            if length > 255:
-                length = 255
-            # Now read the content
-            print("Content length: ", length)
-            content = self.uart.read(length)
-            return content
-        else:
+    def listen_command(self):
+        try:
+            if self.uart.any() > 0:
+                received_data = self.uart.read(self.uart.any())
+                if self.debug:
+                    print("Received serial data: ", received_data)
+                return received_data
+            return None
+        except Exception as e:
+            print("Error reading serial: ", e)
             return None
 
     def client_API(self):
-        print("Waiting for serial data...")
-        try:
-            received_data = self.read_serial()
-            if received_data:
-                if self.mode == "requester":
-                    success = self.handle_requester_mode(received_data)
-                elif self.mode == "source":
-                    sucess = self.handle_source_mode(received_data)
-                return success
-            return False
-        except Exception as e:
-            #utime.sleep(0.1)
-            print("Error reading serial: ", e)
-            return False
-        
-    
-    def handle_requester_mode(self, received_data):
-        packet_from_rpi = Packet(self.connector.mesh_mode)
-        check = packet_from_rpi.load(received_data)
-        if self.debug:
-            print("Received serial data: ", received_data, check)
-        if check:
-            response_packet = self.connector.send_and_wait_response(packet_from_rpi)
-            if response_packet:
-                if response_packet.get_command():
-                    response = response_packet.get_content()
-                    print("Sending serial: ", len(response), " -> {}".format(response))
-                    self.write_serial(response)
-                    return True
+        command = self.listen_command()
+        if command:
+            if command.startswith(b"S&W:"):
+                return self.handle_send_and_wait(command)
+            elif command.startswith(b"Send:"):
+                return self.handle_source_mode(command)
+            elif command.startswith(b"Listen:"):
+                return self.handle_requester_mode(command)
             else:
-                if self.debug:
-                    print("No response...")
                 return False
+        else:
+            return False
 
-    def handle_source_mode(self, received_data):
-        packet_from_source = Packet(self.connector.mesh_mode)
-        try:
-            packet_from_source.load(received_data)
-            success = self.send_packet(packet_from_source)
-        except: 
-            received_data = received_data.decode("utf-8")
-            if received_data.startswith("Listen:"):
-                self.listen_and_process(received_data)
-
-    def send_packet(self, packet_from_source):
-        success = self.connector.send(packet_from_source)
-        if success:
+    def handle_send_and_wait(self, command):
+        packet_from_rpi = Packet(self.connector.mesh_mode)
+        packet_from_rpi.load(command[4:])
+        # Send ACK:adaptive_timeout from connector
+        ack = f"ACK:{self.connector.adaptive_timeout}\n".encode("utf-8")
+        self.uart.write(ack)
+        response_packet = self.connector.send_and_wait_response(packet_from_rpi)
+        if response_packet:
+            if response_packet.get_command():
+                response = response_packet.get_content()
+                print("Sending serial: ", len(response), " -> {}".format(response))
+                self.uart.write(response)
+                return True
+        else:
             if self.debug:
-                print("Packet sent successfully")
-            self.write_serial(b'OK')
-        return success
+                print("No response...")
+            return False
+    
+    def handle_source_mode(self, command):
+        packet_from_source = Packet(self.connector.mesh_mode)
+        # Send ACK to say that I will send it
+        ack = b"OK"
+        self.uart.write(ack)
+        try:
+            packet_from_source.load(command[5:])
+            packet_from_source.set_source(self.connector.get_mac())
+            success = self.connector.send(packet_from_source)
+            if success:
+                return True
+        except Exception as e:
+            print("Error loading packet: ", e)
+            return False
 
-    def listen_and_process(self, received_data):
-        focus_time = int(received_data.split(":")[1])
+    def handle_requester_mode(self, command):
+        focus_time = int(command[7:])
+        ack = b"OK"
+        self.uart.write(ack)
         if self.debug:
             print("Listening for: ", focus_time)
         packet = Packet(mesh_mode=self.connector.mesh_mode)
@@ -121,8 +107,7 @@ class Serial_Interface(Interface):
                 packet.load(data)
                 response = packet.get_content()
                 print("Sending serial: ", len(response), " -> {}".format(response))
-                self.write_serial(response)
-                #self.uart.write(response)
+                self.uart.write(response)
             except Exception as e:
                 if self.debug:
                     print("Error loading: ", data, " -> ", e)
@@ -130,5 +115,6 @@ class Serial_Interface(Interface):
         else:
             if self.debug:
                 print("No data received")
-            self.write_serial(b'No data')
-            #self.uart.write(b'No data')
+            self.uart.write(b'No data')
+
+    # 
