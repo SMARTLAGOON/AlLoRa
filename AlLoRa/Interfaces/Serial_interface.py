@@ -34,16 +34,17 @@ class Serial_Interface(Interface):
         utime.sleep(1)
 
     def listen_command(self):
-        try:
-            if self.uart.any() > 0:
-                received_data = self.uart.read(self.uart.any())
-                if self.debug:
-                    print("Received serial data: ", received_data)
-                return received_data
-            return None
-        except Exception as e:
-            print("Error reading serial: ", e)
-            return None
+        buffer = bytearray()
+        end_phrase = b"<<END>>\n"
+        while True:
+            if self.uart.any():
+                buffer += self.uart.read(self.uart.any())
+                if buffer.endswith(end_phrase):
+                    return buffer[:-len(end_phrase)]
+            else:
+                utime.sleep(0.01)
+        return None
+
 
     def client_API(self):
         command = self.listen_command()
@@ -61,14 +62,17 @@ class Serial_Interface(Interface):
 
     def handle_send_and_wait(self, command):
         packet_from_rpi = Packet(self.connector.mesh_mode)
-        packet_from_rpi.load(command[4:])
+        data = command.split(b"S&W:")[-1]
+        packet_from_rpi.load(data)
         # Send ACK:adaptive_timeout from connector
-        ack = f"ACK:{self.connector.adaptive_timeout}\n".encode("utf-8")
+        ack = b"ACK:" + str(self.connector.adaptive_timeout).encode() + b"<<END>>\n"
+        if self.debug:
+            print("Sending ACK: ", ack)
         self.uart.write(ack)
         response_packet = self.connector.send_and_wait_response(packet_from_rpi)
         if response_packet:
             if response_packet.get_command():
-                response = response_packet.get_content()
+                response = response_packet.get_content() + b"<<END>>\n"
                 print("Sending serial: ", len(response), " -> {}".format(response))
                 self.uart.write(response)
                 return True
@@ -116,5 +120,3 @@ class Serial_Interface(Interface):
             if self.debug:
                 print("No data received")
             self.uart.write(b'No data')
-
-    # 
