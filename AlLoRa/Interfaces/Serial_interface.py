@@ -33,9 +33,8 @@ class Serial_Interface(Interface):
                                                                                                                                 self.baud, self.tx, self.rx, self.bits, self.parity, self.stop))
         utime.sleep(1)
 
-    def listen_command(self):
+    def listen_command(self, end_phrase=b"<<END>>\n"):
         buffer = bytearray()
-        end_phrase = b"<<END>>\n"
         while True:
             if self.uart.any():
                 buffer += self.uart.read(self.uart.any())
@@ -73,7 +72,8 @@ class Serial_Interface(Interface):
         if response_packet:
             if response_packet.get_command():
                 response = response_packet.get_content() + b"<<END>>\n"
-                print("Sending serial: ", len(response), " -> {}".format(response))
+                if self.debug:
+                    print("Sending serial: ", len(response), " -> {}".format(response))
                 self.uart.write(response)
                 return True
         else:
@@ -93,7 +93,8 @@ class Serial_Interface(Interface):
             if success:
                 return True
         except Exception as e:
-            print("Error loading packet: ", e)
+            if self.debug:
+                print("Error loading packet: ", e)
             return False
 
     def handle_requester_mode(self, command):
@@ -110,7 +111,9 @@ class Serial_Interface(Interface):
             try:
                 packet.load(data)
                 response = packet.get_content()
-                print("Sending serial: ", len(response), " -> {}".format(response))
+                response += b"<<END>>\n"
+                if self.debug:
+                    print("Sending serial: ", len(response), " -> {}".format(response))
                 self.uart.write(response)
             except Exception as e:
                 if self.debug:
@@ -119,4 +122,4 @@ class Serial_Interface(Interface):
         else:
             if self.debug:
                 print("No data received")
-            self.uart.write(b'No data')
+            self.uart.write(b'No data' + b"<<END>>\n")
