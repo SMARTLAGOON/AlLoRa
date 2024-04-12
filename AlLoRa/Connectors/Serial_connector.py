@@ -5,10 +5,15 @@ from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
 
 class Serial_connector(Connector):
+    MAX_ATTEMPTS = 30  # Maximum attempts before resetting
+    RESET_TIMEOUT = 60  # Timeout in seconds before allowing another reset
 
-    def __init__(self):
+    def __init__(self, reset_function=None):
         super().__init__()
-        
+        self.attempt_count = 0
+        self.last_reset_time = 0
+        self.reset_function = reset_function
+
     def config(self, config_json):  #max_timeout = 10
         # JSON Example:
         # {
@@ -35,12 +40,28 @@ class Serial_connector(Connector):
         try:
             self.serial.write(command)
             # Wait for ack response
-            return self.serial_receive(self.timeout)
-            
+            response = self.serial_receive(self.timeout)
+            if response is None:  # Check if no response was received
+                raise Exception("No ACK received")
+            else:
+                self.attempt_count = 0
+            return response
         except Exception as e:
             if self.debug:
-                print("Error sending command: ", e)
+                print("Error sending command or no response: ", e)
+            self.attempt_count += 1
+            if self.debug:
+                print("Attempt count: ", self.attempt_count, "/", self.MAX_ATTEMPTS) 
+
+            if self.attempt_count >= self.MAX_ATTEMPTS:
+                self.attempt_reset()
+            else: # If the maximum attempts have not been reached
+                if self.debug:
+                    print("Max attempts not reached: ", self.attempt_count)
+
             return None
+
+
 
     def serial_receive(self, focus_time, end_phrase=b"<<END>>\n"):
         start_time = time()
@@ -61,6 +82,20 @@ class Serial_connector(Connector):
             else:
                 sleep(0.01)  # Small delay to avoid hogging the CPU
 
+    def attempt_reset(self):
+        if time() - self.last_reset_time > self.RESET_TIMEOUT:
+            if self.reset_function is not None:
+                if self.debug:
+                    print("Resetting...")
+                self.reset_function()  # Call the passed-in reset function
+                self.attempt_count = 0
+                self.last_reset_time = time.time()
+            else:
+                if self.debug:
+                    print("No reset function provided.")
+        else:
+            if self.debug:
+                print("Reset recently triggered, waiting...")
 
     def send_and_wait_response(self, packet: Packet) -> Packet:
         packet.set_source(self.get_mac())  # Adding mac address to packet

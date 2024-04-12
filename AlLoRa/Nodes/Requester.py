@@ -149,9 +149,10 @@ class Requester(Node):
                     self.status['Signal'] = self.connector.get_rssi()
                     self.notify_subscribers()
 
-                sleep(self.NEXT_ACTION_TIME_SLEEP)
             except Exception as e:
                 print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
+
+            sleep(self.NEXT_ACTION_TIME_SLEEP)
 
     def save_hops(self, packet):
         if packet is None:
