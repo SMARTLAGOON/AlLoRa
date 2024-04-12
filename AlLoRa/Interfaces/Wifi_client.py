@@ -69,11 +69,14 @@ class WiFi_Client_Interface(Interface):
         while not self.wlan.isconnected():
             try:
                 self.wlan.connect(self.ssid, auth=(network.WLAN.WPA2, self.psw), timeout=5000)
-                print("connecting", end='')
+                if self.debug:
+                    print("connecting", end='')
                 while not self.wlan.isconnected():
                     sleep(1)
-                    print(".", end='')
-                print("connected")
+                    if self.debug:
+                        print(".", end='')
+                if self.debug:
+                    print("connected")
                 if PYCOM:
                     pycom.rgbled(0x007f00)  # Green
                     sleep(3)
@@ -81,7 +84,8 @@ class WiFi_Client_Interface(Interface):
                 if self.debug:
                     print(self.wlan.ifconfig())
             except Exception as e:
-                print("Exception connecting:", e)
+                if self.debug:
+                    print("Exception connecting:", e)
 
     def client_API(self):
         # Accept the connection of the clients

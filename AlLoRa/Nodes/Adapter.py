@@ -42,9 +42,12 @@ class Adapter(Node):
                     self.status["Signal"] = self.connector.get_rssi()
                     self.notify_subscribers()
                     gc.collect()
+                sleep(0.1)
 
             except KeyboardInterrupt as e:
                 THREAD_EXIT = True
-                print("THREAD_EXIT")
+                if self.debug:
+                    print("THREAD_EXIT")
             except Exception as e:
-                print("Error in Adapter: {}".format(e))
+                if self.debug:
+                    print("Error in Adapter: {}".format(e))

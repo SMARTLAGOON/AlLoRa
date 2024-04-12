@@ -94,14 +94,15 @@ class Connector:
                     if response_packet.get_debug_hops():
                         response_packet.add_hop(self.name, self.get_rssi(), 0)
                     if response_packet.get_change_sf():
-                        print("OK and changing sf")
                         new_sf = int(response_packet.get_payload().decode().split('"')[1])
-                        print(new_sf)
+                        if self.debug:
+                            print("OK and changing sf: ", new_sf)
                         self.set_sf(new_sf)
                     gc.collect()
                     return response_packet
             except Exception as e:
-                print("Corrupted packet received", e, received_data)
+                if self.debug:
+                    print("Corrupted packet received", e, received_data)
             focus_time = self.adaptive_timeout - td
 
     """ This function returns the RSSI of the last received packet"""
@@ -117,5 +118,6 @@ class Connector:
             percentage = 2 * (rssi + 100)
         elif (rssi < 100):
             percentage = 0
-        print('SIGNAL STRENGTH', percentage, '%')
+        if self.debug:
+            print('SIGNAL STRENGTH', percentage, '%')
         return percentage

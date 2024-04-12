@@ -46,6 +46,8 @@ class SX127x_connector(Connector):
                 self.lora.setblocking(False)
                 return True
             except:
+                if self.debug:
+                    print("Error sending packet")
                 self.lora.setblocking(False)
                 return False
         else:

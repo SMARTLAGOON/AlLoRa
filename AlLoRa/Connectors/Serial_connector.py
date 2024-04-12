@@ -38,7 +38,8 @@ class Serial_connector(Connector):
             return self.serial_receive(self.timeout)
             
         except Exception as e:
-            print("Error sending command: ", e)
+            if self.debug:
+                print("Error sending command: ", e)
             return None
 
     def serial_receive(self, focus_time, end_phrase=b"<<END>>\n"):
@@ -46,7 +47,8 @@ class Serial_connector(Connector):
         full_message = bytearray()  # Use a bytearray to accumulate the message
         while True:
             if time() - start_time > focus_time:
-                print("Timeout waiting for response.")
+                if self.debug:
+                    print("Timeout waiting for response.")
                 return None  # Return None to indicate a timeout occurred
 
             line = self.serial.readline()  # Read a line; returns bytes
