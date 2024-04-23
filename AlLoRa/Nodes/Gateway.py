@@ -1,3 +1,4 @@
+from time import time, sleep
 try:
     from uos import urandom
     from ujson import loads, dumps
@@ -10,9 +11,8 @@ from AlLoRa.Digital_Endpoint import Digital_Endpoint
 
 class Gateway(Requester):
 
-    def __init__(self, connector = None, config_file = "LoRa.json", debug_hops = False, 
-                    NEXT_ACTION_TIME_SLEEP = 0.1, 
-                    TIME_PER_ENDPOINT = 10, nodes_file = "Nodes.json"):
+    def __init__(self, connector=None, config_file="LoRa.json", debug_hops=False, 
+                    NEXT_ACTION_TIME_SLEEP=0.1, nodes_file="Nodes.json"):
         #JSON Example:
         # {
         #     "name": "G",
@@ -27,9 +27,8 @@ class Gateway(Requester):
         #     "time_per_endpoint": 10
         # }
 
-        super().__init__(connector,  config_file, debug_hops = debug_hops,
-                            NEXT_ACTION_TIME_SLEEP = NEXT_ACTION_TIME_SLEEP)
-        self.TIME_PER_ENDPOINT = TIME_PER_ENDPOINT
+        super().__init__(connector,  config_file, debug_hops=debug_hops,
+                            NEXT_ACTION_TIME_SLEEP=NEXT_ACTION_TIME_SLEEP)
         self.nodes_file = nodes_file
         self.digital_endpoints = []
         self.add_digital_endpoints(self.nodes_file)
@@ -39,35 +38,44 @@ class Gateway(Requester):
 
     def add_digital_endpoints(self, path):
         try:
-            count_nodes = 0
             with open(path, "r") as f:
                 nodes_config = loads(f.read())
             for node in nodes_config:
-                retries = None
-                try:
-                    retries = node['MAX_RETRIES_BEFORE_MESH']
-                except:
-                    retries = 10
                 if node['active']:
                     active_node = Digital_Endpoint(node)
                     self.digital_endpoints.append(active_node)                                            
-                    count_nodes += 1
                     if self.debug:
-                        print("Node {} added!".format(active_node.mac_address))
-            return count_nodes
-        except:
-            print("Could not load nodes from file: {}, please set manually or add missing file".format(path))
+                        print("Node {} added with frequency {}s and listening time {}s.".format(active_node.get_mac_address(), active_node.asking_frequency, active_node.listening_time))
+            return len(self.digital_endpoints)
+        except Exception as e:
+            print("Could not load nodes from file: {}, error: {}".format(path, e))
             return False
 
     def check_digital_endpoints(self, print_file_content=False, save_files=False):
         print("Listening to {} endpoints!".format(len(self.digital_endpoints)))
+        next_check_times = {ep.get_mac_address(): 0 for ep in self.digital_endpoints}
+
         while True:
-            for digital_endpoint in self.digital_endpoints:
-                try:
-                    self.listen_to_endpoint(digital_endpoint, digital_endpoint.listening_time, 
-                                        print_file=print_file_content, save_file=save_files)
-                except Exception as e:
+            current_time = time()
+            for ep in self.digital_endpoints:
+                if current_time >= next_check_times[ep.get_mac_address()]:
+                    try:
+                        if self.debug:
+                            print("Listening to endpoint {} for {} seconds".format(ep.get_mac_address(), ep.listening_time))
+                        self.listen_to_endpoint(ep, ep.listening_time, 
+                                                print_file=print_file_content, save_file=save_files)
+                        next_check_times[ep.get_mac_address()] = current_time + ep.asking_frequency
+                        if ep.lock_on_file_receive and len(ep.get_current_file().get_missing_chunks()) > 0:
+                            while len(ep.get_current_file().get_missing_chunks()) > 0 and (time() - current_time < ep.listening_time):
+                                self.listen_to_endpoint(ep, ep.listening_time, 
+                                                        print_file=print_file_content, save_file=save_files)
+                    except Exception as e:
+                        if self.debug:
+                            print("Error listening to endpoint {}: {}".format(ep.get_mac_address(), e))
+                else:
                     if self.debug:
-                        print("Error listening to endpoint: {}".format(e))
+                        print("Waiting for endpoint {} to be checked.".format(ep.get_mac_address()))
+                    sleep(self.NEXT_ACTION_TIME_SLEEP)
+            sleep(self.NEXT_ACTION_TIME_SLEEP)
 
                    
