@@ -46,7 +46,7 @@ class Digital_Endpoint:
             self.listening_time = config.get('listening_time', listening_time)
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = config.get('MAX_RETRANSMISSIONS_BEFORE_MESH', MAX_RETRANSMISSIONS_BEFORE_MESH)
             self.lock_on_file_receive = config.get('lock_on_file_receive', lock_on_file_receive)
-            self.max_listen_time_when_locked = config.get('max_listen_time_when_locked', max_timeout_when_lock)
+            self.max_listen_time_when_locked = config.get('max_listen_time_when_locked', max_listen_time_when_locked)
         else:
             self.name = name
             self.mac_address = mac_address[-8:]
