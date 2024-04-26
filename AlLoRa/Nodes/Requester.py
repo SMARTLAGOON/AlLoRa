@@ -119,6 +119,7 @@ class Requester(Node):
         t0 = time()
         in_time = True
         while (in_time):
+            in_time = (time() - t0) < listening_time
             try: 
                 packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
 
@@ -143,7 +144,6 @@ class Requester(Node):
                     ok, hop = self.ask_ok(packet_request)
                     digital_endpoint.connected(ok, hop, self.mesh_mode)
 
-                in_time = True if time() - t0 < listening_time else False
                 if self.subscribers:
                     self.status['Status'] = digital_endpoint.state
                     self.status['Signal'] = self.connector.get_rssi()
@@ -153,6 +153,7 @@ class Requester(Node):
                 print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
 
             sleep(self.NEXT_ACTION_TIME_SLEEP)
+            
 
     def save_hops(self, packet):
         if packet is None:

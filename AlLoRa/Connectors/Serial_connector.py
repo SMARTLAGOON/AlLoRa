@@ -89,7 +89,7 @@ class Serial_connector(Connector):
                     print("Resetting...")
                 self.reset_function()  # Call the passed-in reset function
                 self.attempt_count = 0
-                self.last_reset_time = time.time()
+                self.last_reset_time = time()
             else:
                 if self.debug:
                     print("No reset function provided.")
