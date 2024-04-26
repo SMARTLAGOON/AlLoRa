@@ -164,7 +164,6 @@ class Requester(Node):
             line = "{}: ID={} -> {}\n".format(t, id, hops)
             with open('log_rssi.txt', 'a') as log:
                 log.write(line)
-                #print(line)
             return True
         return False
 

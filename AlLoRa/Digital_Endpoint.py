@@ -20,7 +20,8 @@ class Digital_Endpoint:
 
     def __init__(self, config=None, name="N", mac_address="00000000", active=True, 
                  sleep_mesh=True, asking_frequency=60, listening_time=30, 
-                 MAX_RETRANSMISSIONS_BEFORE_MESH=10, lock_on_file_receive=False, 
+                 MAX_RETRANSMISSIONS_BEFORE_MESH=10, lock_on_file_receive=False,
+                 max_listen_time_when_locked=300,
                  debug=False):
         """
         Initializes a new Digital Endpoint with detailed control over its operational parameters.
@@ -45,6 +46,7 @@ class Digital_Endpoint:
             self.listening_time = config.get('listening_time', listening_time)
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = config.get('MAX_RETRANSMISSIONS_BEFORE_MESH', MAX_RETRANSMISSIONS_BEFORE_MESH)
             self.lock_on_file_receive = config.get('lock_on_file_receive', lock_on_file_receive)
+            self.max_listen_time_when_locked = config.get('max_listen_time_when_locked', max_timeout_when_lock)
         else:
             self.name = name
             self.mac_address = mac_address[-8:]
@@ -54,6 +56,7 @@ class Digital_Endpoint:
             self.listening_time = listening_time
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
             self.lock_on_file_receive = lock_on_file_receive
+            self.max_listen_time_when_locked = max_listen_time_when_locked
 
         self.state = Digital_Endpoint.OK
         self.current_file = None
@@ -71,6 +74,10 @@ class Digital_Endpoint:
         self.mesh = False  # Mesh mode starts disabled
         self.retransmission_counter = 0  # Counter for retransmissions
         self.debug = debug
+
+    def __repr__(self):
+        return "Digital_Endpoint({} ({})".format(self.name, self.mac_address)
+
 
     def get_name(self):
         return self.name

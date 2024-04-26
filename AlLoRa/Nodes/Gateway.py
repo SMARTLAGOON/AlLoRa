@@ -32,6 +32,14 @@ class Gateway(Requester):
         self.nodes_file = nodes_file
         self.digital_endpoints = []
         self.add_digital_endpoints(self.nodes_file)
+
+        self.status["Status"] = "WAIT"  # Status of the requester
+        self.status["Signal"] = "-" # Signal strength
+        self.status["Chunk"] = "-"  # Chunk being received
+        self.status["File"] = "-"   # File name being received
+        self.status["SMAC"] = "-"   # Source MAC
+        # Digital Endpoint file_reception_info
+        self.status["Digital_Endpoints"] = {ep.get_mac_address(): ep.file_reception_info for ep in self.digital_endpoints}
     
     def set_digital_endpoints(self, digital_endpoints):
         self.digital_endpoints = digital_endpoints
@@ -45,7 +53,7 @@ class Gateway(Requester):
                     active_node = Digital_Endpoint(node)
                     self.digital_endpoints.append(active_node)                                            
                     if self.debug:
-                        print("Node {} added with frequency {}s and listening time {}s.".format(active_node.get_mac_address(), active_node.asking_frequency, active_node.listening_time))
+                        print("Node {} ({}) added with frequency {}s and listening time {}s.".format(active_node.get_name(), active_node.get_mac_address(), active_node.asking_frequency, active_node.listening_time))
             return len(self.digital_endpoints)
         except Exception as e:
             print("Could not load nodes from file: {}, error: {}".format(path, e))
@@ -57,25 +65,38 @@ class Gateway(Requester):
 
         while True:
             current_time = time()
-            for ep in self.digital_endpoints:
+            for ep in sorted(self.digital_endpoints, key=lambda x: next_check_times[x.get_mac_address()]):
                 if current_time >= next_check_times[ep.get_mac_address()]:
                     try:
+                        # Initial listening session for the endpoint
                         if self.debug:
-                            print("Listening to endpoint {} for {} seconds".format(ep.get_mac_address(), ep.listening_time))
-                        self.listen_to_endpoint(ep, ep.listening_time, 
+                            print("Listening to endpoint {} ({}) for {}s".format(ep.get_name(), ep.get_mac_address(), ep.listening_time))
+
+                        self.listen_to_endpoint(ep, ep.listening_time,
                                                 print_file=print_file_content, save_file=save_files)
-                        next_check_times[ep.get_mac_address()] = current_time + ep.asking_frequency
-                        if ep.lock_on_file_receive and len(ep.get_current_file().get_missing_chunks()) > 0:
-                            while len(ep.get_current_file().get_missing_chunks()) > 0 and (time() - current_time < ep.listening_time):
-                                self.listen_to_endpoint(ep, ep.listening_time, 
-                                                        print_file=print_file_content, save_file=save_files)
+                        
+                        self.update_subscribers(ep)
+                        # Check if additional time is needed due to incomplete file transfer
+                        if ep.lock_on_file_receive and ep.get_current_file().get_missing_chunks():
+                            # Extend the listening for one additional period if there are missing chunks
+                            if self.debug:
+                                print("Listening to endpoint {} ({}) for {}s due to missing chunks".format(ep.get_name(), ep.get_mac_address(), ep.max_listen_time_when_locked))
+                            self.listen_to_endpoint(ep, ep.max_listen_time_when_locked,
+                                                    print_file=print_file_content, save_file=save_files)
+                            self.update_subscribers(ep)
+
                     except Exception as e:
                         if self.debug:
-                            print("Error listening to endpoint {}: {}".format(ep.get_mac_address(), e))
-                else:
-                    if self.debug:
-                        print("Waiting for endpoint {} to be checked.".format(ep.get_mac_address()))
-                    sleep(self.NEXT_ACTION_TIME_SLEEP)
-            sleep(self.NEXT_ACTION_TIME_SLEEP)
+                            print("Error listening to endpoint {} ({}): {}".format(ep.get_name(), ep.get_mac_address(), e))
+                    finally:
+                        # Reschedule next check regardless of success or error
+                        next_check_times[ep.get_mac_address()] = time() + ep.asking_frequency
+
+                sleep(self.NEXT_ACTION_TIME_SLEEP)
+
+    def update_subscribers(self, digital_endpoint):
+        self.status["Digital_Endpoints"][digital_endpoint.get_mac_address()] = digital_endpoint.file_reception_info
+        self.notify_subscribers()
+
 
                    
