@@ -1,4 +1,4 @@
-# ****AlLoRa:**** Advance layer LoRa
+# ****AlLoRa:**** Advanced layer LoRa
 
 Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://zenodo.org/badge/latestdoi/509513450)
 
