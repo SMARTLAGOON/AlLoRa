@@ -90,7 +90,7 @@ class Requester(Node):
         packet.ask_data(next_chunk)
         print("TEST - ask data PACKET: ", packet)
         print("TEST - ask data PACKET CONTENT: ", next_chunk)
-        response_packet = self.send_request(packet)
+        response_packet = self.send_request(packet)  # PROBLEM!!!!
         print("TEST - ask data RESPONSE PACKET: ", response_packet)
         if self.debug:
             print("Response Packet: ", response_packet)

@@ -1,6 +1,6 @@
 {
     "name": "R",
-    "chunk_size": 235,
+    "chunk_size": 200,
     "mesh_mode": false,
     "debug": true,
     "connector": {

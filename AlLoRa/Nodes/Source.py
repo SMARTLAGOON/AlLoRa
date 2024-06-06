@@ -43,6 +43,7 @@ class Source(Node):
     # This function ensures that a received message matches the criteria of any expected message.
     def listen_requester(self):
         packet = Packet(mesh_mode = self.mesh_mode)
+        print("TEST: LISTEN_REQUESTER:", packet)
         data = self.connector.recv()
         print("Data - listen Requester method: ", data)
         try:
@@ -148,6 +149,7 @@ class Source(Node):
 
     def response(self, packet):
         command = packet.get_command()
+        print("TEST RESPONSE: ", command)
         if not Packet.check_command(command):
             return None, None
 
@@ -174,7 +176,7 @@ class Source(Node):
             return response_packet, new_sf
 
         if command == Packet.CHUNK:
-            requested_chunk = int(packet.get_payload().decode())
+            requested_chunk = int(packet.get_payload().decode())  # Receives byte string decodes it to sequence of characters, eventually int converts it to integer
             print("TEST: REQUESTED CHUNK: ", requested_chunk)
             response_packet.set_data(self.file.get_chunk(requested_chunk))
             if self.subscribers:

@@ -88,6 +88,7 @@ class Connector:
                 print("WAIT_RESPONSE({}) || source_reply: {}".format(self.adaptive_timeout, received_data))
             try:
                 response_packet.load(received_data)
+                print("TEST RESPONSE: send & wait response", response_packet.load(received_data))
                 if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
                     if len(received_data) > response_packet.HEADER_SIZE + 60:	# Hardcoded for only chunks
                         self.adaptive_timeout = max(self.adaptive_timeout * 0.8 + td * 0.21, self.min_timeout)
@@ -99,6 +100,7 @@ class Connector:
                             print("OK and changing sf: ", new_sf)
                         self.set_sf(new_sf)
                     gc.collect()
+                    print("TEST RESPONSE: send & wait response part 2", response_packet)
                     return response_packet
             except Exception as e:
                 if self.debug:

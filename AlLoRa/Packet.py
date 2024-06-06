@@ -112,17 +112,17 @@ class Packet:
             print(f"ERROR: Couldn't decrypt payload - {e}")
             decrypted_payload = self.payload
             print("ERROR: get_payload print payload: ", decrypted_payload)
-        return decrypted_payload
+        return decrypted_payload  # Give data back as byte string
 
     def get_metadata(self):
         if self.command == "METADATA":
             print("Test get_metadata: ", self.payload)
             try:
-                p = self.payload
-                print("TEST: See if payload is empty - get metadata", p)
-                d = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
-                print("TEST: Decrypted Payload before loads - get metadata ", d)
-                return loads(d)
+                pay = self.payload
+                print("TEST: See what is in the payload - get metadata", pay)
+                # d = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
+                # print("TEST: Decrypted Payload before loads - get metadata ", d)
+                return loads(pay)
                 # return loads(self.payload)
             except:
                 print("ERROR: Couldn't load metadata")
@@ -255,8 +255,6 @@ class Packet:
                 else:
                     e = self.payload
                     print("ERROR: Payload is empty - get content", self.payload)
-                    decrypted_payload = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
-                    print("Succes: Decrypted Payload - get Content ", decrypted_payload)
 
             except Exception as e:
                 print(f"ERROR: Couldn't encrypt payload in get content - {e}")
@@ -302,7 +300,9 @@ class Packet:
 
         self.parse_flags(flags)
 
-        self.payload = content
+        decrypted_payload = self.security.aesgcm_decrypt(content)  # Call your decryption function here
+        print("Succes: Decrypted Payload - load ", decrypted_payload)
+        self.payload = decrypted_payload
 
         # self.check = self.checksum == self.get_checksum(self.payload)
         return True  #self.check

@@ -44,12 +44,15 @@ class Security:
         return encrypted_payload, truncated_tag
 
     def aesgcm_decrypt(self, encrypted_payload):
-        truncated_tag = encrypted_payload[-3:]  # Get the last 4 bytes of the encrypted payload
-        cipher = Cipher(algorithms.AES(self.AppKey), modes.GCM(self.nonce, tag=truncated_tag))
-        decryptor = cipher.decryptor()
-        decryptor.authenticate_additional_data(self.aad)
-        dt = decryptor.update(encrypted_payload[:-3]) + decryptor.finalize() # Decrypt the encrypted payload without the last 4 bytes
-        # print(dt)
+        if not encrypted_payload:
+            return encrypted_payload
+        else:
+            truncated_tag = encrypted_payload[-3:]  # Get the last 4 bytes of the encrypted payload
+            cipher = Cipher(algorithms.AES(self.AppKey), modes.GCM(self.nonce, tag=truncated_tag))
+            decryptor = cipher.decryptor()
+            decryptor.authenticate_additional_data(self.aad)
+            dt = decryptor.update(encrypted_payload[:-3]) + decryptor.finalize() # Decrypt the encrypted payload without the last 4 bytes
+            # print(dt)
         return dt
     '''
     def encrypt(self, plaintext):
