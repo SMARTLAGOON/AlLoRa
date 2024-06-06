@@ -1,16 +1,27 @@
 try:
     from uos import urandom
     from ujson import loads, dumps
+    import ucryptolib
+    import ubinascii
+    import sys
+    import struct
 except:
     from os import urandom
     from json import loads, dumps
+    from Crypto.Protocol.KDF import PBKDF2
+    from Crypto.Random import get_random_bytes
+    from Crypto.Cipher import AES
+    from Crypto.Util.Padding import pad
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.Security import Security
+
     
 class Node:
 
     def __init__(self, connector: Connector, config_file):
+        self.security = Security()
         self.config_file = config_file
         self.open_backup()
         self.connector = connector
@@ -25,6 +36,7 @@ class Node:
         self.status = {}
 
         self.config_connector()
+        # self.Packet = Packet
 
 
     def open_backup(self):
@@ -49,11 +61,25 @@ class Node:
                 "connector" : self.connector.backup_config()}
         with open(self.config_file, "w") as f:
             f.write(dumps(conf))
+    '''
+    def generate_AppKey(self):
+        # Generates a random derived aes 128-bit key using PBKDF2 and saves it to a binary file
+        salt = get_random_bytes(16)
+        password = b'password'  # Find a solution to store the password securely
+        key = PBKDF2(password, salt, 16)  # 16 bytes * 8 = 128 bits key
+        with open('AppKey.bin', 'wb') as f:
+            f.write(key)
+
+    def get_AppKey(self):
+        # Reads the key from the binary file
+        with open('AppKey.bin', 'rb') as f:
+            self.key = f.read()
+            return self.key
+    '''
 
     def config_connector(self):
         self.connector.config(self.config_connector_dic)
         self.connector.debug = self.debug
-
         self.MAC = self.connector.get_mac()[-8:]
         self.status["MAC"] = self.MAC
         print(self.name, ":", self.MAC)
@@ -79,27 +105,32 @@ class Node:
         self.LAST_SEEN_IDS = self.LAST_SEEN_IDS[-self.MAX_IDS_CACHED:]
         return True
 
-    def send_lora(self, packet):
-        return self.connector.send(packet)
+    def send_lora(self, packet):  # Used by source to send the packet
+        # content = packet.get_content()
+        # Encrypt the content
+        # encrypted_content, truncated_tag = self.security.aesgcm_encrypt(content)
+        # Set the encrypted content
+        # packet.set_content(encrypted_content + truncated_tag)
+        # send the packet
+        return self.connector.send(packet) # Last step of the process where full packet is send
 
-    def send_request(self, packet: Packet) -> Packet:
+    def send_request(self, packet: Packet) -> Packet:  # Only used by the Requester
         if self.mesh_mode:
             packet.set_id(self.generate_id())
             if self.debug_hops:
                 packet.enable_debug_hops()
 
-        response_packet = self.connector.send_and_wait_response(packet)
+        response_packet = self.connector.send_and_wait_response(packet)  # Send and wait for response is most important part.
         return response_packet
 
     def send_response(self, response_packet: Packet):
         if response_packet:
             if self.mesh_mode:
                 response_packet.set_id(self.generate_id())
-            
             self.send_lora(response_packet)
             if self.debug:
                 print("SENT:", response_packet.get_content())
-            if self.subscribers:
+            if self.subscribers:  # Using the API
                 self.notify_subscribers()
 
     def change_sf(self, sf):

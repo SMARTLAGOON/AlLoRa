@@ -68,6 +68,7 @@ class Requester(Node):
     def ask_metadata(self, packet: Packet):
         packet.ask_metadata()
         response_packet = self.send_request(packet)
+        print("RESPONSE PACKET: ", response_packet)
         if self.save_hops(response_packet):
             return  (1, "hop_catch.json"), response_packet.get_hop()
         if response_packet.get_command() == Packet.METADATA:
@@ -87,7 +88,10 @@ class Requester(Node):
         if self.debug:
             print("ASKING DATA")
         packet.ask_data(next_chunk)
+        print("TEST - ask data PACKET: ", packet)
+        print("TEST - ask data PACKET CONTENT: ", next_chunk)
         response_packet = self.send_request(packet)
+        print("TEST - ask data RESPONSE PACKET: ", response_packet)
         if self.debug:
             print("Response Packet: ", response_packet)
         if self.save_hops(response_packet):
@@ -99,6 +103,7 @@ class Requester(Node):
                     if not self.check_id_list(id):
                         return None, None
                 chunk = response_packet.get_payload()
+                print("TEST: ask data CHUNK: ", chunk)
                 hop = response_packet.get_hop()
                 print("CHUNK + HOP: ", chunk, "->", hop)
                 return chunk, hop
@@ -108,10 +113,10 @@ class Requester(Node):
                 return None, None
         return None, None
 
-    def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time, 
-                            print_file=False, save_file=False):
+    def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time, print_file=False, save_file=False):
         
         mac = digital_endpoint.get_mac_address()
+        print("Listening to: ", mac)
         if self.subscribers:
             self.status['SMAC'] = mac
         save_to = self.result_path + "/" + mac
@@ -121,18 +126,26 @@ class Requester(Node):
         while (in_time):
             try: 
                 packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
+                print("STATE: ", digital_endpoint.state)
+                print("packet_request: ", packet_request)
 
                 if digital_endpoint.state == "REQUEST_DATA_STATE":
+                    print("REQUESTING DATA")
                     metadata, hop = self.ask_metadata(packet_request)
+                    print("METADATA: ", metadata, hop)
                     digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
 
                 elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
+                    print("PROCESSING CHUNK")
                     next_chunk = digital_endpoint.get_next_chunk()
+                    print("TEST: NEXT CHUNK: ", next_chunk)
                     if self.debug:
                         print("ASKING CHUNK: {}".format(next_chunk))
                     if next_chunk is not None:
                         data, hop = self.ask_data(packet_request, next_chunk)
+                        print("TEST: ASKING CHUNK DATA: ", data, hop)
                         file = digital_endpoint.set_data(data, hop, self.mesh_mode)
+                        print("TEST FILE: ", file)
                         if file:
                             if print_file:
                                 print(file.get_content())

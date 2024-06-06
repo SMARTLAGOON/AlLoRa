@@ -28,9 +28,9 @@ class Connector:
         if self.config_parameters:
             self.name = self.config_parameters.get('name', "N")
             self.frequency = self.config_parameters.get('frequency', 868)
-            self.sf = self.config_parameters.get('sf', 7)
+            self.sf = self.config_parameters.get('sf', 8)
             self.mesh_mode = self.config_parameters.get('mesh_mode', False)
-            self.debug = self.config_parameters.get('debug', False)
+            self.debug = self.config_parameters.get('debug', True)
             self.min_timeout = self.config_parameters.get('min_timeout', 0.5)
             self.max_timeout = self.config_parameters.get('max_timeout', 6)
             

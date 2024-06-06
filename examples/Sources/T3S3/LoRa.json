@@ -4,7 +4,7 @@
     "mesh_mode": false,
     "debug": true,
     "connector": {
-      "sf": 7,
+      "sf": 8,
       "freq": 868,
       "min_timeout": 0.5,
       "max_timeout": 12

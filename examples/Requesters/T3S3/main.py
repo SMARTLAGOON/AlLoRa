@@ -14,7 +14,7 @@ def run():
 
 	# Here we setup a digital_endpoint to manage the connection to the Node
 	node_nickname = "T"
-	node_mac_address = "75dbb280" # Replace with the MAC address of the node you want to connect to
+	node_mac_address = "75e05f34" # Replace with the MAC address of the node you want to connect to
 	node_a = Digital_Endpoint(name=node_nickname, mac_address = node_mac_address, active = True)
 
 	# In this loop we listen to the endpoint until we have a complete file and print it.. (just for testing purposes)
@@ -30,5 +30,6 @@ def run():
 		del file_content
 		gc.collect()
 		time.sleep(10)
+
 
 run()

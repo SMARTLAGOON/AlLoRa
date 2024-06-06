@@ -20,7 +20,7 @@ class Source(Node):
         self.file = None
 
         # For subscribers
-        #self.status = {"Status": "WAIT", "Signal": 0, "Chunk": "-", "File": "-"}
+        # self.status = {"Status": "WAIT", "Signal": 0, "Chunk": "-", "File": "-"}
         self.status["Status"] = "WAIT"
         self.status["Signal"] = "-"
         self.status["Chunk"] = "-"
@@ -40,10 +40,11 @@ class Source(Node):
         self.file.first_sent = time()
         self.file.metadata_sent = True
 
-    #This function ensures that a received message matches the criteria of any expected message.
+    # This function ensures that a received message matches the criteria of any expected message.
     def listen_requester(self):
         packet = Packet(mesh_mode = self.mesh_mode)
         data = self.connector.recv()
+        print("Data - listen Requester method: ", data)
         try:
             if not packet.load(data):
                 return None
@@ -52,7 +53,7 @@ class Source(Node):
                 if data:
                     print("No received data...")
                 else:
-                    print("Error loading: ", data, " -> ",e)
+                    print("Error loading: ", data, " -> ", e)
             return None
 
         if self.mesh_mode:
@@ -81,12 +82,15 @@ class Source(Node):
             if packet:
                 if self.is_for_me(packet):
                     command = packet.get_command()
+                    print("Command: ", command)
                     if Packet.check_command(command):
                         if command != Packet.OK:
                             return True
                         response_packet = Packet(self.mesh_mode)
                         response_packet.set_source(self.MAC)
+                        print("Source: ", self.MAC)
                         response_packet.set_destination(packet.get_source())
+                        print("Destination: ", packet.get_source())
                         response_packet.set_ok()
 
                         if packet.get_change_sf():
@@ -120,6 +124,7 @@ class Source(Node):
                 if try_for <= 0:
                     return False
 
+    # While loop that loops until file is completely sent
     def send_file(self):
         while not self.file.sent:
             packet = self.listen_requester()
@@ -170,6 +175,7 @@ class Source(Node):
 
         if command == Packet.CHUNK:
             requested_chunk = int(packet.get_payload().decode())
+            print("TEST: REQUESTED CHUNK: ", requested_chunk)
             response_packet.set_data(self.file.get_chunk(requested_chunk))
             if self.subscribers:
                 self.status['Chunk'] = requested_chunk

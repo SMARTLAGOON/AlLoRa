@@ -1,4 +1,7 @@
 from AlLoRa.File import CTP_File
+from AlLoRa.Security import Security
+import struct
+import sys
 
 class Digital_Endpoint:
 
@@ -114,6 +117,7 @@ class Digital_Endpoint:
 
     def set_data(self, data, hop, mesh_mode):  
         if data:
+            # decrypted_data = self.security.aesgcm_decrypt(data)
             self.current_file.add_chunk(self.current_chunk, data)
             if mesh_mode:
                 self.reset_retransmission_counter(hop)

@@ -1,6 +1,8 @@
+from AlLoRa.Security import Security
 import struct
 import hashlib
 import binascii
+import sys
 try:
     from ujson import loads, dumps
 except:
@@ -8,10 +10,10 @@ except:
 
 class Packet:
 
-    HEADER_SIZE_P2P  = 20
-    HEADER_FORMAT_P2P  = "!8s8sB3s" #Source, Destination, Flags, Check Sum
-    HEADER_SIZE_MESH  = 22
-    HEADER_FORMAT_MESH  = "!8s8sB2s3s" #Source, Destination, Flags, ID, Check Sum
+    HEADER_SIZE_P2P  = 17 # original was 20
+    HEADER_FORMAT_P2P  = "!8s8sB" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH  = 19
+    HEADER_FORMAT_MESH  = "!8s8sB2s" #Source, Destination, Flags, ID, Check Sum
 
     OK = "OK"
     METADATA = "METADATA"  #"request-data-info"
@@ -26,7 +28,7 @@ class Packet:
             return True
         return False
 
-    def __init__(self, mesh_mode):
+    def __init__(self, mesh_mode=False, security=None):
         self.mesh_mode = mesh_mode
 
         if not self.mesh_mode:
@@ -39,7 +41,7 @@ class Packet:
         self.source = ''                  # 8 Bytes mac address of the source
         self.destination = ''             # 8 Bytes mac address of the destination
 
-        self.checksum = None              # Checksum
+        # self.checksum = None              # Checksum
         self.payload = b''                # Content of the message
 
         self.check = None                 # True if checksum is correct with content
@@ -56,12 +58,24 @@ class Packet:
 
         # For mesh
         self.id = None                    # Random number from 0 to 65.535
+        self.security = security if security else Security()
 
     def __repr__(self):
-        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
-            self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
-            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)
+        return "Packet(mesh_mode={}, source='{}', destination='{}', payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
+            self.mesh_mode, self.source, self.destination, self.payload, self.check, self.command,
+            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)  #  checksum={},!!
+    '''
+    def mac_compress(self, mac):
+        mac_address_A = mac[-8:]  # Extract the last 8 characters from the MAC address
+        int_value = int(mac_address_A, 16)  # Convert the hexadecimal segment to an integer
+        compressed_value = struct.pack('I', int_value)  # Compress the value into 4 bytes unsigned int
+        return compressed_value
 
+    def mac_decompress(self, compressed_mac):
+        decompressed_value = struct.unpack('I', compressed_mac)[0]  # Decompress the 4-byte value back to an unsigned int
+        decompressed_hex_value = hex(decompressed_value)[2:]  # Convert the integer back to a hexadecimal string
+        return decompressed_hex_value.zfill(8)  # Ensure the string is 8 characters long
+    '''
     def set_source(self, source: str):
         self.source = source
 
@@ -81,30 +95,55 @@ class Packet:
         self.command = "OK"
 
     def ask_metadata(self):
-         self.command = "METADATA"
+        self.command = "METADATA"
 
     def set_metadata(self, length, name):
         self.command = "METADATA"
         metadata = {"LENGTH" : length, "FILENAME": name}
         self.payload = dumps(metadata).encode()
+        print("TEST: set_metadata - metadata: ", metadata)
+        print("TEST: set_metadata - payload: ", self.payload)
 
     def get_payload(self):
-        return self.payload
+        try:
+            decrypted_payload = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
+            print("WINST PAYLOAD - Get payload", decrypted_payload)
+        except Exception as e:
+            print(f"ERROR: Couldn't decrypt payload - {e}")
+            decrypted_payload = self.payload
+            print("ERROR: get_payload print payload: ", decrypted_payload)
+        return decrypted_payload
 
     def get_metadata(self):
         if self.command == "METADATA":
+            print("Test get_metadata: ", self.payload)
             try:
-                return loads(self.payload)
+                p = self.payload
+                print("TEST: See if payload is empty - get metadata", p)
+                d = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
+                print("TEST: Decrypted Payload before loads - get metadata ", d)
+                return loads(d)
+                # return loads(self.payload)
             except:
+                print("ERROR: Couldn't load metadata")
                 return None
 
     def ask_data(self, next_chunk):
         self.command = "CHUNK"
         self.payload = str(next_chunk).encode()
+        print("Test - ask_data - next_chunk", next_chunk)
+        print("Test - ask_data - payload", self.payload)
 
     def set_data(self, chunk):
         self.command = "DATA"
-        self.payload = chunk
+        try:
+            encrypted_chunk, truncated_tag = self.security.aesgcm_encrypt(chunk)
+            print("WINST CHUNK - Set data")
+        except Exception as e:
+            print(f"ERROR: Couldn't encrypt payload in set_data - {e}")
+            encrypted_chunk = chunk
+            print("ERROR: set_data print chunk: ", chunk)
+        self.payload = encrypted_chunk
 
     def get_mesh(self):
         return self.mesh
@@ -186,7 +225,7 @@ class Packet:
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
 
-    def get_content(self):
+    def get_content(self):  # Returns Header + Payload
         if self.command in self.COMMAND:
             command_bits = self.COMMAND[self.command]
 
@@ -206,21 +245,36 @@ class Packet:
             if self.change_sf:
                 flags = flags | (1<<7)
 
-            p = self.payload
-            self.checksum = self.get_checksum(p)
+            try:
+                if self.payload:
+                    print(f"Payload before encryption: {self.payload}")  # Debugging print statement
+                    e, truncated_tag = self.security.aesgcm_encrypt(self.payload)
+                    print(f"Encrypted payload: {e}")  # Debugging print statement
+                    dec = self.security.aesgcm_decrypt(e)
+                    print(f"Decrypted payload: {dec}")  # Debugging print statement
+                else:
+                    e = self.payload
+                    print("ERROR: Payload is empty - get content", self.payload)
+                    decrypted_payload = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
+                    print("Succes: Decrypted Payload - get Content ", decrypted_payload)
+
+            except Exception as e:
+                print(f"ERROR: Couldn't encrypt payload in get content - {e}")
+                e = self.payload
+            # self.checksum = self.get_checksum(p)
 
             if self.mesh_mode:
                 try:
                     id_bytes = self.id.to_bytes(2, 'little')
                 except:
-                    print(self.source.encode(), self.destination.encode(), flags, self.id, self.checksum)
+                    print(self.source.encode(), self.destination.encode(), flags, self.id)  # self.checksum
                 #print(self.source, self.destination, flags, id_bytes, self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes, self.checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes)  # self.checksum
             else:
                 #print(self.source, self.destination, flags,  self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags,  self.checksum)
+                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags)  # self.checksum
 
-            return h+p
+            return h+e
 
     def parse_flags(self, flags: int):
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
@@ -238,10 +292,10 @@ class Packet:
         content = packet[self.HEADER_SIZE:]
 
         if self.mesh_mode:
-            self.source, self.destination, flags,  id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+            self.source, self.destination, flags,  id = struct.unpack(self.HEADER_FORMAT, header) # , self.checksum
             self.id = int.from_bytes(id, "little")
         else:
-             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+             self.source, self.destination, flags = struct.unpack(self.HEADER_FORMAT, header)  # , self.checksum
 
         self.source = self.source.decode()
         self.destination = self.destination.decode()
@@ -250,16 +304,16 @@ class Packet:
 
         self.payload = content
 
-        self.check = self.checksum == self.get_checksum(self.payload)
-        return self.check
+        # self.check = self.checksum == self.get_checksum(self.payload)
+        return True  #self.check
 
     def get_dict(self):
         p = self.payload
-        self.checksum = self.get_checksum(p)
+        # self.checksum = self.get_checksum(p)
         d = {"source" : self.source,
             "destination" : self.destination,
             "command" : self.command,
-            "checksum" : self.checksum.decode(),
+            # "checksum" : self.checksum.decode(),
             "payload" : binascii.b2a_base64(self.payload).decode().strip() if self.payload else None,
             "mesh" : self.mesh,
             "hop" : self.hop,
@@ -274,7 +328,7 @@ class Packet:
         self.source = d["source"]
         self.destination = d["destination"]
         self.command = d["command"]
-        self.checksum = d["checksum"].encode()
+        # self.checksum = d["checksum"].encode()
         self.payload = binascii.a2b_base64(d["payload"]) if d["payload"] else b''
         self.mesh = d["mesh"]
         self.hop = d["hop"]
@@ -283,8 +337,8 @@ class Packet:
         self.change_sf = d["change_sf"]
         self.id = d["id"]
 
-        self.check = self.checksum == self.get_checksum(self.payload)
-        return self.check
+        # self.check = self.checksum == self.get_checksum(self.payload)
+        # return self.check
 
 if __name__ == "__main__":
     mac_address_A = "70b3d5499a76ba3f"[8:]

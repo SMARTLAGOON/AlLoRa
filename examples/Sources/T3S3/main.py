@@ -4,17 +4,20 @@ from AlLoRa.Nodes.Source import Source
 from AlLoRa.File import CTP_File
 from AlLoRa.Connectors.SX127x_connector import SX127x_connector
 
+
 def clean_timing_file():
-	test_log = open('log.txt', "wb")
-	test_log.write("")
-	test_log.close()
+    test_log = open('log.txt', "wb")
+    test_log.write("")
+    test_log.close()
+
 
 gc.enable()
 # For testing
 sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]	#, 1024
-file_counter = 0
 
-if __name__ == "__main__":
+
+def run():
+    file_counter = 0
     # AlLoRa setup
     connector=SX127x_connector()
     lora_node = Source(connector, config_file="LoRa.json")
@@ -34,24 +37,28 @@ if __name__ == "__main__":
 
         # with an established connection, we start sending data periodically
         while True:
-            if not lora_node.got_file():
-                gc.collect()
-                n = file_counter % len(sizes)
-                file_counter += 1
-                size = sizes[n]
-                print("Setting file")
+            try:
+                if not lora_node.got_file():
+                    gc.collect()
+                    n = file_counter % len(sizes)
+                    file_counter += 1
+                    size = sizes[n]
+                    print("Setting file")
 
-                file = CTP_File(name = '{}.json'.format(size),
-                                content = bytearray('{}'.format(n%10)*(1024 * size), 'utf-8'),
-                                chunk_size=chunk_size)
-                lora_node.set_file(file)
+                    file = CTP_File(name = '{}.json'.format(size),
+                                    content = bytearray('{}'.format(n%10)*(1024 * size), 'utf-8'),
+                                    chunk_size=chunk_size)
+                    lora_node.set_file(file)
 
-                print("New file set, ", file.get_name())
+                    print("New file set, ", file.get_name())
 
-            lora_node.send_file()
+                lora_node.send_file()
+            except Exception as e:
+                print("Error sending file: ", e)
+                break
 
     except KeyboardInterrupt as e:
         print("EXIT")
 
 
-
+run()
