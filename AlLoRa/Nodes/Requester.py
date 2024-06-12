@@ -87,7 +87,7 @@ class Requester(Node):
     def ask_data(self, packet: Packet, next_chunk):
         if self.debug:
             print("ASKING DATA")
-        packet.ask_data(next_chunk)
+        packet.ask_data(next_chunk) # FAILS HERE
         print("TEST - ask data PACKET: ", packet)
         print("TEST - ask data NEXT CHUNK: ", next_chunk)
         response_packet = self.send_request(packet)  # PROBLEM!!!!

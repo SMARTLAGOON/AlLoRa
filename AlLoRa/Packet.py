@@ -143,9 +143,20 @@ class Packet:
 
     def ask_data(self, next_chunk): # NEXT CHUNK LOADS INTO PAYLOAD WITHOUT ENCRYPTION!!!88!!
         self.command = "CHUNK"
-        self.payload = str(next_chunk).encode() # PROBLEM: NO ENCRYPTED PAYLOAD
         print("Test - ask_data - next_chunk", next_chunk)
+
+        padded_chunk = f"{next_chunk:02}"  # This will ensure the string is at least 2 characters long
+        print(f"Test - Padded Data: {padded_chunk}")  # Outputs: "0#" with # being the chunk number
+
+        encoded_chunk = padded_chunk.encode() # Convert the string to a byte string
+        print(f"Test - Encoded Data: {encoded_chunk}")  # Outputs: b'0#'
+
+        encrypted_chunk, truncated_tag = self.security.aesgcm_encrypt(encoded_chunk)  # Encrypt the byte string
+        print("TEST - ask_data - encrypted_chunk", encrypted_chunk)
+        self.payload = encrypted_chunk  # Set the encrypted byte string as the payload
+        # self.payload = str(padded_chunk).encode()  # Original PROBLEM: NO ENCRYPTED PAYLOAD
         print("Test - ask_data - payload", self.payload)
+
 
     def set_data(self, chunk):
         self.command = "DATA"

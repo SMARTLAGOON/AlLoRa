@@ -1,10 +1,10 @@
 {
     "name": "T",
-    "chunk_size": 200,
+    "chunk_size": 235,
     "mesh_mode": false,
     "debug": true,
     "connector": {
-      "sf": 8,
+      "sf": 7,
       "freq": 868,
       "min_timeout": 0.5,
       "max_timeout": 12
