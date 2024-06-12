@@ -89,7 +89,7 @@ class Requester(Node):
             print("ASKING DATA")
         packet.ask_data(next_chunk)
         print("TEST - ask data PACKET: ", packet)
-        print("TEST - ask data PACKET CONTENT: ", next_chunk)
+        print("TEST - ask data NEXT CHUNK: ", next_chunk)
         response_packet = self.send_request(packet)  # PROBLEM!!!!
         print("TEST - ask data RESPONSE PACKET: ", response_packet)
         if self.debug:
@@ -142,7 +142,7 @@ class Requester(Node):
                     if self.debug:
                         print("ASKING CHUNK: {}".format(next_chunk))
                     if next_chunk is not None:
-                        data, hop = self.ask_data(packet_request, next_chunk)
+                        data, hop = self.ask_data(packet_request, next_chunk)  # ASKS DATA SETS NEXT CHUNK IN PAYLOAD
                         print("TEST: ASKING CHUNK DATA: ", data, hop)
                         file = digital_endpoint.set_data(data, hop, self.mesh_mode)
                         print("TEST FILE: ", file)

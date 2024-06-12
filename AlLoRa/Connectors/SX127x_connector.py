@@ -38,6 +38,7 @@ class SX127x_connector(Connector):
 
     def send(self, packet):
         if self.debug:
+            print("TEST MADE IT TO SEND_PACKET()")
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
             try:

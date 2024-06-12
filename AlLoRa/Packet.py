@@ -60,6 +60,7 @@ class Packet:
         self.id = None                    # Random number from 0 to 65.535
         self.security = security if security else Security()
 
+
     def __repr__(self):
         return "Packet(mesh_mode={}, source='{}', destination='{}', payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
             self.mesh_mode, self.source, self.destination, self.payload, self.check, self.command,
@@ -100,11 +101,22 @@ class Packet:
     def set_metadata(self, length, name):
         self.command = "METADATA"
         metadata = {"LENGTH" : length, "FILENAME": name}
-        self.payload = dumps(metadata).encode()
+        test = dumps(metadata).encode()
+        # self.payload = dumps(metadata).encode()
+        try:
+            encrypted_meta, truncated_tag = self.security.aesgcm_encrypt(test)
+            print("WINST meta - Set metadata")
+        except Exception as e:
+            print(f"ERROR: Couldn't encrypt payload in set_metadata - {e}")
+            encrypted_meta = test
+            print("ERROR: Encryption failed, this is the metadata: ", test)
+        self.payload = encrypted_meta
+
         print("TEST: set_metadata - metadata: ", metadata)
         print("TEST: set_metadata - payload: ", self.payload)
 
     def get_payload(self):
+        '''
         try:
             decrypted_payload = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
             print("WINST PAYLOAD - Get payload", decrypted_payload)
@@ -112,7 +124,8 @@ class Packet:
             print(f"ERROR: Couldn't decrypt payload - {e}")
             decrypted_payload = self.payload
             print("ERROR: get_payload print payload: ", decrypted_payload)
-        return decrypted_payload  # Give data back as byte string
+        '''
+        return self.payload  # Give data back as byte string
 
     def get_metadata(self):
         if self.command == "METADATA":
@@ -128,9 +141,9 @@ class Packet:
                 print("ERROR: Couldn't load metadata")
                 return None
 
-    def ask_data(self, next_chunk):
+    def ask_data(self, next_chunk): # NEXT CHUNK LOADS INTO PAYLOAD WITHOUT ENCRYPTION!!!88!!
         self.command = "CHUNK"
-        self.payload = str(next_chunk).encode()
+        self.payload = str(next_chunk).encode() # PROBLEM: NO ENCRYPTED PAYLOAD
         print("Test - ask_data - next_chunk", next_chunk)
         print("Test - ask_data - payload", self.payload)
 
@@ -245,20 +258,8 @@ class Packet:
             if self.change_sf:
                 flags = flags | (1<<7)
 
-            try:
-                if self.payload:
-                    print(f"Payload before encryption: {self.payload}")  # Debugging print statement
-                    e, truncated_tag = self.security.aesgcm_encrypt(self.payload)
-                    print(f"Encrypted payload: {e}")  # Debugging print statement
-                    dec = self.security.aesgcm_decrypt(e)
-                    print(f"Decrypted payload: {dec}")  # Debugging print statement
-                else:
-                    e = self.payload
-                    print("ERROR: Payload is empty - get content", self.payload)
+            p = self.payload
 
-            except Exception as e:
-                print(f"ERROR: Couldn't encrypt payload in get content - {e}")
-                e = self.payload
             # self.checksum = self.get_checksum(p)
 
             if self.mesh_mode:
@@ -272,7 +273,7 @@ class Packet:
                 #print(self.source, self.destination, flags,  self.checksum, p)
                 h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags)  # self.checksum
 
-            return h+e
+            return h+p
 
     def parse_flags(self, flags: int):
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
@@ -339,6 +340,7 @@ class Packet:
 
         # self.check = self.checksum == self.get_checksum(self.payload)
         # return self.check
+
 
 if __name__ == "__main__":
     mac_address_A = "70b3d5499a76ba3f"[8:]
