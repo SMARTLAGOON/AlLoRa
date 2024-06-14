@@ -10,10 +10,10 @@ except:
 
 class Packet:
 
-    HEADER_SIZE_P2P  = 17 # original was 20
-    HEADER_FORMAT_P2P  = "!8s8sB" #Source, Destination, Flags, Check Sum
-    HEADER_SIZE_MESH  = 19
-    HEADER_FORMAT_MESH  = "!8s8sB2s" #Source, Destination, Flags, ID, Check Sum
+    HEADER_SIZE_P2P  = 9  # original was 20 - without MAC compression 17 - with MAC compression 9
+    HEADER_FORMAT_P2P  = "!4s4sB" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH  = 11  # original was 22 - without MAC compression 19 - with MAC compression 11
+    HEADER_FORMAT_MESH  = "!4s4sB2s" #Source, Destination, Flags, ID, Check Sum
 
     OK = "OK"
     METADATA = "METADATA"  #"request-data-info"
@@ -65,26 +65,25 @@ class Packet:
         return "Packet(mesh_mode={}, source='{}', destination='{}', payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
             self.mesh_mode, self.source, self.destination, self.payload, self.check, self.command,
             self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)  #  checksum={},!!
-    '''
+
     def mac_compress(self, mac):
-        mac_address_A = mac[-8:]  # Extract the last 8 characters from the MAC address
-        int_value = int(mac_address_A, 16)  # Convert the hexadecimal segment to an integer
-        compressed_value = struct.pack('I', int_value)  # Compress the value into 4 bytes unsigned int
-        return compressed_value
+        int_mac = int(mac, 16)  # Convert the hexadecimal segment to an integer
+        compressed_source = struct.pack('I', int_mac)  # Compress the value into 4 bytes unsigned int
+        return compressed_source
 
     def mac_decompress(self, compressed_mac):
         decompressed_value = struct.unpack('I', compressed_mac)[0]  # Decompress the 4-byte value back to an unsigned int
-        decompressed_hex_value = hex(decompressed_value)[2:]  # Convert the integer back to a hexadecimal string
-        return decompressed_hex_value.zfill(8)  # Ensure the string is 8 characters long
-    '''
+        decompressed_hex_value = hex(decompressed_value)  # Convert the integer back to a hexadecimal string
+        return str(decompressed_hex_value)[2:10]  # Ensure the string is 8 characters long
+
     def set_source(self, source: str):
-        self.source = source
+        self.source = self.mac_compress(source)
 
     def get_source(self):
         return self.source
 
     def set_destination(self, destination: str):
-        self.destination = destination
+        self.destination = self.mac_compress(destination)
 
     def get_destination(self):
         return self.destination
@@ -116,15 +115,6 @@ class Packet:
         print("TEST: set_metadata - payload: ", self.payload)
 
     def get_payload(self):
-        '''
-        try:
-            decrypted_payload = self.security.aesgcm_decrypt(self.payload)  # Call your decryption function here
-            print("WINST PAYLOAD - Get payload", decrypted_payload)
-        except Exception as e:
-            print(f"ERROR: Couldn't decrypt payload - {e}")
-            decrypted_payload = self.payload
-            print("ERROR: get_payload print payload: ", decrypted_payload)
-        '''
         return self.payload  # Give data back as byte string
 
     def get_metadata(self):
@@ -156,7 +146,6 @@ class Packet:
         self.payload = encrypted_chunk  # Set the encrypted byte string as the payload
         # self.payload = str(padded_chunk).encode()  # Original PROBLEM: NO ENCRYPTED PAYLOAD
         print("Test - ask_data - payload", self.payload)
-
 
     def set_data(self, chunk):
         self.command = "DATA"
@@ -277,13 +266,13 @@ class Packet:
                 try:
                     id_bytes = self.id.to_bytes(2, 'little')
                 except:
-                    print(self.source.encode(), self.destination.encode(), flags, self.id)  # self.checksum
+                    print(self.source, self.destination, flags, self.id)  # self.checksum & encode
                 #print(self.source, self.destination, flags, id_bytes, self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes)  # self.checksum
+                h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, flags, id_bytes)  # self.checksum
             else:
                 #print(self.source, self.destination, flags,  self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags)  # self.checksum
-
+                h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, flags)  # self.checksum
+                # No need anymore for encoding the MAC's
             return h+p
 
     def parse_flags(self, flags: int):
@@ -307,9 +296,12 @@ class Packet:
         else:
              self.source, self.destination, flags = struct.unpack(self.HEADER_FORMAT, header)  # , self.checksum
 
+        self.source = self.mac_decompress(self.source)  # No need anymore for decoding MAC's
+        self.destination = self.mac_decompress(self.destination)
+        '''
         self.source = self.source.decode()
         self.destination = self.destination.decode()
-
+        '''
         self.parse_flags(flags)
 
         decrypted_payload = self.security.aesgcm_decrypt(content)  # Call your decryption function here

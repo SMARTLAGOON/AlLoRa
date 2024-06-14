@@ -65,8 +65,18 @@ class Connector:
     def recv(self, focus_time=12):
         return None
 
+    def compare_macs(self, mac1, mac2):
+        """
+        Compare two MAC addresses, converting bytes to str if necessary.
+        """
+        if isinstance(mac1, bytes):
+            mac1 = Packet().mac_decompress(mac1)
+        if isinstance(mac2, bytes):
+            mac2 = Packet().mac_decompress(mac2)
+        return mac1 == mac2
+
     def send_and_wait_response(self, packet):
-        packet.set_source(self.get_mac())  # Adding mac address to packet
+        packet.set_source(self.get_mac())  # Adding mac address to packet, with set_source making the MAC to 4 bytes
         focus_time = self.adaptive_timeout
         send_success = self.send(packet)
         #if not send_success:
@@ -87,9 +97,8 @@ class Connector:
                 self.signal_estimation()
                 print("WAIT_RESPONSE({}) || source_reply: {}".format(self.adaptive_timeout, received_data))
             try:
-                response_packet.load(received_data)
-                print("TEST RESPONSE: send & wait response", response_packet.load(received_data))
-                if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
+                response_packet.load(received_data)  # Unpacking the received data & decrypting & decompressing MAC
+                if self.compare_macs(response_packet.get_source(), packet.get_destination()) and self.compare_macs(response_packet.get_destination(), self.get_mac()):  # Problem with comparing bytes to a string
                     if len(received_data) > response_packet.HEADER_SIZE + 60:	# Hardcoded for only chunks
                         self.adaptive_timeout = max(self.adaptive_timeout * 0.8 + td * 0.21, self.min_timeout)
                     if response_packet.get_debug_hops():

@@ -48,7 +48,7 @@ class Requester(Node):
 
     def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode)
-        packet.set_destination(destination)
+        packet.set_destination(destination)  # destination = Str & set_destination -> converts it to bytes
         if mesh_active:
             packet.enable_mesh()
             if not sleep_mesh:
