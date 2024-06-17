@@ -53,7 +53,7 @@ class CTP_File:
 
     def add_chunk(self, order: int, chunk: bytes):
         self.chunks[order] = chunk
-        print("CHUNK ADDED: ", len(self.chunks), "->", order, "->", str(chunk))
+        #print("CHUNK ADDED: ", len(self.chunks), "->", order, "->", str(chunk))
 
     def assembly(self):
         self.content = bytearray()

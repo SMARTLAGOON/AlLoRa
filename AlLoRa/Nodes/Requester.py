@@ -1,14 +1,14 @@
 from AlLoRa.Nodes.Node import Node, Packet
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
-from time import time, sleep
+
 try:
     import os
-    from time import strftime
+    from time import strftime, time, sleep
     def get_time():
         return strftime("%Y-%m-%d_%H:%M:%S")
 except:
     import uos as os
-    from utime import localtime
+    from utime import localtime, ticks_ms as time, sleep, sleep_ms
     def get_time():
         tt = localtime()
         return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
@@ -88,8 +88,8 @@ class Requester(Node):
             print("ASKING DATA")
         packet.ask_data(next_chunk)
         response_packet = self.send_request(packet)
-        if self.debug:
-            print("Response Packet: ", response_packet)
+        # if self.debug:
+        #     print("Response Packet: ", response_packet)
         if self.save_hops(response_packet):
             return b"0", response_packet.get_hop()
         if response_packet.get_command() == Packet.DATA:
@@ -100,7 +100,8 @@ class Requester(Node):
                         return None, None
                 chunk = response_packet.get_payload()
                 hop = response_packet.get_hop()
-                print("CHUNK + HOP: ", chunk, "->", hop)
+                if self.debug and hop:
+                    print("CHUNK + HOP: ", chunk, "->", hop)
                 return chunk, hop
 
             except Exception as e:
@@ -133,6 +134,7 @@ class Requester(Node):
                         print("ASKING CHUNK: {}".format(next_chunk))
                     if next_chunk is not None:
                         data, hop = self.ask_data(packet_request, next_chunk)
+                        self.status['Chunk'] = digital_endpoint.file_reception_info["total_chunks"] - next_chunk
                         file = digital_endpoint.set_data(data, hop, self.mesh_mode)
                         if file:
                             if print_file:
@@ -150,7 +152,8 @@ class Requester(Node):
                     self.notify_subscribers()
 
             except Exception as e:
-                print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
+                if self.debug:
+                    print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
 
             sleep(self.NEXT_ACTION_TIME_SLEEP)
             

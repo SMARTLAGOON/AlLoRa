@@ -172,11 +172,11 @@ class Source(Node):
             requested_chunk = int(packet.get_payload().decode())
             response_packet.set_data(self.file.get_chunk(requested_chunk))
             if self.subscribers:
-                self.status['Chunk'] = requested_chunk
+                self.status['Chunk'] = self.file.get_length() - requested_chunk
                 self.status['Status'] = 'CHUNK'
 
             if self.debug:
-                print("RC: {}".format(requested_chunk))
+                print("RC: {} / {}".format(requested_chunk, self.file.get_length()))
 
             if not self.file.first_sent:
                 self.file.report_SST(True)
@@ -188,7 +188,7 @@ class Source(Node):
             if self.subscribers:
                 self.status['File'] = filename
                 self.status['Status'] = 'Metadata'
-                self.status['Chunk'] = '-'
+                self.status['Chunk'] = self.file.get_length()
 
             if self.file.metadata_sent:
                 self.file.retransmission += 1

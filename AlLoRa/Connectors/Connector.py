@@ -1,7 +1,7 @@
 from AlLoRa.Packet import Packet
 import gc
 try:
-    from utime import sleep, ticks_ms as time
+    from utime import sleep, sleep_ms, ticks_ms as time
     from uos import urandom
 except:
     from time import sleep, time
@@ -69,14 +69,18 @@ class Connector:
         packet.set_source(self.get_mac())  # Adding mac address to packet
         focus_time = self.adaptive_timeout
         send_success = self.send(packet)
-        #if not send_success:
-            #return None
+        if not send_success:
+            if self.debug:
+                print("Error sending packet")
+            return None
 
         while focus_time > 0:
             t0 = time()
             received_data = self.recv(focus_time)
             td = (time() - t0)/1000
             if not received_data:
+                if self.debug:
+                    print("WAIT_RESPONSE({}) || No response".format(focus_time))
                 random_factor = int.from_bytes(urandom(2), "little") / 2**16
                 self.adaptive_timeout = min(self.adaptive_timeout * (1 + random_factor),
                                         self.max_timeout) #random exponential backoff.

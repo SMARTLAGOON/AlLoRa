@@ -61,8 +61,6 @@ class Serial_connector(Connector):
 
             return None
 
-
-
     def serial_receive(self, focus_time, end_phrase=b"<<END>>\n"):
         start_time = time()
         full_message = bytearray()  # Use a bytearray to accumulate the message

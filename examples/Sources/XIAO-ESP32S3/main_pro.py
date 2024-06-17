@@ -2,13 +2,13 @@ import time, sys, gc, ujson
 import os
 import _thread
 
-from lora32 import T3S3
+from xiao import XiaoEsp32S3
 from utils.sd_manager import SD_manager
 from utils.oled_screen import OLED_Screen
 from utils.led_alive import LED
 
 from AlLoRa.Nodes.Source import Source
-from AlLoRa.Connectors.SX127x_connector import SX127x_connector
+from AlLoRa.Connectors.E5_connector import E5_connector
 from AlLoRa.File import CTP_File
 
 gc.enable()
@@ -41,9 +41,9 @@ def get_oldest_SD_file(sd, chunk_size):
 
 
 # Initialize T3S3 and SD_manager
-device = T3S3()
-led = LED(device)
-led.run()
+device = XiaoEsp32S3()
+#led = LED(device)
+#led.run()
 
 # print("CURRENT: ",sd_manager.get_files())
 # print("PATH: ", sd_manager.get_path())
@@ -67,7 +67,7 @@ screen = OLED_Screen(device, img_data, layout_config=source_layout, button=False
 
 def run():
     # AlLoRa setup
-    connector = SX127x_connector()
+    connector = E5_connector()
     lora_node = Source(connector, config_file="LoRa.json")
     lora_node.register_subscriber(screen)
     lora_node.notify_subscribers()
@@ -93,7 +93,10 @@ def run():
         print(e)
         print("NEW FILES: ", sd_manager.get_files())
         sd_manager.unmount()
-        led.kill()
+        #led.kill()
     print("EXIT")
 
 run()
+
+
+
