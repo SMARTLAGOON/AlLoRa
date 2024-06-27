@@ -95,41 +95,54 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Reset recently triggered, waiting...")
 
-    def send_and_wait_response(self, packet: Packet) -> Packet:
+    def send_and_wait_response(self, packet: Packet):
         packet.set_source(self.get_mac())  # Adding mac address to packet
         command = b"S&W:" + packet.get_content() + b"<<END>>\n"  # Append the custom end phrase to the command
+        packet_size_sent = len(packet.get_content())
         response = self.send_command(command)
         # Response should be ACK:adaptive_timeout
         if not response:
-            return None
+            return None, packet_size_sent, 0, 0
+
         if self.debug:
             print("ACK Response: ", response)
+
         try:
             if response.startswith(b"ACK:"):
                 response = response.split(b"ACK:")[1]
                 self.adaptive_timeout = float(response) + 0.5
                 # Now wait for the actual response
                 focus_time = self.adaptive_timeout
+
+                t0 = time()
                 received_data = self.serial_receive(focus_time)
+                td = (time() - t0) / 1000  # Calculate the time difference in seconds
+                packet_size_received = len(received_data) if received_data else 0
+
                 if self.debug:
                     print("Received data: ", received_data)
+
                 if received_data:
                     response_packet = Packet(self.mesh_mode)
                     check = response_packet.load(received_data)
                     if check:
-                        return response_packet
+                        return response_packet, packet_size_sent, packet_size_received, td
                     else:
                         if self.debug:
                             print("Error loading packet")
+                        return None, packet_size_sent, packet_size_received, td
                 else:
                     if self.debug:
                         print("No data received")
+                    return None, packet_size_sent, packet_size_received, td
             else:
                 if self.debug:
                     print("No ACK received")
+                return None, packet_size_sent, 0, 0
         except Exception as e:
             if self.debug:
                 print("Error S&W: ", e)
+            return None, packet_size_sent, 0, 0
 
     def send(self, packet: Packet):
         command = b"Send:" + packet.get_content() + b"<<END>>\n"  # Append the custom end phrase to the command
