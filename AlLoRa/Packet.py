@@ -57,6 +57,8 @@ class Packet:
         # For mesh
         self.id = None                    # Random number from 0 to 65.535
 
+        self.content = None
+
     def __repr__(self):
         return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
             self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
@@ -186,7 +188,7 @@ class Packet:
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
 
-    def get_content(self):
+    def close_packet(self):
         if self.command in self.COMMAND:
             command_bits = self.COMMAND[self.command]
 
@@ -220,7 +222,14 @@ class Packet:
                 #print(self.source, self.destination, flags,  self.checksum, p)
                 h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags,  self.checksum)
 
-            return h+p
+            self.content = h+p
+
+    def get_content(self):
+        if self.content:
+            return self.content
+        else:
+            self.close_packet()
+            return self.content
 
     def parse_flags(self, flags: int):
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
@@ -251,6 +260,10 @@ class Packet:
         self.payload = content
 
         self.check = self.checksum == self.get_checksum(self.payload)
+
+        if self.check:
+            self.content = packet
+        
         return self.check
 
     def get_dict(self):

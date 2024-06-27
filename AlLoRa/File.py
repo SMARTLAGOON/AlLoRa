@@ -1,5 +1,5 @@
 import gc
-from  math import ceil
+from math import ceil
 try:
     from utime import ticks_ms as time
     import uos as os
@@ -8,19 +8,27 @@ except:
     import os
 gc.enable()
 
-'''
-Analogous class to Lopy's one but instead of making chunks, this one reassembles them
-'''
+class OnDemandFileWriter:
+    def __init__(self, filename):
+        self.file = open(filename, 'wb')
+
+    def write(self, data):
+        self.file.write(data)
+
+    def close(self):
+        self.file.close()
+
 class CTP_File:
 
     def __init__(self, name: str = None, content: bytearray = None, chunk_size: int = None, length: int = None, report=False):
         self.name = name
+        self.report = report
         if content:
             self.assembly_needed = False
             self.content = content
             self.length = len(content)
             self.chunk_size = chunk_size
-            self.chunk_counter = ceil(self.length/self.chunk_size)
+            self.chunk_counter = ceil(self.length / self.chunk_size)
 
             self.retransmission = 0
             self.last_chunk_sent = None
@@ -31,47 +39,51 @@ class CTP_File:
             self.last_sent = None
         else:
             self.assembly_needed = True
-            self.content = bytearray()  # should be and empty bytearray
-            self.length = length # Length in chunks
-            self.chunks = dict()
-            self.missing_chunks = list()
-
-        self.report = report
+            self.length = length
+            self.chunk_counter = length
+            self.temp_file_name = f"{name}.tmp"
+            self.file_writer = OnDemandFileWriter(self.temp_file_name)
+            self.received_chunks = 0
+            self.missing_chunks = list(range(length))
 
     def get_name(self):
         return self.name
 
     def get_content(self):
         if self.assembly_needed:
-            self.assembly()
+            with open(self.temp_file_name, "rb") as f:
+                self.content = f.read()
+            return self.content
         return self.content
 
     # Requester methods
     def get_missing_chunks(self) -> list:
-        self.assembly()
         return self.missing_chunks
 
     def add_chunk(self, order: int, chunk: bytes):
-        self.chunks[order] = chunk
-        #print("CHUNK ADDED: ", len(self.chunks), "->", order, "->", str(chunk))
-
-    def assembly(self):
-        self.content = bytearray()
-        self.missing_chunks = list()
-        for i in range(0, self.length):
-            try:
-                self.content += self.chunks[i]
-            except KeyError as e:
-                self.missing_chunks.append(i)
-
-    # Check if the folder exists and create it if not, then save the file on it
-    def save(self, path):
         try:
-            os.mkdir(path)
+            self.file_writer.write(chunk)
+            self.received_chunks += 1
+            if order in self.missing_chunks:
+                self.missing_chunks.remove(order)
         except Exception as e:
-            pass
-        with open("{}/{}".format(path, self.name), "wb") as f:
-            f.write(self.get_content())
+            print("Error adding chunk: ", e)
+
+    def finalize(self, path=None):
+        self.file_writer.close()
+        print("Trying to save file: ", self.temp_file_name + " -> " + path + "/" + self.name)
+        if path:
+            os.rename(self.temp_file_name, path + "/" + self.name)
+        else:
+            os.rename(self.temp_file_name, self.name)
+
+    def save(self, path=None):
+        if path:
+            try:
+                os.mkdir(path)
+            except:
+                pass
+        self.finalize(path)
 
     # Source methods
     def get_length(self):
@@ -85,7 +97,7 @@ class CTP_File:
         if self.last_chunk_sent:
             self.check_retransmission(position)
         self.last_chunk_sent = position
-        return bytes(self.content[position*self.chunk_size : position*self.chunk_size + self.chunk_size])
+        return bytes(self.content[position * self.chunk_size: position * self.chunk_size + self.chunk_size])
 
     def check_retransmission(self, requested_chunk):
         if requested_chunk == self.last_chunk_sent:
@@ -94,20 +106,21 @@ class CTP_File:
         return False
 
     def report_SST(self, t0_tf, report=False):
-        t = time()/1000
+        t = time() / 1000
         if t0_tf:
             self.first_sent = t
         elif self.first_sent is not None:
             self.last_sent = t
-            txt = "{} -> size: {} (chunks:{}) ;t0: {}; tf {}; SST: {}; Retransmission: {}\n".format(self.get_name(), self.length, self.chunk_counter, self.first_sent, t, t - self.first_sent, self.retransmission)
+            txt = "{} -> size: {} (chunks:{}) ;t0: {}; tf {}; SST: {}; Retransmission: {}\n".format(
+                self.get_name(), self.length, self.chunk_counter, self.first_sent, t, t - self.first_sent,
+                self.retransmission)
             print(txt)
             if report and self.report:
-                test_log = open('log.txt', "ab")
-                test_log.write(txt)
-                test_log.close()
+                with open('log.txt', "ab") as test_log:
+                    test_log.write(txt.encode())
 
 if __name__ == "__main__":
-    x = CTP_File(name = "Test", length = 100)
+    x = CTP_File(name="Test", length=100)
     print(x.get_name())
-    y = CTP_File(name = "Test2", content = bytearray(b"1111111111111111111"), chunk_size = 2)
+    y = CTP_File(name="Test2", content=bytearray(b"1111111111111111111"), chunk_size=2)
     print(y.get_name())

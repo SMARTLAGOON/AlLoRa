@@ -13,7 +13,8 @@ class Adapter(Node):
         self.sf_trial = None
         self.interface = interface
         self.config_interface()
-        self.status["Signal"] = "-"
+        self.status["RSSI"] = "-"
+        self.status["SNR"] = "-"
 
     def config_interface(self):
         with open(self.config_file, "r") as f:
@@ -39,7 +40,8 @@ class Adapter(Node):
                     break
                 success = self.interface.client_API()  # change name
                 if success:
-                    self.status["Signal"] = self.connector.get_rssi()
+                    self.status["RSSI"] = self.connector.get_rssi()
+                    self.status["SNR"] = self.connector.get_snr()
                     self.notify_subscribers()
                     gc.collect()
                 sleep(0.1)

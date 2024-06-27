@@ -19,13 +19,6 @@ class Source(Node):
 
         self.file = None
 
-        # For subscribers
-        #self.status = {"Status": "WAIT", "Signal": 0, "Chunk": "-", "File": "-"}
-        self.status["Status"] = "WAIT"
-        self.status["Signal"] = "-"
-        self.status["Chunk"] = "-"
-        self.status["File"] = "-"
-
     def get_chunk_size(self):
         return self.chunk_size
 
@@ -40,24 +33,56 @@ class Source(Node):
         self.file.first_sent = time()
         self.file.metadata_sent = True
 
+    def send_response(self, response_packet: Packet):
+        if response_packet:
+            if self.mesh_mode:
+                response_packet.set_id(self.generate_id())
+            t0 = time()
+            self.send_lora(response_packet)
+            tf = time()
+            time_send = tf - t0
+            time_reply = tf - self.tr
+            if self.debug:
+                print("SENT:", response_packet.get_content())
+                print("Time Send: ", time_send, " Time Reply: ", time_reply)
+            if self.subscribers:
+                self.status['PSizeS'] = len(response_packet.get_content())
+                self.status['TimePS'] = time_send
+                self.status['TimeBtw'] = time_reply
+                self.notify_subscribers()
+
     #This function ensures that a received message matches the criteria of any expected message.
     def listen_requester(self):
-        packet = Packet(mesh_mode = self.mesh_mode)
-        data = self.connector.recv()
+        packet = Packet(mesh_mode=self.mesh_mode)
+        focus_time = self.connector.adaptive_timeout
+        t0 = time()
+        data = self.connector.recv(focus_time)
+        self.tr = time() # Get the time when the packet was received
+        td = (self.tr - t0) / 1000  # Calculate the time difference in seconds
+
+        if not data:
+            if self.debug:
+                print("No data received within focus time")
+            
+            self.connector.increase_adaptive_timeout()
+            return None
+
         try:
             if not packet.load(data):
                 return None
         except Exception as e:
-            if self.debug:
-                if data:
-                    print("No received data...")
-                else:
-                    print("Error loading: ", data, " -> ",e)
+            if data:
+                if self.debug:
+                    print("Error loading: ", data, " -> ", e)
+                self.status["CorruptedPackets"] += 1
+            else:
+                if self.debug:
+                    print("No data received")
             return None
 
         if self.mesh_mode:
             try:
-                packet_id = packet.get_id() #Check if already forwarded or sent by myself
+                packet_id = packet.get_id()  # Check if already forwarded or sent by myself
                 if packet_id in self.LAST_SEEN_IDS or packet_id in self.LAST_IDS:
                     if self.debug:
                         print("ALREADY_SEEN", self.LAST_SEEN_IDS)
@@ -67,9 +92,16 @@ class Source(Node):
                     print(e)
 
         if self.debug:
-            percentage = self.connector.get_rssi()
-            print('LISTEN_REQUESTER() || received_content', packet.get_content())
-            self.status['Signal'] = percentage
+            rssi = self.connector.get_rssi()
+            snr = self.connector.get_snr()
+            print('LISTEN_REQUESTER({}) at: {} || request_content : {}'.format(td, self.connector.adaptive_timeout, packet.get_content()))
+            print("RSSI: ", rssi, " SNR: ", snr)
+            self.status['RSSI'] = rssi
+            self.status['SNR'] = snr
+            self.status['PSizeR'] = len(data)
+            self.status['TimePR'] = td * 1000  # Time in ms
+
+        self.connector.decrease_adaptive_timeout(td)
 
         return packet
 
@@ -174,6 +206,7 @@ class Source(Node):
             if self.subscribers:
                 self.status['Chunk'] = self.file.get_length() - requested_chunk
                 self.status['Status'] = 'CHUNK'
+                self.status['Retransmission'] = self.file.retransmission
 
             if self.debug:
                 print("RC: {} / {}".format(requested_chunk, self.file.get_length()))
@@ -185,10 +218,6 @@ class Source(Node):
         if command == Packet.METADATA:    # handle for new file
             filename = self.file.get_name()
             response_packet.set_metadata(self.file.get_length(), filename)
-            if self.subscribers:
-                self.status['File'] = filename
-                self.status['Status'] = 'Metadata'
-                self.status['Chunk'] = self.file.get_length()
 
             if self.file.metadata_sent:
                 self.file.retransmission += 1
@@ -196,6 +225,12 @@ class Source(Node):
                     print("asked again for Metadata...")
             else:
                 self.file.metadata_sent = True
+
+            if self.subscribers:
+                self.status['File'] = filename
+                self.status['Status'] = 'Metadata'
+                self.status['Chunk'] = self.file.get_length()
+                self.status['Retransmission'] = self.file.retransmission
             return response_packet, new_sf
 
         if command == Packet.OK:

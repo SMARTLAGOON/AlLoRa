@@ -76,7 +76,8 @@ class E5_connector(Connector):
         default_APP_EUI = "80:00:00:00:00:00:00:06"
         success, response = self.send_command(cmd, expected_response, 500)
         if success:
-            print("Response:", response.decode())
+            if self.debug:
+                print("Response:", response.decode())
             mac = response.decode()#.split('+ID: ')[-1].strip()
             obtained_APP_EUI = mac.split('DevEui, ')[1][:23]
             self.MAC = obtained_APP_EUI.replace(':', '').strip()
@@ -122,7 +123,8 @@ class E5_connector(Connector):
 
     def set_uart_timeout(self, timeout):
         cmd = "AT+UART=TIMEOUT,{}\r\n".format(timeout)
-        print("Set Timeout Command:", cmd)
+        if self.debug:
+            print("Set Timeout Command:", cmd)
         expected_response = "+UART: TIMEOUT, {}".format(timeout)
         success, response = self.send_command(cmd, expected_response, 500)
         if self.debug:
@@ -132,7 +134,8 @@ class E5_connector(Connector):
     def restart_module(self):
         # Send a command to reset the module (if available) or reinitialize the UART
         cmd = "AT+RESET\r\n"
-        print("Restart Module Command:", cmd)
+        if self.debug:
+            print("Restart Module Command:", cmd)
         expected_response = "+RESET"
         success, response = self.send_command(cmd, expected_response, 1000)
         if self.debug:
@@ -187,7 +190,6 @@ class E5_connector(Connector):
         cmd = 'AT+TEST=TXLRPKT,"{}"\r\n'.format(data)
         start_time_total = utime.ticks_ms()
         expected_response = "+TEST: TXLRPKT"    #expected_response = "+TEST: TX DONE\r\n"    #
-        wt0 = utime.ticks_ms()
         success = self.uart.write(cmd)
         
         wt1 = utime.ticks_ms()
@@ -205,10 +207,9 @@ class E5_connector(Connector):
         #             break
         #     else:
         #         utime.sleep_ms(1)
-        # end_time_total = utime.ticks_ms()
-        # if self.debug:
-        #     print("send_packet Response:", response.decode())
-            #print("send_packet Total Time:", utime.ticks_diff(end_time_total, start_time_total), "ms")
+        end_time_total = utime.ticks_ms()
+        if self.debug:
+            print("send_packet Total Time:", utime.ticks_diff(end_time_total, start_time_total), "ms")
         return expected_response in response
 
     def set_sf(self, sf):
@@ -228,7 +229,7 @@ class E5_connector(Connector):
         return byte_str.hex()
 
     def extract_packet_info(self, response):
-        time_0 = utime.ticks_ms()
+        # time_0 = utime.ticks_ms()
         rssi_match = re.search(r'RSSI:(-?\d+)', response)
         snr_match = re.search(r'SNR:(-?\d+)', response)
 
@@ -255,7 +256,7 @@ class E5_connector(Connector):
             self.snr = None
             # if self.debug:
             #     print("SNR value not found in response")
-        time_1 = utime.ticks_ms()
+        # time_1 = utime.ticks_ms()
         # if self.debug:
         #     print("extract_packet_info Time:", utime.ticks_diff(time_1, time_0), "ms")
     
@@ -263,26 +264,10 @@ class E5_connector(Connector):
     def send(self, packet):
         data = packet.get_content()
         hex_data = self.bytes_to_hex(data)
-        
-        # Ensure the hex data is not too long and contains only valid characters
-        # if len(hex_data) > 528:
-        #     if self.debug:
-        #         print("Error: Packet too long")
-        #     return False
-        # if any(c not in "0123456789abcdefABCDEF" for c in hex_data):
-        #     if self.debug:
-        #         print("Error: Invalid character in packet")
-        #     return False
-        
-        # Ensure the command is properly terminated
         hex_data = hex_data.strip().strip('"')
         
         success = self.send_packet(hex_data)
-        # if self.debug:
-        #     if success:
-        #         print("Packet sent successfully")
-        #     else:
-        #         print("Error sending packet")
+        
         return success
 
     def recv(self, focus_time=12):

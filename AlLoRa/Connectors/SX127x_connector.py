@@ -36,6 +36,9 @@ class SX127x_connector(Connector):
     def get_rssi(self):
         return self.lora.get_rssi()
 
+    def get_snr(self):
+        return self.lora.get_snr()
+
     def send(self, packet):
         if self.debug:
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
@@ -45,9 +48,9 @@ class SX127x_connector(Connector):
                 self.lora.send(packet.get_content())  # .encode()
                 self.lora.setblocking(False)
                 return True
-            except:
+            except Exception as e:
                 if self.debug:
-                    print("Error sending packet")
+                    print("Error sending packet: ", e)
                 self.lora.setblocking(False)
                 return False
         else:

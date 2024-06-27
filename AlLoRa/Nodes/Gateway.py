@@ -34,7 +34,8 @@ class Gateway(Requester):
         self.add_digital_endpoints(self.nodes_file)
 
         self.status["Status"] = "WAIT"  # Status of the requester
-        self.status["Signal"] = "-" # Signal strength
+        self.status["RSSI"] = "-" # Signal strength
+        self.status["SNR"] = "-"   # Signal to Noise Ratio
         self.status["Chunk"] = "-"  # Chunk being received
         self.status["File"] = "-"   # File name being received
         self.status["SMAC"] = "-"   # Source MAC

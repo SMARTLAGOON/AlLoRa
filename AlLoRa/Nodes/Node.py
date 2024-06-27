@@ -26,6 +26,21 @@ class Node:
 
         self.config_connector()
 
+        self.status["Status"] = "WAIT"  # Status of the requester
+        self.status["RSSI"] = "-" # Signal strength
+        self.status["SNR"] = "-"  # Signal to Noise Ratio
+        #self.status["SF"] = self.connector.sf
+
+        self.status["Chunk"] = "-"  # Chunk being received
+        self.status["File"] = "-"   # File name being received
+        self.status["PSizeS"] = "-" # Packet Size Sent
+        self.status["PSizeR"] = "-" # Packet Size Received
+        self.status["Retransmission"] = 0   # Number of retransmissions
+        self.status["TimePS"] = "-"    # Time to send packet
+        self.status["TimePR"] = "-"    # Waiting time for response
+        self.status["TimeBtw"] = "-"  # Time between reply
+        self.status["CorruptedPackets"] = 0  # Number of corrupted packets
+
 
     def open_backup(self):
         with open(self.config_file, "r") as f:
@@ -81,26 +96,6 @@ class Node:
 
     def send_lora(self, packet):
         return self.connector.send(packet)
-
-    def send_request(self, packet: Packet) -> Packet:
-        if self.mesh_mode:
-            packet.set_id(self.generate_id())
-            if self.debug_hops:
-                packet.enable_debug_hops()
-
-        response_packet = self.connector.send_and_wait_response(packet)
-        return response_packet
-
-    def send_response(self, response_packet: Packet):
-        if response_packet:
-            if self.mesh_mode:
-                response_packet.set_id(self.generate_id())
-            
-            self.send_lora(response_packet)
-            if self.debug:
-                print("SENT:", response_packet.get_content())
-            if self.subscribers:
-                self.notify_subscribers()
 
     def change_sf(self, sf):
         self.connector.backup_sf()

@@ -6,6 +6,7 @@ from xiao import XiaoEsp32S3
 from utils.sd_manager import SD_manager
 from utils.oled_screen import OLED_Screen
 from utils.led_alive import LED
+from subslogger import Logger
 
 from AlLoRa.Nodes.Source import Source
 from AlLoRa.Connectors.E5_connector import E5_connector
@@ -51,7 +52,7 @@ device = XiaoEsp32S3()
 source_layout = [
     {'key': 'MAC', 'pos': {'x': 40, 'y': 0}, 'area': {'x': 40, 'y': 0, 'w': 88, 'h': 12}, 'static': True},
     {'key': 'File', 'pos': {'x': 40, 'y': 12}, 'area': {'x': 40, 'y': 12, 'w': 88, 'h': 12}},
-    {'key': 'Signal', 'pos': {'x': 40, 'y': 24}, 'area': {'x': 40, 'y': 24, 'w':40, 'h': 12}},
+    {'key': 'RSSI', 'pos': {'x': 40, 'y': 24}, 'area': {'x': 40, 'y': 24, 'w':40, 'h': 12}},
     {'key': 'Chunk', 'pos': {'x': 80, 'y': 24}, 'area': {'x': 80, 'y': 24, 'w': 40, 'h': 12}}
 ]
 
@@ -69,13 +70,20 @@ def run():
     # AlLoRa setup
     connector = E5_connector()
     lora_node = Source(connector, config_file="LoRa.json")
-    lora_node.register_subscriber(screen)
-    lora_node.notify_subscribers()
     chunk_size = lora_node.get_chunk_size() #235
     sd_manager = SD_manager(sclk=device.SD_SCLK, mosi=device.SD_MOSI, miso=device.SD_MISO, cs=device.SD_CS)
     print("CURRENT: ",sd_manager.get_files())
     print("PATH: ", sd_manager.get_path())
-    
+
+    logger = Logger(
+    always_log_topics=["RSSI", "SNR", "Chunk", "PSizeS", "PSizeR", "TimePR", 'TimePS', 'TimeBtw'],
+    change_log_topics=["File", "Status", "Retransmission", "CorruptedPackets"]
+    )
+
+    lora_node.register_subscriber(screen)
+    lora_node.register_subscriber(logger)
+    lora_node.notify_subscribers()
+
     try:
         lora_node.establish_connection()
         print("Connection OK")

@@ -167,12 +167,12 @@ class Digital_Endpoint:
             self.file_reception_info["latest_chunk_index"] = self.current_chunk
             self.file_reception_info["latest_chunk_reception_time"] = get_time()
             if len(self.current_file.get_missing_chunks()) == 0:  # All chunks received
-                self.file_reception_info["last_file_name"] = self.current_file.name
-                self.file_reception_info["last_file_size"] = len(self.current_file.get_content())
+                self.file_reception_info["last_file_name"] = self.current_file.get_name()
+                self.file_reception_info["last_file_size"] = self.current_file.get_length()
                 self.file_reception_info["last_reception_hour"] = self.file_reception_info["latest_chunk_reception_time"]
                 self.state = Digital_Endpoint.OK
                 if self.debug:
-                    print("Node {}: FILE {} RECEIVED".format(self.name, self.current_file.name))
+                    print("Node {}: FILE {} RECEIVED".format(self.name, self.current_file.get_name()))
                 return self.current_file
             if mesh_mode:
                 self.reset_retransmission_counter(hop)
