@@ -149,7 +149,7 @@ class Requester(Node):
                 if digital_endpoint.state == "REQUEST_DATA_STATE":
                     metadata, hop = self.ask_metadata(packet_request)
                     t0 = time()
-                    digital_endpoint.set_metadata(metadata, hop, self.mesh_mode)
+                    digital_endpoint.set_metadata(metadata, hop, self.mesh_mode, save_to)
 
                 elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
                     next_chunk = digital_endpoint.get_next_chunk()

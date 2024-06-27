@@ -20,7 +20,7 @@ class OnDemandFileWriter:
 
 class CTP_File:
 
-    def __init__(self, name: str = None, content: bytearray = None, chunk_size: int = None, length: int = None, report=False):
+    def __init__(self, name: str = None, content: bytearray = None, chunk_size: int = None, length: int = None, report=False, path="Results"):
         self.name = name
         self.report = report
         if content:
@@ -41,8 +41,14 @@ class CTP_File:
             self.assembly_needed = True
             self.length = length
             self.chunk_counter = length
-            self.temp_file_name = f"{name}.tmp"
-            self.file_writer = OnDemandFileWriter(self.temp_file_name)
+            self.path = path
+            # Check if Temp folder exists
+            try:
+                os.mkdir(f"{self.path}/Temp")
+            except:
+                pass
+            self.temp_file_path = f"{self.path}/Temp/{name}.tmp"
+            self.file_writer = OnDemandFileWriter(self.temp_file_path)
             self.received_chunks = 0
             self.missing_chunks = list(range(length))
 
@@ -51,7 +57,7 @@ class CTP_File:
 
     def get_content(self):
         if self.assembly_needed:
-            with open(self.temp_file_name, "rb") as f:
+            with open(self.temp_file_path, "rb") as f:
                 self.content = f.read()
             return self.content
         return self.content
@@ -71,11 +77,10 @@ class CTP_File:
 
     def finalize(self, path=None):
         self.file_writer.close()
-        print("Trying to save file: ", self.temp_file_name + " -> " + path + "/" + self.name)
-        if path:
-            os.rename(self.temp_file_name, path + "/" + self.name)
-        else:
-            os.rename(self.temp_file_name, self.name)
+        if not path:
+            path = self.path
+        print("Trying to save file: ", self.temp_file_path + " -> " + path + "/" + self.name)
+        os.rename(self.temp_file_path, path + "/" + self.name)
 
     def save(self, path=None):
         if path:

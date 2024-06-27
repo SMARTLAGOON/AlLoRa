@@ -78,7 +78,6 @@ class Digital_Endpoint:
     def __repr__(self):
         return "Digital_Endpoint({} ({})".format(self.name, self.mac_address)
 
-
     def get_name(self):
         return self.name
 
