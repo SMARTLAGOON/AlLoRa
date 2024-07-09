@@ -100,6 +100,12 @@ class Packet:
             except:
                 return None
 
+    def get_config(self):   # RF configuration
+        try:
+            return loads(self.payload)
+        except:
+            return None
+
     def ask_data(self, next_chunk):
         self.command = "CHUNK"
         self.payload = str(next_chunk).encode()
@@ -148,6 +154,25 @@ class Packet:
         self.set_ok()
         self.change_sf = True
         self.payload = dumps(sf).encode()
+
+     # Receives a dictionary with the new configuration
+    def set_change_rf(self, rf_config):
+        changer = {}
+        changer["freq"] = rf_config.get("freq", None)
+        changer["sf"] = rf_config.get("sf", None)
+        changer["bw"] = rf_config.get("bw", None)
+        changer["cr"] = rf_config.get("cr", None)
+        changer["tx_power"] = rf_config.get("tx_power", None)
+        # Check if there is any change
+        if any(changer.values()):
+            self.set_ok()
+            self.change_sf = True
+            # only send the changes that are not None
+            changer = {k: v for k, v in changer.items() if v is not None}
+            self.payload = dumps(changer).encode()
+            return True
+        else:
+            return False
 
     def get_message_path(self):
         if self.debug_hops:

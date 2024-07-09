@@ -34,12 +34,13 @@ class E5_connector(Connector):
             self.txbuf = connector_config.get("txbuf", 150)  # TX buffer size
             self.rxbuf = connector_config.get("rxbuf", 150)  # RX buffer size
             
-            self.frequency = connector_config.get("freq", 868)
-            self.sf = connector_config.get("sf", 7)
-            self.bandwidth = connector_config.get("bandwidth", 125)
+            # self.frequency = connector_config.get("freq", 868)
+            # self.sf = connector_config.get("sf", 7)
+            # self.bandwidth = connector_config.get("bandwidth", 125)
+            #self.tx_power = connector_config.get("tx_power", 14)
             self.tx_preamble = connector_config.get("tx_preamble", 8)
             self.rx_preamble = connector_config.get("rx_preamble", 8)
-            self.tx_power = connector_config.get("tx_power", 14)
+            
             self.crc = connector_config.get("crc", "ON")
             self.iq = connector_config.get("iq", "OFF")
             self.net = connector_config.get("net", "ON")
@@ -62,12 +63,12 @@ class E5_connector(Connector):
 
             # Enter test mode and configure RF settings
             self.enter_test_mode()
-            self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bandwidth, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
+            self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
             if self.debug:
                 print("Configuration: uart_id={}, baudrate={}, tx={}, rx={}, bits={}, parity={}, stop={}, timeout={}".format(
                     self.uart_id, self.baudrate, self.tx_pin, self.rx_pin, self.bits, self.parity, self.stop, self.timeout))
                 print("RF Configuration: frequency={}, sf={}, bandwidth={}, tx_preamble={}, rx_preamble={}, tx_power={}, crc={}, iq={}, net={}".format(
-                    self.frequency, self.sf, self.bandwidth, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net))
+                    self.frequency, self.sf, self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net))
             self.get_mac_from_module()
 
     def get_mac_from_module(self):
@@ -151,14 +152,6 @@ class E5_connector(Connector):
             print("Enter Test Mode Response:", response.decode())
         return success
 
-    def set_rf_config(self, frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net):
-        cmd = "AT+TEST=RFCFG,{},{},{},{},{},{},{},{},{}\r\n".format(frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
-        expected_response = "+TEST: RFCFG"
-        success, response = self.send_command(cmd, expected_response, 2000)
-        if self.debug:
-            print("Set RF Config Response:", response.decode())
-        return success
-
     def receive_packet(self, timeout=10000, chunk_size=124):
         cmd = "AT+TEST=RXLRPKT\r\n"
         self.uart.write(cmd)
@@ -211,12 +204,6 @@ class E5_connector(Connector):
         if self.debug:
             print("send_packet Total Time:", utime.ticks_diff(end_time_total, start_time_total), "ms")
         return expected_response in response
-
-    def set_sf(self, sf):
-        self.sf = sf
-        self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bandwidth, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
-        if self.debug:
-            print("SF Changed to:", self.sf)
 
     # Packet Handling
     def hex_to_bytes(self, hex_str):
@@ -289,3 +276,64 @@ class E5_connector(Connector):
 
     def get_snr(self):
         return self.snr
+
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None):
+        freq = frequency if frequency is not None else self.frequency
+        sf = sf if sf is not None else "SF" + str(self.sf)
+        bandwidth = bw if bw is not None else self.bw
+        cr = cr if cr is not None else self.cr
+        tx_power = tx_power if tx_power is not None else self.tx_power
+        success = self.set_rf_config(freq, sf, bandwidth, self.tx_preamble, self.rx_preamble, tx_power, self.crc, self.iq, self.net)
+        return success
+
+    def set_rf_config(self, frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net):
+        cmd = "AT+TEST=RFCFG,{},{},{},{},{},{},{},{},{}\r\n".format(frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
+        expected_response = "+TEST: RFCFG"
+        success, response = self.send_command(cmd, expected_response, 2000)
+        if self.debug:
+            print("Set RF Config Response:", response.decode())
+        if success:
+            self.frequency = frequency
+            self.sf = int(sf[2:])
+            self.bw = bandwidth
+            self.tx_preamble = tx_preamble
+            self.rx_preamble = rx_preamble
+            self.tx_power = tx_power
+            self.crc = crc
+            self.iq = iq
+            self.net = net
+        return success
+
+    def set_frequency(self, frequency):
+        success = self.set_rf_config(frequency, "SF" + str(self.sf), self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
+        if success:
+            if self.debug:
+                print("Frequency Set to:", frequency)
+        return success
+
+    def set_sf(self, sf):
+        success = self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
+        if success:
+            if self.debug:
+                print("SF Changed to:", sf)
+        return success
+
+    def set_bw(self, bw):
+        success = self.set_rf_config(self.frequency, "SF" + str(self.sf), bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
+        if success:
+            if self.debug:
+                print("Bandwidth Set to:", bw)
+        return success
+
+    def set_cr(self, cr):
+        # CR is not configurable in E5 module
+        if self.debug:
+            print("CR is not configurable in E5 module")
+        return False
+
+    def set_transmission_power(self, desired_power):
+        success = self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bw, self.tx_preamble, self.rx_preamble, desired_power, self.crc, self.iq, self.net)
+        if success:
+            if self.debug:
+                print("Transmission Power Set to:", desired_power)
+        return success

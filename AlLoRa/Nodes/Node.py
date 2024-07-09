@@ -97,12 +97,31 @@ class Node:
     def send_lora(self, packet):
         return self.connector.send(packet)
 
-    def change_sf(self, sf):
-        self.connector.backup_sf()
-        self.connector.set_sf(sf)
+    def change_rf_config(self, new_config):
+        frequency = new_config.get("freq", None)
+        sf = new_config.get("sf", None)
+        bw = new_config.get("bw", None)
+        cr = new_config.get("cr", None)
+        tx_power = new_config.get("tx_power", None)
+        print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power)
+        changed = self.connector.change_rf_config(frequency=frequency, 
+                                        sf=sf, bw=bw, cr=cr, 
+                                        tx_power=tx_power)
+        if changed:
+            self.sf_trial = 5
+            return True
+        return False
 
-    def restore_sf(self):
-        self.connector.restore_sf()
+
+    def restore_rf_config(self):
+        self.connector.restore_rf_config()
+
+    # def change_sf(self, sf):
+    #     self.connector.backup_sf()
+    #     self.connector.set_sf(sf)
+
+    # def restore_sf(self):
+    #     self.connector.restore_sf()
 
     # Subscribers stuff:
     def register_subscriber(self, subscriber):

@@ -28,8 +28,13 @@ class Connector:
         self.config_parameters = config_json
         if self.config_parameters:
             self.name = self.config_parameters.get('name', "N")
-            self.frequency = self.config_parameters.get('frequency', 868)
-            self.sf = self.config_parameters.get('sf', 7)
+
+            self.frequency = self.config_parameters.get('freq', 868)    # 868 MHz
+            self.sf = self.config_parameters.get('sf', 7)               # SF7
+            self.bw = self.config_parameters.get("bandwidth", 125)            # 125 kHz
+            self.cr = self.config_parameters.get("coding_rate", 5)            # 4/5
+            self.tx_power = self.config_parameters.get("tx_power", 14)         # 14 dBm
+
             self.mesh_mode = self.config_parameters.get('mesh_mode', False)
             self.debug = self.config_parameters.get('debug', False)
             self.min_timeout = self.config_parameters.get('min_timeout', 0.5)
@@ -38,6 +43,7 @@ class Connector:
             self.adaptive_timeout = self.min_timeout
             self.backup_timeout = self.adaptive_timeout
             self.sf_backup = self.sf
+            self.backup_rf_config()
         else:
             if self.debug:
                 print("Error: No config parameters")
@@ -47,15 +53,6 @@ class Connector:
 
     def get_mac(self):
         return self.MAC
-
-    def set_sf(self, sf):
-        pass
-
-    def backup_sf(self):
-        self.sf_backup = self.sf
-
-    def restore_sf(self):
-        self.set_sf(self.sf_backup)
 
     def set_mesh_mode(self, mesh_mode=False):
         self.mesh_mode = mesh_mode
@@ -110,11 +107,6 @@ class Connector:
                             self.decrease_adaptive_timeout(td)
                         if response_packet.get_debug_hops():
                             response_packet.add_hop(self.name, self.get_rssi(), 0)
-                        if response_packet.get_change_sf():
-                            new_sf = int(response_packet.get_payload().decode().split('"')[1])
-                            if self.debug:
-                                print("OK and changing sf: ", new_sf)
-                            self.set_sf(new_sf)
                         return response_packet, packet_size_sent, packet_size_received, td
                 else:
                     raise Exception("Corrupted packet")
@@ -150,3 +142,68 @@ class Connector:
         if self.debug:
             print('SIGNAL STRENGTH', percentage, '%')
         return percentage
+
+    def get_rf_config(self):
+        return [self.frequency, self.sf, self.bw, self.cr, self.tx_power]
+
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None):
+        self.backup_rf_config()
+        try:
+            if frequency is not None:
+                self.set_frequency(frequency)
+            if sf is not None:
+                self.set_sf(sf)
+            if bw is not None:
+                self.set_bw(bw)
+            if cr is not None:
+                self.set_cr(cr)
+            if tx_power is not None:
+                self.set_transmission_power(tx_power)
+            return True
+        except Exception as e:
+            if self.debug:
+                print("Error changing RF config: ", e)
+            self.restore_rf_config()
+            return False
+
+    # def backup_sf(self):
+    #     self.sf_backup = self.sf
+
+    # def restore_sf(self):
+    #     self.set_sf(self.sf_backup)
+
+    def backup_rf_config(self):
+        self.last_rf_config = [self.frequency, 
+                                    self.sf, 
+                                    self.bw, 
+                                    self.cr, 
+                                    self.tx_power]
+
+    def restore_rf_config(self):
+        frequency =  self.last_rf_config[0]
+        sf = self.last_rf_config[1]
+        bw = self.last_rf_config[2] 
+        cr = self.last_rf_config[3]
+        tx_power = self.last_rf_config[4]
+        self.change_rf_config(frequency=frequency, 
+                                sf=sf, 
+                                bw=bw, 
+                                cr=cr, 
+                                tx_power=tx_power)
+
+
+    def set_frequency(self, frequency):
+        pass
+
+    def set_sf(self, sf):
+        pass
+
+    def set_bw(self, bw):
+        print("TEST")
+        pass
+
+    def set_cr(self, cr):
+        pass
+
+    def set_transmission_power(self, tx_power):
+        pass

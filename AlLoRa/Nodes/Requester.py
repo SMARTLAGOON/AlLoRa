@@ -130,8 +130,8 @@ class Requester(Node):
         return None, None
 
     def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time=None, 
-                            print_file=False, save_file=False):
-        
+                            print_file=False, save_file=False, one_file=False):
+        stop = False
         mac = digital_endpoint.get_mac_address()
         if self.subscribers:
             self.status['SMAC'] = mac
@@ -165,13 +165,15 @@ class Requester(Node):
                             final_ok = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
                             final_ok.set_ok()
                             final_ok.set_source(self.connector.get_mac())
-                            sleep(self.NEXT_ACTION_TIME_SLEEP)
+                            sleep(1)
                             self.send_lora(final_ok)
                             self.status['Chunk'] = "DONE"
                             if print_file:
                                 print(file.get_content())
                             if save_file:
                                 file.save(save_to)
+                            if one_file:
+                                stop = True
 
                 elif digital_endpoint.state == "OK":
                     ok, hop = self.ask_ok(packet_request)
@@ -182,15 +184,19 @@ class Requester(Node):
                 if self.debug:
                     print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
 
-            if self.subscribers:
-                self.status['Status'] = digital_endpoint.state
-                self.notify_subscribers()
+            finally:
+                if self.subscribers:
+                    self.status['Status'] = digital_endpoint.state
+                    self.notify_subscribers()
 
-            gc.collect()
-            dt = time() - t0    # Time to process the request in ms
-            sleep_time = self.NEXT_ACTION_TIME_SLEEP - (dt * 1000)
-            if sleep_time > 0:
-                sleep(sleep_time)
+                gc.collect()
+                dt = time() - t0    # Time to process the request in ms
+                sleep_time = self.NEXT_ACTION_TIME_SLEEP - (dt * 1000)
+                if sleep_time > 0:
+                    sleep(sleep_time)
+                
+                if stop:
+                    break
 
     def save_hops(self, packet):
         if packet is None:
@@ -226,3 +232,62 @@ class Requester(Node):
                     try_for -= 1
                     if try_for <= 0:
                         return False
+
+    def ask_change_rf(self, digital_endpoint, new_config):
+        try_for = 20
+        new_config = [new_config.get("freq", None), new_config.get("sf", None), 
+                        new_config.get("bw", None), new_config.get("cr", None), 
+                        new_config.get("tx_power", None), 
+                        new_config.get("chunk_size", None)] # Chunk size not yet implemented
+        config = self.connector.get_rf_config()
+        print("Current config: ", config)
+        print("New config: ", new_config)
+        # Only change the values that are different from the current configuration
+        new_freq = new_config[0] if new_config[0] != config[0] else None
+        new_sf = new_config[1] if new_config[1] != config[1] else None
+        new_bw = new_config[2] if new_config[2] != config[2] else None
+        new_cr = new_config[3] if new_config[3] != config[3] else None
+        new_tx_power = new_config[4] if new_config[4] != config[4] else None
+        while True:
+            packet = Packet(self.mesh_mode)
+            packet.set_destination(digital_endpoint.get_mac_address())
+            changes = packet.set_change_rf({"freq": new_freq, "sf": new_sf, 
+                                            "bw": new_bw, "cr": new_cr, 
+                                            "tx_power": new_tx_power})
+            if not changes:
+                return False
+            if digital_endpoint.get_mesh():
+                packet.enable_mesh()
+                if not digital_endpoint.get_sleep():
+                    packet.disable_sleep()
+            response_packet = self.send_request(packet)
+            try:
+                if response_packet.get_command() == Packet.OK:
+                    new_config = response_packet.get_config()
+                    if self.debug:
+                        print("OK and changing config to: ", new_config)
+                    # frequency=new_config.get('freq', None)
+                    # sf=new_config.get('sf', None)
+                    # bw=new_config.get("bw", None)
+                    # cr=new_config.get("cr", None)
+                    # tx_power=new_config.get("tx_power", None)
+                    #changed = self.change_rf_config(frequency=frequency, sf=sf, bw=bw, cr=cr, tx_power=tx_power)
+                    changed = self.change_rf_config(new_config)
+                    if not changed:
+                        return False
+                        #raise Exception("Error changing config")
+                    return True
+                else:
+                    try_for -= 1
+                    if try_for <= 0:
+                        return False
+            except Exception as e:
+                if self.debug:
+                    print("Error changing RF config: ", e)
+                try_for -= 1
+                if try_for <= 0:
+                    return False
+
+
+
+
