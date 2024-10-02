@@ -1,5 +1,6 @@
 from AlLoRa.Packet import Packet
 import gc
+from math import ceil
 try:
     from utime import sleep, sleep_ms, ticks_ms as time
     from uos import urandom
@@ -13,6 +14,7 @@ class Connector:
     def __init__(self):
         self.MAC = "00000000"
         self.observed_min_timeout = float('inf')
+        self.debug = False
 
     def config(self, config_json):
         # JSON Example:
@@ -32,21 +34,66 @@ class Connector:
             self.frequency = self.config_parameters.get('freq', 868)    # 868 MHz
             self.sf = self.config_parameters.get('sf', 7)               # SF7
             self.bw = self.config_parameters.get("bandwidth", 125)            # 125 kHz
-            self.cr = self.config_parameters.get("coding_rate", 5)            # 4/5
+            self.cr = self.config_parameters.get("coding_rate", 1)            # 4/5
             self.tx_power = self.config_parameters.get("tx_power", 14)         # 14 dBm
 
             self.mesh_mode = self.config_parameters.get('mesh_mode', False)
-            self.debug = self.config_parameters.get('debug', False)
             self.min_timeout = self.config_parameters.get('min_timeout', 0.5)
             self.max_timeout = self.config_parameters.get('max_timeout', 6)
-            
-            self.adaptive_timeout = self.min_timeout
+            self.timeout_delta = self.config_parameters.get('timeout_delta', 1)  # Delta for processing times
+        
+            # Calculate initial adaptive timeouts
+            self.update_timeouts()
+
+            self.adaptive_timeout = self.max_timeout
             self.backup_timeout = self.adaptive_timeout
             self.sf_backup = self.sf
             self.backup_rf_config()
         else:
             if self.debug:
                 print("Error: No config parameters")
+
+    def get_max_payload_size(self):
+        if self.sf < 11:
+            return 255
+        elif self.sf == 11:
+            return 111
+        elif self.sf == 12:
+            return 30   #51
+
+    def update_timeouts(self):
+        # Calculate the min and max timeouts based on the ToA for the current RF settings
+        #max_toa = self.calculate_toa(self.sf, self.bw, self.cr, 255)  # Max payload
+        self.max_payload_size = self.get_max_payload_size()
+        min_toa = self.calculate_toa(self.sf, self.bw, self.cr, self.max_payload_size)   # Max payload
+        max_toa = min_toa * 2
+        self.min_timeout = min_toa + self.timeout_delta # Convert ms to seconds
+        self.max_timeout = max_toa + self.timeout_delta  # Convert ms to seconds and add delta for processing times
+        if self.debug:
+            print("Updated timeouts: Min: {} s, Max: {} s".format(self.min_timeout, self.max_timeout))
+
+    def calculate_toa(self, sf, bw, cr, payload_size):
+        print("TOA with SF:", sf, "BW:", bw, "CR:", cr, "Payload:", payload_size)
+        crc = 1  # CRC enabled
+        bw_hz = bw * 1000   # Convert bandwidth to Hz
+        t_symbol = (2 ** sf) / bw_hz    # Symbol duration
+        t_preamble = t_symbol * (8 + 4.25)  # Preamble duration
+        h = 0   # Implicit header disabled
+        de = 1 if (sf >= 11 and bw == 125) else 0   # Low data rate optimization enabled for SF11 and SF12 with 125kHz BW
+        cr_rate = cr / 4.0  # Coding rate
+        # Payload Symbol Calculation
+        payload_bits = 8 * payload_size - 4 * sf + 28 + 16 * (1 if crc else 0) - 20 * h
+        bits_per_symbol = 4 * (sf - 2 * de)
+        n_payload = 8 + max(0, int(ceil(payload_bits / bits_per_symbol) * (cr_rate + 4)))
+        
+        # Payload Duration
+        t_payload = t_symbol * n_payload
+        
+        # Total Time on Air
+        t_air = t_preamble + t_payload
+        print("TOA:", t_air)
+        
+        return t_air
 
     def backup_config(self):
         return self.config_parameters
@@ -77,10 +124,16 @@ class Connector:
         packet.set_source(self.get_mac())  # Adding Mac address to packet
         focus_time = self.adaptive_timeout
         packet_size_sent = len(packet.get_content())
-        send_success = self.send(packet)
-        if not send_success:
+        try:
+            send_success = self.send(packet)
+            if not send_success:
+                if self.debug:
+                    print("SEND_PACKET || Error sending packet")
+                return None, 0, 0, 0
+        except Exception as e:
             if self.debug:
-                print("SEND_PACKET || Error sending packet")
+                print("SEND_PACKET || Error sending packet: ", e)
+            self.increase_adaptive_timeout()
             return None, 0, 0, 0
 
         while focus_time > 0:
@@ -109,11 +162,12 @@ class Connector:
                             response_packet.add_hop(self.name, self.get_rssi(), 0)
                         return response_packet, packet_size_sent, packet_size_received, td
                 else:
-                    raise Exception("Corrupted packet")
+                    #raise Exception("Corrupted packet")
+                    return None, packet_size_sent, packet_size_received, td
 
             except Exception as e:
                 if self.debug:
-                    print("Connector: ", e, received_data)
+                    print("Connector: ", e)
 
             focus_time = self.adaptive_timeout - td
             if focus_time < self.min_timeout:
@@ -146,8 +200,9 @@ class Connector:
     def get_rf_config(self):
         return [self.frequency, self.sf, self.bw, self.cr, self.tx_power]
 
-    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None):
-        self.backup_rf_config()
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
+        if backup:
+            self.backup_rf_config()
         try:
             if frequency is not None:
                 self.set_frequency(frequency)
@@ -159,6 +214,8 @@ class Connector:
                 self.set_cr(cr)
             if tx_power is not None:
                 self.set_transmission_power(tx_power)
+            self.update_timeouts()
+            self.adaptive_timeout = self.max_timeout
             return True
         except Exception as e:
             if self.debug:
@@ -189,7 +246,8 @@ class Connector:
                                 sf=sf, 
                                 bw=bw, 
                                 cr=cr, 
-                                tx_power=tx_power)
+                                tx_power=tx_power,
+                                backup=False)
 
 
     def set_frequency(self, frequency):

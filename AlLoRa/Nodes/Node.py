@@ -26,13 +26,18 @@ class Node:
 
         self.config_connector()
 
+        self.status["Freq"] = self.connector.frequency
+        self.status["SF"] = self.connector.sf
+        self.status["BW"] = self.connector.bw
+        self.status["CR"] = self.connector.cr
+        self.status["TX_P"] = self.connector.tx_power
+
         self.status["Status"] = "WAIT"  # Status of the requester
         self.status["RSSI"] = "-" # Signal strength
         self.status["SNR"] = "-"  # Signal to Noise Ratio
-        #self.status["SF"] = self.connector.sf
 
-        self.status["Chunk"] = "-"  # Chunk being received
-        self.status["File"] = "-"   # File name being received
+        self.status["Chunk"] = "-"  # Chunk being received/sent
+        self.status["File"] = "-"   # File name being received/sent
         self.status["PSizeS"] = "-" # Packet Size Sent
         self.status["PSizeR"] = "-" # Packet Size Received
         self.status["Retransmission"] = 0   # Number of retransmissions
@@ -66,8 +71,8 @@ class Node:
             f.write(dumps(conf))
 
     def config_connector(self):
-        self.connector.config(self.config_connector_dic)
         self.connector.debug = self.debug
+        self.connector.config(self.config_connector_dic)
 
         self.MAC = self.connector.get_mac()[-8:]
         self.status["MAC"] = self.MAC
@@ -98,20 +103,42 @@ class Node:
         return self.connector.send(packet)
 
     def change_rf_config(self, new_config):
+        print("Changing RF Config to: ", new_config)
         frequency = new_config.get("freq", None)
         sf = new_config.get("sf", None)
         bw = new_config.get("bw", None)
         cr = new_config.get("cr", None)
         tx_power = new_config.get("tx_power", None)
-        print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power)
+        chunk_size = new_config.get("cks", None)
+        if self.debug:
+            print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power, chunk_size)
         changed = self.connector.change_rf_config(frequency=frequency, 
                                         sf=sf, bw=bw, cr=cr, 
                                         tx_power=tx_power)
+        if chunk_size:
+            self.chunk_size = chunk_size
+
+        max_chunk_size = self.calculate_max_chunk_size()
+        if self.chunk_size > max_chunk_size:
+            self.chunk_size = max_chunk_size
+            print("Chunk size too big, changing to: ", self.chunk_size)
+            
         if changed:
-            self.sf_trial = 5
+            self.sf_trial = 15
+            self.status["Freq"] = self.connector.frequency
+            self.status["SF"] = self.connector.sf
+            self.status["BW"] = self.connector.bw
+            self.status["CR"] = self.connector.cr
+            self.status["TX_P"] = self.connector.tx_power
             return True
         return False
 
+    def calculate_max_chunk_size(self):
+        if self.mesh_mode:
+            header_size = Packet.HEADER_SIZE_MESH
+        else:
+            header_size = Packet.HEADER_SIZE_P2P
+        return self.connector.get_max_payload_size() - header_size
 
     def restore_rf_config(self):
         self.connector.restore_rf_config()

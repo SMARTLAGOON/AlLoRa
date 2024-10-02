@@ -90,6 +90,12 @@ class Digital_Endpoint:
     def is_active(self):
         return self.active
 
+    def reset_state(self):
+        self.state = Digital_Endpoint.OK
+        self.current_file = None
+        self.mesh = False  # Mesh mode starts disabled
+        self.retransmission_counter = 0  # Counter for retransmissions
+
     def enable_mesh(self):
         self.mesh = True
         if self.debug:

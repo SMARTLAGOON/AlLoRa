@@ -28,7 +28,9 @@ class SX127x_connector(Connector):
                             cr=self.cr,
                             output_power=self.tx_power,
                             verbose= self.debug)
-        self.lora.setblocking(False) 
+        self.lora.setblocking(False)
+        if self.debug:
+            print("Freq : {}, SF : {}, BW : {}, CR : {}, Power : {}".format(self.lora.get_frequency(), self.lora.get_spreading_factor(), self.lora.get_bandwidth(), self.lora.get_coding_rate(), self.lora.get_transmission_power()))
 
     def get_rssi(self):
         return self.lora.get_rssi()
@@ -41,9 +43,17 @@ class SX127x_connector(Connector):
             print("SEND_PACKET() || packet: {}".format(packet.get_content()))
         if packet.get_length() <= Connector.MAX_LENGTH_MESSAGE:
             try:
+                timeout = max(0.5, self.calculate_toa(self.sf, self.bw, self.cr, packet.get_length())*1.1)  # Seconds
+                t0 = time.ticks_ms()
+                if self.sf == 12:
+                    timeout *= 1.2
+                print("Using timeout: ", timeout, "s to send packet")
+                self.lora.settimeout(timeout)
                 self.lora.setblocking(True)
                 self.lora.send(packet.get_content())  # .encode()
                 self.lora.setblocking(False)
+                td = time.ticks_ms() - t0
+                print("Time to send: {} ms and timeout: {} ms".format(td, timeout*1000))
                 return True
             except Exception as e:
                 if self.debug:
@@ -57,12 +67,15 @@ class SX127x_connector(Connector):
 
     def recv(self, focus_time=12):
         try:
+            t0 = time.ticks_ms()
             self.lora.settimeout(focus_time)
             data = self.lora.recv(Connector.MAX_LENGTH_MESSAGE)
+            td = time.ticks_ms() - t0
             return data
         except:
             if self.debug:
                 print("nothing received or error")
+            return None
     
     def set_rf_config(self, frequency, sf, bw, cr, tx_power):
         self.change_rf_config(frequency, sf, bw, cr, tx_power)
@@ -106,5 +119,6 @@ class SX127x_connector(Connector):
     def set_transmission_power(self, desired_power):
         # Set the desired transmission power in dBm
         self.lora.set_transmission_power_dbm(desired_power)
+        self.tx_power = desired_power
         if self.debug:
             print("Output Power Changed to: ", desired_power, "dBm")

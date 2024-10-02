@@ -3,6 +3,7 @@ from machine import UART
 import ubinascii
 # import network
 import re
+from math import ceil
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
@@ -63,7 +64,7 @@ class E5_connector(Connector):
 
             # Enter test mode and configure RF settings
             self.enter_test_mode()
-            self.set_rf_config(self.frequency, "SF" + str(self.sf), self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
+            self.set_rf_config(self.frequency, self.sf, self.bw, self.tx_preamble, self.rx_preamble, self.tx_power, self.crc, self.iq, self.net)
             if self.debug:
                 print("Configuration: uart_id={}, baudrate={}, tx={}, rx={}, bits={}, parity={}, stop={}, timeout={}".format(
                     self.uart_id, self.baudrate, self.tx_pin, self.rx_pin, self.bits, self.parity, self.stop, self.timeout))
@@ -154,14 +155,10 @@ class E5_connector(Connector):
 
     def receive_packet(self, timeout=10000, chunk_size=124):
         cmd = "AT+TEST=RXLRPKT\r\n"
-        self.uart.write(cmd)
+        success = self.uart.write(cmd)
         
         t0_ack = utime.ticks_ms()
         ack = self.uart.read(32)
-        t1_ack = utime.ticks_ms()
-        # if self.debug:
-        #     print("ACK:", ack, "Time:", utime.ticks_diff(t1_ack, t0_ack), "ms")
-
         start_time_total = utime.ticks_ms()
         response = b''
         
@@ -183,13 +180,21 @@ class E5_connector(Connector):
         cmd = 'AT+TEST=TXLRPKT,"{}"\r\n'.format(data)
         start_time_total = utime.ticks_ms()
         expected_response = "+TEST: TXLRPKT"    #expected_response = "+TEST: TX DONE\r\n"    #
+        sfs = {8: 2, 9: 4, 10: 8, 11: 16, 12: 32}
+        sf_changed = False
+        if self.sf > 7:
+            self.set_dynamic_uart_timeout(ceil((self.timeout * sfs[self.sf])*1.1))
+            sf_changed = True
+
+        wt0 = utime.ticks_ms()
         success = self.uart.write(cmd)
-        
         wt1 = utime.ticks_ms()
-        #print("Time to write:", utime.ticks_diff(wt1, wt0), "ms")
+        print("Time to write:", utime.ticks_diff(wt1, wt0), "ms")
         start_time = utime.ticks_ms()
         #response = b''
         response = self.uart.read()
+        if sf_changed:
+            self.set_dynamic_uart_timeout(self.timeout) # Set the UART timeout back to the default value
         #expected_response = "+TEST: TXLRPKT"
         
         # while utime.ticks_diff(utime.ticks_ms(), start_time) < 120:  # Limit the waiting time to 150 ms
@@ -203,7 +208,13 @@ class E5_connector(Connector):
         end_time_total = utime.ticks_ms()
         if self.debug:
             print("send_packet Total Time:", utime.ticks_diff(end_time_total, start_time_total), "ms")
-        return expected_response in response
+        try: 
+            if expected_response in response:
+                return True
+            else:
+                return False
+        except:
+            return False
 
     # Packet Handling
     def hex_to_bytes(self, hex_str):
@@ -277,24 +288,36 @@ class E5_connector(Connector):
     def get_snr(self):
         return self.snr
 
-    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None):
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
+        print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power)
+        if backup:
+            self.backup_rf_config()
         freq = frequency if frequency is not None else self.frequency
-        sf = sf if sf is not None else "SF" + str(self.sf)
+        sf = sf if sf is not None else self.sf
         bandwidth = bw if bw is not None else self.bw
         cr = cr if cr is not None else self.cr
         tx_power = tx_power if tx_power is not None else self.tx_power
         success = self.set_rf_config(freq, sf, bandwidth, self.tx_preamble, self.rx_preamble, tx_power, self.crc, self.iq, self.net)
-        return success
+        if success:
+            print("RF Config Changed to: ", freq, sf, bandwidth, cr, tx_power)
+            self.update_timeouts()
+            self.adaptive_timeout = self.max_timeout
+            return True
+        else:
+            self.restore_rf_config()
+            return False
 
     def set_rf_config(self, frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net):
-        cmd = "AT+TEST=RFCFG,{},{},{},{},{},{},{},{},{}\r\n".format(frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
+        cmd = "AT+TEST=RFCFG,{},SF{},{},{},{},{},{},{},{}\r\n".format(frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
+        print(cmd)
         expected_response = "+TEST: RFCFG"
         success, response = self.send_command(cmd, expected_response, 2000)
         if self.debug:
             print("Set RF Config Response:", response.decode())
         if success:
+            print("RF Config Set to:", frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
             self.frequency = frequency
-            self.sf = int(sf[2:])
+            self.sf = sf
             self.bw = bandwidth
             self.tx_preamble = tx_preamble
             self.rx_preamble = rx_preamble

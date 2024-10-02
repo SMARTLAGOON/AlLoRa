@@ -1,4 +1,4 @@
-import time, sys, gc, ujson
+import utime, sys, gc, ujson, machine
 import os
 import _thread
 
@@ -70,6 +70,7 @@ def run():
     # AlLoRa setup
     connector = E5_connector()
     lora_node = Source(connector, config_file="LoRa.json")
+    lora_node.MAC = "75e0604c"  # Force MAC for tests
     chunk_size = lora_node.get_chunk_size() #235
     sd_manager = SD_manager(sclk=device.SD_SCLK, mosi=device.SD_MOSI, miso=device.SD_MISO, cs=device.SD_CS)
     print("CURRENT: ",sd_manager.get_files())
@@ -77,13 +78,15 @@ def run():
 
     logger = Logger(
     always_log_topics=["RSSI", "SNR", "Chunk", "PSizeS", "PSizeR", "TimePR", 'TimePS', 'TimeBtw'],
-    change_log_topics=["File", "Status", "Retransmission", "CorruptedPackets"]
+    change_log_topics=["File", "Status", "Retransmission", "CorruptedPackets", "Freq", "SF", "BW", "CR", "TX_P"]
     )
 
     lora_node.register_subscriber(screen)
     lora_node.register_subscriber(logger)
     lora_node.notify_subscribers()
 
+    sending_timeout = 2 * 60 * 1000 # 2 minutes in milliseconds
+    t0 = utime.ticks_ms()
     try:
         lora_node.establish_connection()
         print("Connection OK")
@@ -93,9 +96,17 @@ def run():
                 if file is not None:
                     print("Sending LoRa file: ", file.get_name())
                     lora_node.set_file(file)
-                    lora_node.send_file()
+                    t_0_send = utime.ticks_ms()
+                    sucess = lora_node.send_file(timeout=sending_timeout)
+                    if sucess:
+                        td = utime.ticks_diff(utime.ticks_ms(), t_0_send)
+                        if td > sending_timeout:
+                            print("Timeout sending file")
+                    else:
+                        print("Error sending file")
+                        machine.reset() # Reset device
                     #erase_file.erase_file(file.get_name())
-            time.sleep(10)
+            utime.sleep(10)
 
     except Exception as e:
         print(e)

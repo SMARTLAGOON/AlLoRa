@@ -5,6 +5,8 @@ try:
     from utime import sleep, ticks_ms as time
 except:
     from time import sleep, time
+    def time():
+        return time() * 1000    # Convert to ms
 
 class Source(Node):
 
@@ -12,10 +14,11 @@ class Source(Node):
         super().__init__(connector, config_file)
         gc.enable()
 
-        if self.mesh_mode and self.chunk_size > 233:   # Packet size less than 255 (with Spreading Factor 7)
-            self.chunk_size = 233
+        max_chunk_size = self.calculate_max_chunk_size()
+        if self.chunk_size > max_chunk_size:
+            self.chunk_size = max_chunk_size
             if self.debug:
-                print("Chunk size force down to {}".format(self.chunk_size))
+                print("Chunk size too big, setting to max: ", self.chunk_size)
 
         self.file = None
 
@@ -38,12 +41,13 @@ class Source(Node):
             if self.mesh_mode:
                 response_packet.set_id(self.generate_id())
             t0 = time()
+            if self.connector.sf == 12:
+                sleep(1)
             self.send_lora(response_packet)
             tf = time()
             time_send = tf - t0
             time_reply = tf - self.tr
             if self.debug:
-                print("SENT:", response_packet.get_content())
                 print("Time Send: ", time_send, " Time Reply: ", time_reply)
             if self.subscribers:
                 self.status['PSizeS'] = len(response_packet.get_content())
@@ -145,6 +149,7 @@ class Source(Node):
                             #self.change_sf(int(new_sf))
                             response_packet.set_change_rf(new_sf)
                             self.change_rf_config(new_sf)
+                                
                         return False
                 else:
                     if self.debug:
@@ -156,7 +161,8 @@ class Source(Node):
                 if try_for <= 0:
                     return False
 
-    def send_file(self):
+    def send_file(self, timeout=float('inf')):  
+        t0 = time() # Start time in ms
         while not self.file.sent:
             packet = self.listen_requester()
             if packet:
@@ -165,7 +171,10 @@ class Source(Node):
                     self.send_response(response_packet)
                     if new_sf:
                         #self.change_sf(int(new_sf))
+                        backup_cks = self.chunk_size
                         self.change_rf_config(new_sf)
+                        if self.chunk_size != backup_cks:
+                            self.file.change_chunk_size(self.chunk_size)
                 else:
                     self.forward(packet=packet)
             elif self.sf_trial:
@@ -174,9 +183,23 @@ class Source(Node):
                     #self.restore_sf()
                     self.restore_rf_config()
                     self.sf_trial = False
+
+            if time() - t0 > timeout:
+                last_sent = self.file.last_chunk_sent 
+                del(self.file)
+                gc.collect()
+                self.file = None
+                if self.debug:
+                    print("Timeout reached")
+                # If something was sent, but not all, we return a True
+                if last_sent:
+                    return True
+                return False 
+                    
         del(self.file)
         gc.collect()
         self.file = None
+        return True
 
     def response(self, packet):
         command = packet.get_command()
@@ -195,6 +218,8 @@ class Source(Node):
 
         new_sf = None
         if self.sf_trial:
+            if self.debug:
+                print("SF Trial ended successfully")
             self.sf_trial = False
             self.backup_config()
 

@@ -10,7 +10,11 @@ gc.enable()
 
 class OnDemandFileWriter:
     def __init__(self, filename):
-        self.file = open(filename, 'wb')
+        try: 
+            self.file = open(filename, 'wb')
+        except Exception as e:
+            print("Error opening file: ", filename, ": ", e)
+
 
     def write(self, data):
         self.file.write(data)
@@ -44,10 +48,14 @@ class CTP_File:
             self.path = path
             # Check if Temp folder exists
             try:
-                os.mkdir(f"{self.path}/Temp")
-            except:
-                pass
-            self.temp_file_path = f"{self.path}/Temp/{name}.tmp"
+                os.mkdir(self.path)
+            except Exception as e:
+                print("Error creating base folder: ", e)
+            try:
+                os.mkdir("{}/Temp".format(self.path))
+            except Exception as e:
+                print("Error creating Temp folder: ", e)
+            self.temp_file_path = "{}/Temp/{}.tmp".format(self.path, name)
             self.file_writer = OnDemandFileWriter(self.temp_file_path)
             self.received_chunks = 0
             self.missing_chunks = list(range(length))
@@ -93,6 +101,10 @@ class CTP_File:
     # Source methods
     def get_length(self):
         return self.chunk_counter
+
+    def change_chunk_size(self, new_size):
+        self.chunk_size = new_size
+        self.chunk_counter = ceil(self.length / self.chunk_size)
 
     def sent_ok(self):
         self.report_SST(False)
