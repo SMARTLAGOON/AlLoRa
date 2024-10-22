@@ -107,7 +107,7 @@ class WiFi_Client_Interface(Interface):
             if "POST /send-packet " in str(r):
                 response_json = loads(str(r).split("\\r\\n\\r\\n")[1][:-1]) #FIXME A comma from nowhere is sneaked into it, that is why I use slicing.
                 #Response to the Source
-                packet = Packet(self.connector.mesh_mode)
+                packet = Packet(self.connector.mesh_mode, self.connector.short_mac)
                 packet.load_dict(response_json['packet'])
                 response_packet = self.connector.send_and_wait_response(packet)
                 if response_packet.get_command():

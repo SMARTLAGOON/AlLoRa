@@ -60,7 +60,7 @@ class Serial_Interface(Interface):
             return False
 
     def handle_send_and_wait(self, command):
-        packet_from_rpi = Packet(self.connector.mesh_mode)
+        packet_from_rpi = Packet(self.connector.mesh_mode, self.connector.short_mac)
         data = command.split(b"S&W:")[-1]
         packet_from_rpi.load(data)
         # Send ACK:adaptive_timeout from connector
@@ -82,7 +82,7 @@ class Serial_Interface(Interface):
             return False
     
     def handle_source_mode(self, command):
-        packet_from_source = Packet(self.connector.mesh_mode)
+        packet_from_source = Packet(self.connector.mesh_mode, self.connector.short_mac)
         # Send ACK to say that I will send it
         ack = b"OK"
         self.uart.write(ack)
@@ -103,7 +103,7 @@ class Serial_Interface(Interface):
         self.uart.write(ack)
         if self.debug:
             print("Listening for: ", focus_time)
-        packet = Packet(mesh_mode=self.connector.mesh_mode)
+        packet = Packet(mesh_mode=self.connector.mesh_mode, short_mac=self.connector.short_mac)
         data = self.connector.recv(focus_time)
         if data:
             if self.debug:

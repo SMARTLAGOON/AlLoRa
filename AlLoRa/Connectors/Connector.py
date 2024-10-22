@@ -30,6 +30,7 @@ class Connector:
         self.config_parameters = config_json
         if self.config_parameters:
             self.name = self.config_parameters.get('name', "N")
+            self.debug = self.config_parameters.get('debug', False)
 
             self.frequency = self.config_parameters.get('freq', 868)    # 868 MHz
             self.sf = self.config_parameters.get('sf', 7)               # SF7
@@ -38,6 +39,8 @@ class Connector:
             self.tx_power = self.config_parameters.get("tx_power", 14)         # 14 dBm
 
             self.mesh_mode = self.config_parameters.get('mesh_mode', False)
+            self.short_mac = self.config_parameters.get('short_mac', False)
+
             self.min_timeout = self.config_parameters.get('min_timeout', 0.5)
             self.max_timeout = self.config_parameters.get('max_timeout', 6)
             self.timeout_delta = self.config_parameters.get('timeout_delta', 1)  # Delta for processing times
@@ -149,7 +152,7 @@ class Connector:
                 self.increase_adaptive_timeout()
                 return None, packet_size_sent, packet_size_received, td
 
-            response_packet = Packet(self.mesh_mode)
+            response_packet = Packet(self.mesh_mode, self.short_mac)
             if self.debug:
                 print("WAIT_RESPONSE({}) at: {}|| source_reply: {}".format(td, self.adaptive_timeout, received_data))
                 #print("RSSI: ", self.get_rssi(), "SNR: ", self.get_snr())

@@ -54,9 +54,13 @@ class Node:
         self.name = self.config.get('name', "N")
         self.debug = self.config.get('debug', True)
         self.mesh_mode = self.config.get('mesh_mode', False)
+        self.short_mac = self.config.get('short_mac', False)
         self.chunk_size = self.config.get('chunk_size', 235)
 
         self.config_connector_dic = self.config.get('connector', None)    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
+        self.config_connector_dic['debug'] = self.debug
+        self.config_connector_dic['mesh_mode'] = self.mesh_mode
+        self.config_connector_dic['short_mac'] = self.short_mac
 
         if self.debug:
             print(self.config)
@@ -65,13 +69,13 @@ class Node:
         conf = {"name": self.name,
                 "chunk_size": self.chunk_size,
                 "mesh_mode": self.mesh_mode,
+                "short_mac": self.short_mac,
                 "debug": self.debug,
                 "connector" : self.connector.backup_config()}
         with open(self.config_file, "w") as f:
             f.write(dumps(conf))
 
     def config_connector(self):
-        self.connector.debug = self.debug
         self.connector.config(self.config_connector_dic)
 
         self.MAC = self.connector.get_mac()[-8:]
@@ -135,9 +139,17 @@ class Node:
 
     def calculate_max_chunk_size(self):
         if self.mesh_mode:
-            header_size = Packet.HEADER_SIZE_MESH
+            if self.short_mac:
+                header_size = Packet.HEADER_SIZE_MESH_SM
+            else:
+                header_size = Packet.HEADER_SIZE_MESH_LM
+            #header_size = Packet.HEADER_SIZE_MESH
         else:
-            header_size = Packet.HEADER_SIZE_P2P
+            if self.short_mac:
+                header_size = Packet.HEADER_SIZE_P2P_SM
+            else:
+                header_size = Packet.HEADER_SIZE_P2P_LM
+            #header_size = Packet.HEADER_SIZE_P2P
         return self.connector.get_max_payload_size() - header_size
 
     def restore_rf_config(self):

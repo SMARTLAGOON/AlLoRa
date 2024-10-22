@@ -70,7 +70,7 @@ class Requester(Node):
         self.time_request = time()
 
     def create_request(self, destination, mesh_active, sleep_mesh):
-        packet = Packet(self.mesh_mode)
+        packet = Packet(self.mesh_mode, self.short_mac)
         packet.set_destination(destination)
         if mesh_active:
             packet.enable_mesh()
@@ -395,7 +395,7 @@ class Requester(Node):
         try_for = 3
         if 7 <= new_sf <= 12:
             while True:
-                packet = Packet(self.mesh_mode)
+                packet = Packet(self.mesh_mode, self.short_mac)
                 packet.set_destination(digital_endpoint.get_mac_address())
                 packet.set_change_sf(new_sf)
                 if digital_endpoint.get_mesh():
@@ -430,7 +430,7 @@ class Requester(Node):
         new_tx_power = new_config[4] if new_config[4] != config[4] else None
         new_chunk_size = new_config[5] if new_config[5] != self.chunk_size else None
         while True:
-            packet = Packet(self.mesh_mode)
+            packet = Packet(self.mesh_mode, self.short_mac)
             packet.set_destination(digital_endpoint.get_mac_address())
             changes = packet.set_change_rf({"freq": new_freq, "sf": new_sf, 
                                             "bw": new_bw, "cr": new_cr, 

@@ -123,7 +123,7 @@ class Serial_connector(Connector):
                     print("Received data: ", received_data)
 
                 if received_data:
-                    response_packet = Packet(self.mesh_mode)
+                    response_packet = Packet(self.mesh_mode, self.short_mac)
                     check = response_packet.load(received_data)
                     if check:
                         return response_packet, packet_size_sent, packet_size_received, td

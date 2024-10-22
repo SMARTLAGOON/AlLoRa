@@ -43,7 +43,7 @@ class WiFi_connector(Connector):
         json_response = None
         retry = True
         max_retries = 1
-        response_packet = Packet(self.mesh_mode)
+        response_packet = Packet(self.mesh_mode, self.short_mac)
         while max_retries > 0 and retry:
             try:
                 s = socket.socket()

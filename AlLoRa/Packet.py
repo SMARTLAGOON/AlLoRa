@@ -8,10 +8,17 @@ except:
 
 class Packet:
 
-    HEADER_SIZE_P2P  = 12 #20
-    HEADER_FORMAT_P2P  = "!4s4sB3s" #Source, Destination, Flags, Check Sum
-    HEADER_SIZE_MESH  = 14  #22
-    HEADER_FORMAT_MESH  = "!4s4sB2s3s" #Source, Destination, Flags, ID, Check Sum
+    # SM = Short MAC
+    HEADER_SIZE_P2P_SM  = 12 #20
+    HEADER_FORMAT_P2P_SM  = "!4s4sB3s" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH_SM  = 14  #22
+    HEADER_FORMAT_MESH_SM  = "!4s4sB2s3s" #Source, Destination, Flags, ID, Check Sum
+
+    # LM = Long MAC
+    HEADER_SIZE_P2P_LM  = 20
+    HEADER_FORMAT_P2P_LM  = "!8s8sB3s" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH_LM  = 22
+    HEADER_FORMAT_MESH_LM  = "!8s8sB2s3s" #Source, Destination, Flags, ID, Check Sum
 
     OK = "OK"
     METADATA = "METADATA"  #"request-data-info"
@@ -26,15 +33,28 @@ class Packet:
             return True
         return False
 
-    def __init__(self, mesh_mode):
+    def __init__(self, mesh_mode, short_mac=False):
         self.mesh_mode = mesh_mode
+        self.short_mac = short_mac
 
         if not self.mesh_mode:
-            self.HEADER_SIZE = self.HEADER_SIZE_P2P
-            self.HEADER_FORMAT = self.HEADER_FORMAT_P2P
+            if self.short_mac:
+                self.HEADER_SIZE = self.HEADER_SIZE_P2P_SM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_P2P_SM
+            else:
+                self.HEADER_SIZE = self.HEADER_SIZE_P2P_LM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_P2P_LM
+            # self.HEADER_SIZE = self.HEADER_SIZE_P2P
+            # self.HEADER_FORMAT = self.HEADER_FORMAT_P2P
         else:
-            self.HEADER_SIZE = self.HEADER_SIZE_MESH
-            self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
+            if self.short_mac:
+                self.HEADER_SIZE = self.HEADER_SIZE_MESH_SM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_MESH_SM
+            else:
+                self.HEADER_SIZE = self.HEADER_SIZE_MESH_LM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_MESH_LM
+            # self.HEADER_SIZE = self.HEADER_SIZE_MESH
+            # self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
 
         self.source = ''                  # 8 Bytes mac address of the source
         self.destination = ''             # 8 Bytes mac address of the destination
@@ -75,16 +95,31 @@ class Packet:
         return str(decompressed_hex_value)[2:10]  # Ensure the string is 8 characters long
     
     def set_source(self, source: str):
-        self.source = self.mac_compress(source)
+        if self.short_mac:
+            self.source = self.mac_compress(source)
+        else:
+            self.source = source
 
     def get_source(self):
-        return self.mac_decompress(self.source)
+        if self.short_mac:
+            return self.mac_decompress(self.source)
+        else:
+            return self.source.decode()
+        #return self.mac_decompress(self.source)
 
     def set_destination(self, destination: str):    # 8 Bytes mac address
-        self.destination = self.mac_compress(destination)
+        if self.short_mac:
+            self.destination = self.mac_compress(destination)
+        else:
+            self.destination = destination
+        #self.destination = self.mac_compress(destination)
 
     def get_destination(self):
-        return self.mac_decompress(self.destination)
+        if self.short_mac:
+            return self.mac_decompress(self.destination)
+        else:
+            return self.destination.decode()
+        #return self.mac_decompress(self.destination)
 
     def get_command(self):
         return self.command
@@ -101,9 +136,16 @@ class Packet:
     #     self.payload = dumps(metadata).encode()
     def set_metadata(self, length, name):
         self.command = "METADATA"
-        length_bytes = length.to_bytes(2, 'little')
-        name_bytes = name.encode()
-        self.payload = length_bytes + name_bytes
+        if self.short_mac:
+            length_bytes = length.to_bytes(2, 'little')
+            name_bytes = name.encode()
+            self.payload = length_bytes + name_bytes
+        else:
+            metadata = {"LENGTH" : length, "FILENAME": name}
+            self.payload = dumps(metadata).encode()
+        # length_bytes = length.to_bytes(2, 'little')
+        # name_bytes = name.encode()
+        # self.payload = length_bytes + name_bytes
 
     def get_payload(self):
         return self.payload
@@ -117,9 +159,12 @@ class Packet:
     def get_metadata(self):
         if self.command == "METADATA":
             try:
-                length = int.from_bytes(self.payload[:2], 'little')
-                name = self.payload[2:].decode()
-                return {"L": length, "FN": name}
+                if self.short_mac:
+                    length = int.from_bytes(self.payload[:2], 'little')
+                    name = self.payload[2:].decode()
+                    return {"LENGTH": length, "FILENAME": name}
+                else:
+                    return loads(self.payload)
             except:
                 return None
 

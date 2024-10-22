@@ -57,7 +57,7 @@ class Source(Node):
 
     #This function ensures that a received message matches the criteria of any expected message.
     def listen_requester(self):
-        packet = Packet(mesh_mode=self.mesh_mode)
+        packet = Packet(mesh_mode=self.mesh_mode, short_mac=self.short_mac)
         focus_time = self.connector.adaptive_timeout
         t0 = time()
         data = self.connector.recv(focus_time)
@@ -120,7 +120,7 @@ class Source(Node):
                     if Packet.check_command(command):
                         if command != Packet.OK:
                             return True
-                        response_packet = Packet(self.mesh_mode)
+                        response_packet = Packet(self.mesh_mode, self.short_mac)
                         response_packet.set_source(self.MAC)
                         response_packet.set_destination(packet.get_source())
                         response_packet.set_ok()
@@ -206,7 +206,7 @@ class Source(Node):
         if not Packet.check_command(command):
             return None, None
 
-        response_packet = Packet(mesh_mode = self.mesh_mode)
+        response_packet = Packet(mesh_mode=self.mesh_mode, short_mac=self.short_mac)
         response_packet.set_source(self.MAC)
         response_packet.set_destination(packet.get_source())
 
