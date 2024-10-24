@@ -1,4 +1,4 @@
-# ****AlLoRa:**** Advance layer LoRa
+# ****AlLoRa:**** Advanced layer LoRa
 
 Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://zenodo.org/badge/latestdoi/509513450)
 
@@ -443,16 +443,16 @@ Where it shows the time of reception, the ID of the message and then a list of h
 
 ## Setting a Device and running an example:
 
-Check the [examples folder]() for more information about how to run the examples!
+Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples!
 
 Links of interest:
 
 - [Setting up AlLoRa  in LILYGO T3S3
-](https://www.notion.so/Setting-up-AlLoRa-in-LILYGO-T3S3-4b3b3b1b1b7e4b3b8)
-- [Setting up AlLoRa in ESP32](https://www.notion.so/Setting-up-AlLoRa-in-ESP32-1b3b3b1b1b7e4b3b8)
-- [Setting up AlLoRa in LoPy4](https://www.notion.so/Setting-up-AlLoRa-in-LoPy4-1b3b3b1b1b7e4b3b8)
+](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware)
+- [AlLoRa + ESP32 Devices](https://www.notion.so/barratia/AlLoRa-ESP32-devices-87ed423f7d554e24b936588392481a4e?pvs=4)
+- [Setting up AlLoRa in LoPy4 devices](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Requesters/LopyRequester)
   
-- [Setting up AlLoRa in Raspberry Pi](https://www.notion.so/Setting-up-AlLoRa-in-Raspberry-Pi-1b3b3b1b1b7e4b3b8)
+- [Raspberry Pi Gateways](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways/Raspberry)
 
 
 
