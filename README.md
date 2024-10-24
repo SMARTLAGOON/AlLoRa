@@ -10,12 +10,14 @@ The code in this repository contains a toolbox that allows transferring content 
 
 Details of the protocol can be found in these articles: 
 
--[AlLoRa: Empowering environmental intelligence through an advanced LoRa-based IoT solution]([https://ieeexplore.ieee.org/document/10060496](https://www.sciencedirect.com/science/article/pii/S0140366424000641?via%3Dihub))
--[A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
--[AI*LoRa: Enabling Efficient Long-Range Communication with Machine Learning at the Edge](https://dl.acm.org/doi/10.1145/3641512.3690040)
+* [AlLoRa: Empowering environmental intelligence through an advanced LoRa-based IoT solution]([https://ieeexplore.ieee.org/document/10060496](https://www.sciencedirect.com/science/article/pii/S0140366424000641?via%3Dihub))
+
+* [A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
+
+* [AI*LoRa: Enabling Efficient Long-Range Communication with Machine Learning at the Edge](https://dl.acm.org/doi/10.1145/3641512.3690040)
 
 
-We're also developing a GPT assistant, [AlLoRa Genius](https://chat.openai.com/g/g-rOGxxA1BZ-allora-genius), to assist with understanding and utilizing the AlLoRa protocol more effectively.
+We're also developing a custom GPT, [AlLoRa Genius](https://chat.openai.com/g/g-rOGxxA1BZ-allora-genius), to assist in understanding and utilizing the AlLoRa protocol.
 
 
 <!-- ## Readme on Notion!
