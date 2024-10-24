@@ -8,7 +8,12 @@ Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://z
 
 The code in this repository contains a toolbox that allows transferring content over a LoRa channel. It’s based on the original [LoRaCTP](https://github.com/pmanzoni/loractp), adding a more modular design with mesh capabilities and larger packet sizes for faster transfers. 
 
-Details of the protocol can be found in this paper: [A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
+Details of the protocol can be found in these articles: 
+
+-[AlLoRa: Empowering environmental intelligence through an advanced LoRa-based IoT solution]([https://ieeexplore.ieee.org/document/10060496](https://www.sciencedirect.com/science/article/pii/S0140366424000641?via%3Dihub))
+-[A modular and mesh-capable LoRa based Content Transfer Protocol for Environmental Sensing](https://ieeexplore.ieee.org/document/10060496)
+-[AI*LoRa: Enabling Efficient Long-Range Communication with Machine Learning at the Edge](https://dl.acm.org/doi/10.1145/3641512.3690040)
+
 
 We're also developing a GPT assistant, [AlLoRa Genius](https://chat.openai.com/g/g-rOGxxA1BZ-allora-genius), to assist with understanding and utilizing the AlLoRa protocol more effectively.
 
@@ -110,7 +115,7 @@ We're also developing a GPT assistant, [AlLoRa Genius](https://chat.openai.com/g
  ### Example:
 
  ```python
- from AlLoRa.Nodes.Source import ASource
+ from AlLoRa.Nodes.Source import Source
 
  lora_node = AlLoRa_Source(name = "A", connector = connector,
           chunk_size = 235, mesh_mode = True, debug = False)
@@ -245,73 +250,12 @@ More details about the structure of the packages [here](https://www.notion.so/Al
 
 ## Adapters
 
-<details>
-<summary>Sometimes another device is needed in order to bridge to LoRa, depending of the technology used for the connection. In this cases, the code for the adapters will be in this folder, for now we have a WiFi to LoRa adapter</summary>
-
-### [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa-Adapters/AlLoRa-WiFi_adapter)
-
-It contains the code for a LoPy4. It activates a hotspot for the Node to be bridged to connect to and a “light version” of a mix of the code of a Node and a Connector.  
-
-It operates in this way:
-
-🍓 Raspberry Pi/Computer Node (Wifi Connector) **←Wi-Fi→** LoPy4 with AlLoRa-WiFi_adapter **←LoRa→** Node
-
-
-<details>
-<summary><b><u>Setup Lopy4 Adapter</u></b></summary>
-
-1. Setup the LoPy4 (following this [instructions](#setup)).
-2. Uploading and running the code
-   
-   1. Open the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa-Adapters/AlLoRa-WiFi_adapter) folder of the repo in your IDE
-   2. Connect your LoPy4 + expansion board to your computer. PyMakr should recognise it and show you something like this:
-
-        ![Untitled](readme_assets/Hardware_Setup/Untitled%203.png)
-
-        - If it doesn’t do it automatically, you can open the “Connect Device” option and manually select your Port:
-
-            <p align="center">
-            <img width="400" src="readme_assets/Hardware_Setup/Untitled%204.png">
-            </p>
-
-   3. Open the config.txt file and setup a SSID and Password for the Lopy4's Wi-Fi hotspot, you will use this to connect to the adapter with the device that you are connecting to LoRa through this adapter.
-
-   4. Press Ctrl+Alt/Opt + s or the “Upload Project to Device” button to upload the code to the LoPy4
-
-     ![Untitled](readme_assets/Hardware_Setup/Untitled%205.png)
-
-     With this, the code will boot automatically each time the LoPy4 is on.
-
-   5. If everything is ok, you should see something like this on the terminal:
-
-     <p align="center">
-    <img width="400" src="readme_assets/Hardware_Setup/Untitled%207.png">
-    </p>
-
-   6. Import and setup a [Wifi_connector.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Connectors/Wifi_connector.py) in the device that you want to communicate using AlLoRa, and then use the rest of the library as explained in this repo. Your device should be connected to the Adapter's hotspot and everything should work as normal. 
-
- </details>
-
-</details>
+Sometimes, another device is needed in order to bridge to LoRa, depending on the technology used for the connection. This folder contains multiple adapters for different use cases. 
 
 ## Examples
 
-<details>
-<summary>Contain examples of uses of the AlLoRa code.</summary>
+Contain examples of uses of the AlLoRa code with different types of devices and levels of complexity.
 
-### [LoPy Source](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPySource)
-
-A simple implementation of a Source Node use case, it sends increasingly larger files of numbers.
-
-### [LoPy Requester](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/LoPyRequester)
-
-A simple implementation of a Requester Node use case, it ask a Source Node for information and listen to the responses
-
-### [Raspberry Gateway](https://github.com/SMARTLAGOON/AlLoRa/tree/main/examples/RaspberryGateway)
-
-An implementation of a Gateway Node using Raspberry Pi (or a desktop computer), it access LoRa using the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Adapters/AlLoRa-WiFi_adapter) and listens to two Source Nodes and prints the content when a whole File is received.
-
-</details>
 
 # **How does it work?**
 
@@ -351,7 +295,7 @@ The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf
 
 ## → Packet Structure
 
-The  [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
+The [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
 
 For compatibility’s sake, It is designed to have a maximum of 255 Bytes, that is the maximum size of a LoRa message on a LoPy4.
 
