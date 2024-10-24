@@ -1,16 +1,7 @@
 from AlLoRa.File import CTP_File
 import time
-
-try:
-    from time import strftime
-    def get_time():
-        return strftime("%Y-%m-%d %H:%M:%S")
-except ImportError:
-    from utime import localtime
-    def get_time():
-        tt = localtime()
-        return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
-
+from AlLoRa.utils.time_utils import get_time
+from AlLoRa.utils.debug_utils import print
 
 class Digital_Endpoint:
 
@@ -163,7 +154,7 @@ class Digital_Endpoint:
             return None
         except Exception as e:
             if self.debug:
-                print("ERROR IN GET_NEXT_CHUNK: {}".format(e))
+                print("Node {}: ERROR IN GET_NEXT_CHUNK: {}".format(self.name, e))
             return None
 
     def set_data(self, data, hop, mesh_mode):

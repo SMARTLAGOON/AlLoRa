@@ -3,6 +3,7 @@ from time import sleep, time
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class Serial_connector(Connector):
     MAX_ATTEMPTS = 30  # Maximum attempts before resetting

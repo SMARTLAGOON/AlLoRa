@@ -1,12 +1,11 @@
-try:
-    from uos import urandom
-    from ujson import loads, dumps
-except:
-    from os import urandom
-    from json import loads, dumps
-
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os 
+from AlLoRa.utils.json_utils import json
+
+from os import urandom
+from json import loads, dumps
     
 class Node:
 
@@ -52,13 +51,12 @@ class Node:
             self.config = loads(f.read())
 
         self.name = self.config.get('name', "N")
-        self.debug = self.config.get('debug', True)
+        self.debug = self.config.get('debug', False)
         self.mesh_mode = self.config.get('mesh_mode', False)
         self.short_mac = self.config.get('short_mac', False)
         self.chunk_size = self.config.get('chunk_size', 235)
 
         self.config_connector_dic = self.config.get('connector', None)    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
-        self.config_connector_dic['debug'] = self.debug
         self.config_connector_dic['mesh_mode'] = self.mesh_mode
         self.config_connector_dic['short_mac'] = self.short_mac
 
@@ -154,13 +152,6 @@ class Node:
 
     def restore_rf_config(self):
         self.connector.restore_rf_config()
-
-    # def change_sf(self, sf):
-    #     self.connector.backup_sf()
-    #     self.connector.set_sf(sf)
-
-    # def restore_sf(self):
-    #     self.connector.restore_sf()
 
     # Subscribers stuff:
     def register_subscriber(self, subscriber):

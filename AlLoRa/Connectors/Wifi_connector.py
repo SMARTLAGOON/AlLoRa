@@ -5,6 +5,7 @@ from time import sleep, time
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class WiFi_connector(Connector):
 

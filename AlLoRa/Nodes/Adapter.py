@@ -3,7 +3,9 @@ from AlLoRa.Nodes.Node import Node, Packet, urandom, loads, dumps
 from AlLoRa.File import CTP_File
 from AlLoRa.Connectors.Connector import Connector
 from AlLoRa.Interfaces.Interface import Interface
-from time import sleep, time
+from AlLoRa.utils.time_utils import current_time_ms as time, sleep
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
 
 class Adapter(Node):
 

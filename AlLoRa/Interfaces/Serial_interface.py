@@ -4,6 +4,7 @@ import struct
 from AlLoRa.Packet import Packet
 from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class Serial_Interface(Interface):
 

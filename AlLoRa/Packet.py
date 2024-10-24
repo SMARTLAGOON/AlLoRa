@@ -130,10 +130,6 @@ class Packet:
     def ask_metadata(self):
          self.command = "METADATA"
 
-    # def set_metadata(self, length, name):
-    #     self.command = "METADATA"
-    #     metadata = {"L" : length, "FN": name}
-    #     self.payload = dumps(metadata).encode()
     def set_metadata(self, length, name):
         self.command = "METADATA"
         if self.short_mac:
@@ -143,19 +139,10 @@ class Packet:
         else:
             metadata = {"LENGTH" : length, "FILENAME": name}
             self.payload = dumps(metadata).encode()
-        # length_bytes = length.to_bytes(2, 'little')
-        # name_bytes = name.encode()
-        # self.payload = length_bytes + name_bytes
 
     def get_payload(self):
         return self.payload
 
-    # def get_metadata(self):
-    #     if self.command == "METADATA":
-    #         try:
-    #             return loads(self.payload)
-    #         except:
-    #             return None
     def get_metadata(self):
         if self.command == "METADATA":
             try:
@@ -345,11 +332,6 @@ class Packet:
             self.id = int.from_bytes(id, "little")
         else:
              self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
-
-        # self.source = self.source.decode()
-        # self.destination = self.destination.decode()
-        # self.source = self.mac_decompress(self.source)  # No need anymore for decoding MAC's
-        # self.destination = self.mac_decompress(self.destination)
 
         self.parse_flags(flags)
 

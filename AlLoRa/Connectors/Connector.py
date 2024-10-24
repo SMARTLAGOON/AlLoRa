@@ -1,12 +1,10 @@
 from AlLoRa.Packet import Packet
 import gc
 from math import ceil
-try:
-    from utime import sleep, sleep_ms, ticks_ms as time
-    from uos import urandom
-except:
-    from time import sleep, time
-    from os import urandom
+from AlLoRa.utils.time_utils import get_time, current_time_ms as time, sleep, sleep_ms
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
+from os import urandom
 
 class Connector:
     MAX_LENGTH_MESSAGE = 255
@@ -76,7 +74,8 @@ class Connector:
             print("Updated timeouts: Min: {} s, Max: {} s".format(self.min_timeout, self.max_timeout))
 
     def calculate_toa(self, sf, bw, cr, payload_size):
-        print("TOA with SF:", sf, "BW:", bw, "CR:", cr, "Payload:", payload_size)
+        if self.debug:
+            print("TOA with SF:", sf, "BW:", bw, "CR:", cr, "Payload:", payload_size)
         crc = 1  # CRC enabled
         bw_hz = bw * 1000   # Convert bandwidth to Hz
         t_symbol = (2 ** sf) / bw_hz    # Symbol duration
@@ -94,7 +93,8 @@ class Connector:
         
         # Total Time on Air
         t_air = t_preamble + t_payload
-        print("TOA:", t_air)
+        if self.debug:
+            print("TOA:", t_air)
         
         return t_air
 
@@ -226,12 +226,6 @@ class Connector:
             self.restore_rf_config()
             return False
 
-    # def backup_sf(self):
-    #     self.sf_backup = self.sf
-
-    # def restore_sf(self):
-    #     self.set_sf(self.sf_backup)
-
     def backup_rf_config(self):
         self.last_rf_config = [self.frequency, 
                                     self.sf, 
@@ -260,7 +254,6 @@ class Connector:
         pass
 
     def set_bw(self, bw):
-        print("TEST")
         pass
 
     def set_cr(self, cr):

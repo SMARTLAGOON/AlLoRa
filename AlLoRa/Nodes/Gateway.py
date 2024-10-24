@@ -1,13 +1,11 @@
-from time import time, sleep
-try:
-    from uos import urandom
-    from ujson import loads, dumps
-except:
-    from os import urandom
-    from json import loads, dumps
-
 from AlLoRa.Nodes.Requester import Requester
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
+from AlLoRa.utils.time_utils import current_time_ms as time, sleep
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
+from os import urandom
+from AlLoRa.utils.json_utils import json
+from json import loads, dumps
 
 class Gateway(Requester):
 
@@ -57,7 +55,8 @@ class Gateway(Requester):
                         print("Node {} ({}) added with frequency {}s and listening time {}s.".format(active_node.get_name(), active_node.get_mac_address(), active_node.asking_frequency, active_node.listening_time))
             return len(self.digital_endpoints)
         except Exception as e:
-            print("Could not load nodes from file: {}, error: {}".format(path, e))
+            if self.debug:
+                print("Could not load nodes from file: {}, error: {}".format(path, e))
             return False
 
     def check_digital_endpoints(self, print_file_content=False, save_files=False):

@@ -5,6 +5,7 @@ from ujson import loads, dumps
 
 from AlLoRa.Interfaces.Interface import Interface
 from AlLoRa.Packet import Packet
+from AlLora.utils.debug_utils import print
 
 try:
     # Attempt to import Pycom-specific modules

@@ -4,6 +4,7 @@ import network
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 # Requires PyLora_SX127x_extensions to be installed
 # https://github.com/GRCDEV/PyLora_SX127x_extensions
@@ -47,13 +48,15 @@ class SX127x_connector(Connector):
                 t0 = time.ticks_ms()
                 if self.sf == 12:
                     timeout *= 1.2
-                print("Using timeout: ", timeout, "s to send packet")
+                if self.debug:
+                    print("Using timeout: ", timeout, "s to send packet")
                 self.lora.settimeout(timeout)
                 self.lora.setblocking(True)
                 self.lora.send(packet.get_content())  # .encode()
                 self.lora.setblocking(False)
                 td = time.ticks_ms() - t0
-                print("Time to send: {} ms and timeout: {} ms".format(td, timeout*1000))
+                if self.debug:
+                    print("Time to send: {} ms and timeout: {} ms".format(td, timeout*1000))
                 return True
             except Exception as e:
                 if self.debug:
@@ -95,7 +98,8 @@ class SX127x_connector(Connector):
                 print("SF Changed to: ", self.sf)
 
     def set_bw(self, bw):
-        print("BW:", bw)
+        if self.debug:
+            print("BW:", bw)
         if self.bw != bw:
             try:
                 self.lora.set_bandwidth(bw)

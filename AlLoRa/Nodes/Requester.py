@@ -1,21 +1,9 @@
 import gc
 from AlLoRa.Nodes.Node import Node, Packet
 from AlLoRa.Digital_Endpoint import Digital_Endpoint
-
-try:
-    import os
-    from time import strftime, time, sleep
-    def get_time():
-        return strftime("%Y-%m-%d_%H:%M:%S")
-    def time():
-        return time() * 1000 # Time in ms
-except:
-    import uos as os
-    from utime import localtime, ticks_ms as time, sleep, sleep_ms
-    def get_time():
-        tt = localtime()
-        return "{}-{}-{}_{}:{}:{}".format(tt[0], tt[1], tt[2], tt[3], tt[4], tt[5])
-
+from AlLoRa.utils.time_utils import get_time, current_time_ms as time, sleep, sleep_ms
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
 
 class Requester(Node):
 
@@ -26,17 +14,6 @@ class Requester(Node):
                     successful_interactions_required = 5):
         super().__init__(connector, config_file)
         gc.enable()
-        # JSON Example:
-        # {
-        #     "name": "G",
-        #     "frequency": 868,
-        #     "sf": 7,
-        #     "mesh_mode": false,
-        #     "debug": false,
-        #     "min_timeout": 0.5,
-        #     "max_timeout": 6,
-        #     "result_path": "Results",
-        # }
         
         self.debug_hops = debug_hops
 
@@ -59,7 +36,8 @@ class Requester(Node):
 
         if self.config:
             self.result_path = self.config.get('result_path', "Results")
-            print("Result path: ", self.result_path)
+            if self.debug:
+                print("Result path: ", self.result_path)
             try:
                 os.mkdir(self.result_path)
             except Exception as e:
@@ -144,119 +122,14 @@ class Requester(Node):
                 chunk = response_packet.get_payload()
                 hop = response_packet.get_hop()
                 if self.debug and hop:
-                    print("CHUNK + HOP: ", chunk, "->", hop)
+                    print("CHUNK + HOP: {} -> {} - Node: {}".format(chunk, hop, self.status["SMAC"]))
                 return chunk, hop
 
             except Exception as e:
                 if self.debug:
-                    print("ASKING DATA ERROR: {}".format(e))
+                    print("ASKING DATA ERROR: {} Node {}".format(e, self.status["SMAC"]))
                 return None, None
         return None, None
-
-    # def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time=None, 
-    #                         print_file=False, save_file=False, one_file=False):
-    #     stop = False
-    #     mac = digital_endpoint.get_mac_address()
-    #     if self.subscribers:
-    #         self.status['SMAC'] = mac
-    #     save_to = self.result_path + "/" + mac
-    #     sleep_mesh = digital_endpoint.get_sleep()
-    #     t0 = time()
-    #     if listening_time is None:
-    #         listening_time = float('inf')   # Infinite listening time
-    #     end_time = t0 + listening_time
-    #     while time() < end_time:
-    #         t0 = time()
-    #         try: 
-    #             packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
-
-    #             if digital_endpoint.state == "REQUEST_DATA_STATE":
-    #                 metadata, hop = self.ask_metadata(packet_request)
-    #                 t0 = time()
-    #                 digital_endpoint.set_metadata(metadata, hop, self.mesh_mode, save_to)
-
-    #             elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
-    #                 next_chunk = digital_endpoint.get_next_chunk()
-    #                 if next_chunk is not None:
-    #                     if self.debug:
-    #                         print("ASKING CHUNK: {}".format(next_chunk))
-    #                     data, hop = self.ask_data(packet_request, next_chunk)
-    #                     t0 = time()
-    #                     self.status['Chunk'] = digital_endpoint.file_reception_info["total_chunks"] - next_chunk
-    #                     file = digital_endpoint.set_data(data, hop, self.mesh_mode)
-    #                     if file:
-    #                         # We send a final OK to the endpoint
-    #                         final_ok = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
-    #                         final_ok.set_ok()
-    #                         final_ok.set_source(self.connector.get_mac())
-    #                         sleep(1)
-    #                         self.send_lora(final_ok)
-    #                         self.status['Chunk'] = "DONE"
-    #                         if print_file:
-    #                             print(file.get_content())
-    #                         if save_file:
-    #                             file.save(save_to)
-    #                         if one_file:
-    #                             stop = True
-
-    #             elif digital_endpoint.state == "OK":
-    #                 ok, hop = self.ask_ok(packet_request)
-    #                 t0 = time()
-    #                 digital_endpoint.connected(ok, hop, self.mesh_mode)
-
-    #             if self.sf_trial:
-    #                 if self.debug:
-    #                     print("SF Trial ended successfully")
-    #                 self.sf_trial = False
-    #                 self.backup_config()
-
-    #             # If everything went well, we count a successful interaction
-    #             self.successful_interactions_count += 1
-    #             if self.successful_interactions_count >= self.successful_interactions_required:
-    #                 self.last_sleep_time = self.NEXT_ACTION_TIME_SLEEP
-    #                 self.decrease_sleep_time()
-    #                 self.sleep_just_decreased = True
-
-    #         except Exception as e:
-    #             if self.debug:
-    #                 print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
-    #             if self.sf_trial:
-    #                 self.sf_trial -= 1
-    #                 if self.sf_trial <= 0:
-    #                     if self.debug:
-    #                         print("Restoring RF config")
-    #                     self.restore_rf_config()
-    #                     self.sf_trial = False
-
-    #             dt = (time() - t0) / 1000
-    #             if dt >= self.connector.adaptive_timeout:
-    #                 if self.debug:
-    #                     print("Timeout reached")
-    #                 self.increase_sleep_time()
-    #                 self.successful_interactions_count = 0
-    #                 if self.sleep_just_decreased:
-    #                     self.sleep_just_decreased = False
-    #                     self.minimum_sleep_found = True
-    #                     self.NEXT_ACTION_TIME_SLEEP = self.last_sleep_time
-    #                     self.observed_min_sleep = self.last_sleep_time
-    #                     print("Minimum sleep time found: ", self.NEXT_ACTION_TIME_SLEEP)
-
-    #         finally:
-    #             if self.subscribers:
-    #                 self.status['Status'] = digital_endpoint.state
-    #                 self.notify_subscribers()
-
-    #             gc.collect()
-    #             dt = (time() - t0) / 1000
-    #             print("DT: ", dt, "Sleep time: ", self.NEXT_ACTION_TIME_SLEEP)
-    #             sleep_time = max(0, self.NEXT_ACTION_TIME_SLEEP)
-    #             if self.debug:
-    #                 print("Sleep time: ", sleep_time)
-    #             if sleep_time > 0:
-    #                 sleep(sleep_time)
-                
-    #             if stop:
-    #                 break
 
     def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time=None,
                        print_file=False, save_file=False, one_file=False):
@@ -277,15 +150,19 @@ class Requester(Node):
                 packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
 
                 if digital_endpoint.state == "REQUEST_DATA_STATE":
+                    if self.debug:
+                        print("ASKING METADATA to {}".format(mac))
                     metadata, hop = self.ask_metadata(packet_request)
                     t0 = time()
                     digital_endpoint.set_metadata(metadata, hop, self.mesh_mode, save_to)
+                    if self.debug:
+                        print("METADATA from {}: {}".format(mac, metadata))
 
                 elif digital_endpoint.state == "PROCESS_CHUNK_STATE":
                     next_chunk = digital_endpoint.get_next_chunk()
                     if next_chunk is not None:
                         if self.debug:
-                            print("ASKING CHUNK: {}".format(next_chunk))
+                            print("ASKING CHUNK: {} to {}".format(next_chunk, mac))
                         data, hop = self.ask_data(packet_request, next_chunk)
                         t0 = time()
                         self.status['Chunk'] = digital_endpoint.file_reception_info["total_chunks"] - next_chunk
@@ -305,6 +182,8 @@ class Requester(Node):
                                 stop = True
 
                 elif digital_endpoint.state == "OK":
+                    if self.debug:
+                        print("ASKING OK to {}".format(mac))
                     ok, hop = self.ask_ok(packet_request)
                     t0 = time()
                     digital_endpoint.connected(ok, hop, self.mesh_mode)
@@ -324,7 +203,7 @@ class Requester(Node):
 
             except Exception as e:
                 if self.debug:
-                    print("LISTEN_TO_ENDPOINT ERROR: {}".format(e))
+                    print("LISTEN_TO_ENDPOINT ERROR: {} Node {}".format(e, mac))
                 if self.sf_trial:
                     self.sf_trial -= 1
                     if self.sf_trial <= 0:
@@ -345,11 +224,13 @@ class Requester(Node):
                     self.minimum_sleep_found = True
                     self.NEXT_ACTION_TIME_SLEEP = self.last_sleep_time
                     self.observed_min_sleep = self.last_sleep_time
-                    print("Minimum sleep time found: ", self.NEXT_ACTION_TIME_SLEEP)
+                    if self.debug:
+                        print("Minimum sleep time found: ", self.NEXT_ACTION_TIME_SLEEP)
                 
                 if self.failure_count >= self.max_failures:
                     self.observed_min_sleep = self.NEXT_ACTION_TIME_SLEEP
-                    print("Updated minimum sleep time to higher value: ", self.observed_min_sleep)
+                    if self.debug:
+                        print("Updated minimum sleep time to higher value: ", self.observed_min_sleep)
                     self.NEXT_ACTION_TIME_SLEEP = self.observed_min_sleep
                     self.failure_count = 0
 
@@ -360,7 +241,8 @@ class Requester(Node):
 
                 gc.collect()
                 dt = (time() - t0) / 1000
-                print("DT: ", dt, "Sleep time: ", self.NEXT_ACTION_TIME_SLEEP)
+                if self.debug:
+                    print("DT: ", dt, "Sleep time: ", self.NEXT_ACTION_TIME_SLEEP)
                 sleep_time = max(0, self.NEXT_ACTION_TIME_SLEEP)
                 if self.debug:
                     print("Sleep time: ", sleep_time)
@@ -420,8 +302,9 @@ class Requester(Node):
                         new_config.get("tx_power", None), 
                         new_config.get("cks", None)] 
         config = self.connector.get_rf_config()
-        print("Current config: ", config)
-        print("New config: ", new_config)
+        if self.debug:
+            print("Current config: ", config)
+            print("New config: ", new_config)
         # Only change the values that are different from the current configuration
         new_freq = new_config[0] if new_config[0] != config[0] else None
         new_sf = new_config[1] if new_config[1] != config[1] else None
@@ -466,11 +349,6 @@ class Requester(Node):
                 if try_for <= 0:
                     return False
 
-    # def increase_sleep_time(self):
-    #     random_factor = int.from_bytes(os.urandom(2), "little") / 2**16
-    #     self.NEXT_ACTION_TIME_SLEEP = min(self.NEXT_ACTION_TIME_SLEEP * (1 + random_factor), self.max_sleep_time)
-    #     if self.debug:
-    #         print("Increased sleep time to:", self.NEXT_ACTION_TIME_SLEEP)
     def increase_sleep_time(self):
         if self.NEXT_ACTION_TIME_SLEEP < self.exponential_backoff_threshold:
             self.NEXT_ACTION_TIME_SLEEP *= 2  # Exponential increase
@@ -480,14 +358,6 @@ class Requester(Node):
         
         if self.debug:
             print("Increased sleep time to:", self.NEXT_ACTION_TIME_SLEEP)
-
-    # def decrease_sleep_time(self):
-    #     smoothing_factor = 0.2
-    #     new_sleep_time = self.NEXT_ACTION_TIME_SLEEP * (1 - smoothing_factor)
-    #     self.observed_min_sleep = min(0, min(self.observed_min_sleep, new_sleep_time))
-    #     self.NEXT_ACTION_TIME_SLEEP = max(new_sleep_time, self.observed_min_sleep)
-    #     if self.debug:
-    #         print("Decreased sleep time to:", self.NEXT_ACTION_TIME_SLEEP)
 
     def decrease_sleep_time(self):
         smoothing_factor = 0.2
@@ -504,18 +374,6 @@ class Requester(Node):
         self.NEXT_ACTION_TIME_SLEEP = max(new_sleep_time, self.observed_min_sleep)
         if self.debug:
             print("Decreased sleep time to:", self.NEXT_ACTION_TIME_SLEEP)
-
-    # def reset_sleep_time(self):
-    #     self.NEXT_ACTION_TIME_SLEEP = 0.1
-    #     self.observed_min_sleep = float('inf')
-    #     self.observed_max_sleep = 0
-    #     self.sleep_delta = 0.1
-    #     self.successful_interactions_count = 0
-    #     self.minimum_sleep_found = False
-    #     self.sleep_just_decreased = False
-    #     self.last_sleep_time = self.NEXT_ACTION_TIME_SLEEP
-    #     if self.debug:
-    #         print("Reset sleep time to:", self.NEXT_ACTION_TIME_SLEEP)
 
     def reset_sleep_time(self):
         self.min_sleep_time, self.max_sleep_time = self.calculate_sleep_time_bounds()

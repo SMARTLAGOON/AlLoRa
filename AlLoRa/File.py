@@ -1,11 +1,15 @@
 import gc
 from math import ceil
-try:
-    from utime import ticks_ms as time
-    import uos as os
-except:
-    from time import time
-    import os
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
+from AlLoRa.utils.time_utils import current_time_ms as time
+
+# try:
+#     from utime import ticks_ms as time
+#     import uos as os
+# except:
+#     from time import time
+#     import os
 gc.enable()
 
 class OnDemandFileWriter:

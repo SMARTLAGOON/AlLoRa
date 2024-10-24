@@ -1,12 +1,9 @@
 import gc
 from AlLoRa.Nodes.Node import Node, Packet, urandom
 from AlLoRa.File import CTP_File
-try: 
-    from utime import sleep, ticks_ms as time
-except:
-    from time import sleep, time
-    def time():
-        return time() * 1000    # Convert to ms
+from AlLoRa.utils.time_utils import get_time, current_time_ms as time, sleep, sleep_ms
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
 
 class Source(Node):
 
@@ -252,7 +249,7 @@ class Source(Node):
             if self.file.metadata_sent:
                 self.file.retransmission += 1
                 if self.debug:
-                    print("asked again for Metadata...")
+                    print("Asked again for Metadata...")
             else:
                 self.file.metadata_sent = True
 

@@ -7,15 +7,11 @@ from math import ceil
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class E5_connector(Connector):
     def __init__(self):
         super().__init__()
-        # wlan_sta = network.WLAN(network.STA_IF)
-        # wlan_sta.active(True)
-        # wlan_mac = wlan_sta.config('mac')
-        # self.MAC = ubinascii.hexlify(wlan_mac).decode()[-8:]
-        # wlan_sta.active(False)
 
     def config(self, config_json):
         super().config(config_json)
@@ -35,10 +31,6 @@ class E5_connector(Connector):
             self.txbuf = connector_config.get("txbuf", 150)  # TX buffer size
             self.rxbuf = connector_config.get("rxbuf", 150)  # RX buffer size
             
-            # self.frequency = connector_config.get("freq", 868)
-            # self.sf = connector_config.get("sf", 7)
-            # self.bandwidth = connector_config.get("bandwidth", 125)
-            #self.tx_power = connector_config.get("tx_power", 14)
             self.tx_preamble = connector_config.get("tx_preamble", 8)
             self.rx_preamble = connector_config.get("rx_preamble", 8)
             
@@ -197,14 +189,6 @@ class E5_connector(Connector):
             self.set_dynamic_uart_timeout(self.timeout) # Set the UART timeout back to the default value
         #expected_response = "+TEST: TXLRPKT"
         
-        # while utime.ticks_diff(utime.ticks_ms(), start_time) < 120:  # Limit the waiting time to 150 ms
-        #     something = self.uart.any()
-        #     if something:
-        #         response +=  self.uart.read()
-        #         if expected_response in response:
-        #             break
-        #     else:
-        #         utime.sleep_ms(1)
         end_time_total = utime.ticks_ms()
         if self.debug:
             print("send_packet Total Time:", utime.ticks_diff(end_time_total, start_time_total), "ms")
@@ -289,7 +273,8 @@ class E5_connector(Connector):
         return self.snr
 
     def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
-        print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power)
+        if self.debug:
+            print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power)
         if backup:
             self.backup_rf_config()
         freq = frequency if frequency is not None else self.frequency
@@ -299,7 +284,8 @@ class E5_connector(Connector):
         tx_power = tx_power if tx_power is not None else self.tx_power
         success = self.set_rf_config(freq, sf, bandwidth, self.tx_preamble, self.rx_preamble, tx_power, self.crc, self.iq, self.net)
         if success:
-            print("RF Config Changed to: ", freq, sf, bandwidth, cr, tx_power)
+            if self.debug:
+                print("RF Config Changed to: ", freq, sf, bandwidth, cr, tx_power)
             self.update_timeouts()
             self.adaptive_timeout = self.max_timeout
             return True
@@ -315,7 +301,8 @@ class E5_connector(Connector):
         if self.debug:
             print("Set RF Config Response:", response.decode())
         if success:
-            print("RF Config Set to:", frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
+            if self.debug:
+                print("RF Config Set to:", frequency, sf, bandwidth, tx_preamble, rx_preamble, tx_power, crc, iq, net)
             self.frequency = frequency
             self.sf = sf
             self.bw = bandwidth
