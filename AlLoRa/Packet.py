@@ -111,7 +111,7 @@ class Packet:
         if self.short_mac:
             self.destination = self.mac_compress(destination)
         else:
-            self.destination = destination
+            self.destination = destination.encode()
         #self.destination = self.mac_compress(destination)
 
     def get_destination(self):

@@ -99,8 +99,8 @@ class Requester(Node):
             try:
                 metadata = response_packet.get_metadata()
                 hop = response_packet.get_hop()
-                length = metadata["L"]
-                filename = metadata["FN"]
+                length = metadata["LENGTH"]
+                filename = metadata["FILENAME"]
                 if self.subscribers:
                     self.status['File'] = filename
                 return (length, filename), hop

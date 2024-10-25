@@ -10,6 +10,7 @@ from AlLoRa.Nodes.Source import Source
 from AlLoRa.Connectors.SX127x_connector import SX127x_connector
 from AlLoRa.File import CTP_File
 from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.time_utils import get_time, sleep
 
 gc.enable()
 
@@ -37,10 +38,12 @@ screen = OLED_Screen(device, img_data, layout_config=source_layout, button=False
 
 def run():
     # AlLoRa setup
+    sleep(5)
     connector = SX127x_connector()
     lora_node = Source(connector, config_file="LoRa.json")
+    chunk_size = lora_node.get_chunk_size() #235
 
-    print("CHUNK SIZE: ", lora_node.chunk_size)
+    print("CHUNK SIZE: ", chunk_size)
 
     lora_node.register_subscriber(screen)
     lora_node.notify_subscribers()
@@ -53,7 +56,7 @@ def run():
         while True:
             if not lora_node.got_file():
                 file = CTP_File(name = 'test.json',
-                            content = bytearray('{}'.format(1024), 'utf-8'),
+                            content = bytearray('{}'.format(0)*1024, 'utf-8'),
                             chunk_size=chunk_size)
                 print("Sending LoRa file: ", file.get_name())
                 lora_node.set_file(file)
@@ -73,6 +76,6 @@ def run():
         print(e)
         led.kill()
     print("EXIT")
-    machine.reset() # Reset device
+    #machine.reset() # Reset device
 
 run()

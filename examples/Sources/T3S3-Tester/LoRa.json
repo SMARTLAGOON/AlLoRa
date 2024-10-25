@@ -10,6 +10,6 @@
       "tx_power": 15,
       "min_timeout": 0.5,
       "max_timeout": 12,
-      "debug": false
+      "debug": true
       }
  }
