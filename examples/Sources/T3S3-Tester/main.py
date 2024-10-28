@@ -35,6 +35,7 @@ with open("AlLoRa_logo.json", "r") as f:
     img_data = ujson.load(f)
 
 screen = OLED_Screen(device, img_data, layout_config=source_layout, button=False)
+n = 0
 
 def run():
     # AlLoRa setup
@@ -48,27 +49,20 @@ def run():
     lora_node.register_subscriber(screen)
     lora_node.notify_subscribers()
     
-    sending_timeout = 2 * 60 * 1000 # 2 minutes in milliseconds
     t0 = utime.ticks_ms()
     try:
         lora_node.establish_connection()
         print("Connection OK")
         while True:
             if not lora_node.got_file():
-                file = CTP_File(name = 'test.json',
+                file = CTP_File(name = 'test_{}.json'.format(n),
                             content = bytearray('{}'.format(0)*1024, 'utf-8'),
                             chunk_size=chunk_size)
                 print("Sending LoRa file: ", file.get_name())
                 lora_node.set_file(file)
                 t_0_send = utime.ticks_ms()
-                sucess = lora_node.send_file(timeout=sending_timeout)
-                if sucess:
-                    td = utime.ticks_diff(utime.ticks_ms(), t_0_send)
-                    if td > sending_timeout:
-                        print("Timeout sending file")
-                else:
-                    print("Error sending file")
-                    machine.reset() # Reset device
+                lora_node.send_file()
+                n += 1
                 
             utime.sleep(10)
 
