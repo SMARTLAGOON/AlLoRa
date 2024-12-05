@@ -19,49 +19,19 @@ Details of the protocol can be found in these articles:
 
 We're also developing a custom GPT, [AlLoRa Genius](https://chat.openai.com/g/g-rOGxxA1BZ-allora-genius), to assist in understanding and utilizing the AlLoRa protocol.
 
+## Learn by doing with these examples:
 
-<!-- ## Readme on Notion!
-> For a better experience, you can check our awesome **Notion** description of the code [here...](https://barratia.notion.site/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) -->
-> 
-<!-- 
-## Content
-- [****AlLoRa:**** Advance layer LoRa](#allora-advance-layer-lora)
-  - [Readme on Notion!](#readme-on-notion)
-  - [Content](#content)
-- [Folders](#folders)
-  - [**AlLoRa**](#allora)
-    - [Nodes](#nodes)
-    - [Node.py](#nodepy)
-    - [Source.py](#sourcepy)
-    - [Source usage:](#source-usage)
-    - [Example:](#example)
-    - [Requester.py](#requesterpy)
-    - [Requester usage:](#requester-usage)
-    - [Example:](#example-1)
-    - [Gateway.py](#gatewaypy)
-    - [Gateway usage:](#gateway-usage)
-    - [Example:](#example-2)
-    - [Connectors](#connectors)
-    - [Connector.py](#connectorpy)
-    - [LoPy4\_connector.py](#lopy4_connectorpy)
-    - [SX127x\_connector](#sx127x_connector)
-    - [Wifi\_connector.py](#wifi_connectorpy)
-    - [→ Datasource.py](#-datasourcepy)
-    - [→ Digital\_Endpoint.py](#-digital_endpointpy)
-    - [→ AlLoRa\_File.py](#-allora_filepy)
-    - [→ AlLoRa\_Packet.py](#-allora_packetpy)
-  - [Adapters](#adapters)
-    - [AlLoRa-WiFi\_adapter](#allora-wifi_adapter)
-  - [Examples](#examples)
-    - [LoPy Source](#lopy-source)
-    - [LoPy Requester](#lopy-requester)
-    - [Raspberry Gateway](#raspberry-gateway)
-- [**How does it work?**](#how-does-it-work)
-  - [→ Communication logic](#-communication-logic)
-  - [→ Packet Structure](#-packet-structure)
-    - [Flag composition](#flag-composition)
-  - [→ Mesh mode](#-mesh-mode)
-  - [→ Debug Hops](#-debug-hops) -->
+Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples!
+
+Links of interest:
+
+- [Setting up AlLoRa  in LILYGO T3S3
+](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware)
+- [Setting up AlLoRa in LoPy4 devices](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Requesters/LopyRequester)
+  
+- [Raspberry Pi Gateways](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways/Raspberry)
+
+
 
 # Folders
 
@@ -69,7 +39,7 @@ We're also developing a custom GPT, [AlLoRa Genius](https://chat.openai.com/g/g-
 
 
 <details>
-<summary>It contains all the code necessary to setup a communication network between devices, from a point-to-point using two LoPy4’s, to a mesh with a gateway and multiple edge-nodes.</summary>
+<summary>It contains all the code necessary to setup a communication network between devices, from a point-to-point to a mesh with a gateway and multiple Source nodes.</summary>
     
 ### [Nodes](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Nodes)
 
@@ -297,69 +267,87 @@ The [Digital Endpoints](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf
 
 ## → Packet Structure
 
-The [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the element that is sent and receive through LoRa. It is designed to maximize the amount of actual content (or chunk size) sent each time, but also to ensure the correct reception of the package by the Node that is supposed to receive it. 
+The [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the fundamental data unit transmitted via LoRa. It is designed to optimize the payload size while ensuring reliable reception by the designated Node. Each Packet has a maximum size of 255 bytes, which is the maximum payload supported by LoRa.
 
-For compatibility’s sake, It is designed to have a maximum of 255 Bytes, that is the maximum size of a LoRa message on a LoPy4.
+### Header Composition
 
-The header size is variable depending on the enabled mode (mesh or point-2-point), but both have in common a header of 20 Bytes, the first 16 Bytes contain the first 8 characters of the MAC Address of the source and destination Nodes. 1 Byte is destined to the message’s command and flags (explained in more detail [below](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b)). Another 3 Bytes are destined to the Checksum of the content, it is used to check if the content has arrived correctly or if it has some type of corruption. 
+The header size varies depending on the communication mode (point-to-point or mesh), but it follows a standard structure:
 
-Finally, if the system is working in [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) (detailed below), an additional 2 Bytes are used to store a message ID. The ID is a random number between 0 and 65.535 (the range of values that can be represented in binary using 2 Bytes) and it is used to manage the retransmissions when in mesh mode and to avoid chunk duplication in the Requester.
+- **MAC Addresses (16 bytes):** The first 8 bytes are allocated for the source Node’s MAC address, and the next 8 bytes are for the destination Node’s MAC address.
+- **Command and Flags (1 byte):** This byte encodes the command type and several flags that dictate packet behavior.
+- **Checksum (3 bytes):** These bytes verify content integrity by checking for corruption using the last 3 bytes of the SHA-256 hash digest.
+- **Message ID (2 bytes, mesh mode only):** Used to manage retransmissions and prevent chunk duplication. The ID is a random number between 0 and 65,535.
+
+### Packet Types
+
+The header size impacts the payload capacity:
+
+- **Point-to-Point Packet:** 20-byte header, allowing for a maximum payload of 235 bytes.
+- **Mesh Packet:** 22-byte header, allowing for a maximum payload of 233 bytes.
+
+Optional MAC compression can reduce header size, effectively increasing the payload capacity:
+
+- **Compressed Point-to-Point Packet:** 12-byte header, allowing for a payload of 243 bytes.
+- **Compressed Mesh Packet:** 14-byte header, allowing for a payload of 241 bytes.
 
 <div align="center">
 <table>
 <tr>
-<th>Point-2-point Packet</th>
+<th>Point-to-Point Packet</th>
 <th>Mesh Packet</th>
 </tr>
 <tr>
 <td>
 <pre>
 <img align="center"
-  src="readme_assets/figures/Untitled%202.png"
-  title = "hola"
-  width="300"
-  />
+  src="readme_assets/figures/Packet-p2p.png"
+  title="Point-to-Point Packet"
+  width="300" />
 </pre>
 </td>
 <td>
-<img  align="center"
-  src="readme_assets/figures/Untitled%202.png"
-  title = "hola"
-  width="300"
-  />
+<pre>
+<img align="center"
+  src="readme_assets/figures/Packet-mesh.png"
+  title="Mesh Packet"
+  width="300" />
+</pre>
 </td>
 </tr>
 </table>
 </div>
 
-With this, the point-2-point Packet has 235 Bytes maximum for its payload, while the mesh Packet has 233 available Bytes. It seems like a small difference, but with 255 Bytes maximum per Packet, every Byte counts when sending Kilobytes of data.
+---
 
-### Flag composition
+### Flag Composition
 
-The Flag Byte is structured as follows:
+The Flag byte controls the behavior of the packet and consists of:
 
 <p align="center">
-  <img src="readme_assets/figures/Untitled%204.png" 
-alt="Picture" 
-width="500" 
-style="display: block; margin: 0 auto" />
+  <img src="readme_assets/figures/FlagBytes.png" 
+       alt="Flag Byte Composition"
+       width="500" />
 </p>
 
+#### Flag Bits:
+1. **Command (2 bits):** Specifies the command type:
+    - **00 → DATA:** Payload contains a requested chunk.
+    - **01 → OK:** Acknowledges connection or confirms correct reception of content.
+    - **10 → CHUNK:** Requests a specific chunk of data (chunk number stored in payload).
+    - **11 → METADATA:** Requests or provides metadata, such as file name and size.
+      
+2. **Mesh bit (1 bit):** Indicates if the message should be forwarded.
+   
+4. **Hop bit (1 bit):** Signals that the message was forwarded at least once.
+   
+6. **Debug hop bit (1 bit):** Enables debugging by replacing content with path details for research purposes.
+   
+8. **Change RF bit (1 bit):** Signals a change in the radio frequency configuration between Nodes.
 
-- **Command bits**: 2 bits that combined represent one of four type of commands:
-    
-    - **00 → DATA:** The command activated when the payload contains a requested chunk.
-    - **01 → OK:** The acknowledgement command, it is used to establish connection between nodes or notify of the correct reception of the final chunk of the content being received. It usually implies that the payload is empty.
-    - **10 →  CHUNK:** This command is used by the Requester/Gateway to ask for a chunk of the content being received. The chunk number is stored in the payload, so the Source can know what block is being requested.
-    - **11 → METADATA:** This command is used by the Requester/Gateway to ask for the metadata of the file to be received. If this is the case, the payload of the request will be empty. It is also used by the Source to answer the request of metadata. In this case the payload contains the name and size of the File to sent.
-- **Retransmission bit**: Not being used for the moment
-    
-- **Mesh bit**: 1 bit that indicates if the message is supposed to be forwarded or not (more about this in the [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) segment).
-    
-- **Hop bit**: 1 bit that is True if the message was forwarded at some point (more about this in the [Mesh mode](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) segment).
-    
-- **Debug hop bit**: 1 bit that indicates that the message in question is in “debug hop mode” (more about this in the [Debug hops](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) segment).
-    
+#### Optional MAC Compression:
+
+- **MAC Address Compression:** Reduces MAC addresses from 8 bytes to 4 bytes using binary struct packing. This feature is optional and can be configured based on deployment needs, allowing for backward compatibility with older deployments.
+
 
 ## → Mesh mode
 
@@ -386,19 +374,5 @@ The output of this process generates a log_rssi.txt file that looks like this:
 ```
 
 Where it shows the time of reception, the ID of the message and then a list of hops that the Packet did. Each hop saves the  name of the Node, the RSSI of the last package received with LoRa when registering the hop, and the random time that the Node had to wait before forwarding the message. As we can see, in some cases this random sleep is 0. This is not random, because those Nodes were the destination of the requests of the Gateway, and, as commented before, they have the priority.
-
-## Setting a Device and running an example:
-
-Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples!
-
-Links of interest:
-
-- [Setting up AlLoRa  in LILYGO T3S3
-](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware)
-- [AlLoRa + ESP32 Devices](https://www.notion.so/barratia/AlLoRa-ESP32-devices-87ed423f7d554e24b936588392481a4e?pvs=4)
-- [Setting up AlLoRa in LoPy4 devices](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Requesters/LopyRequester)
-  
-- [Raspberry Pi Gateways](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways/Raspberry)
-
 
 
