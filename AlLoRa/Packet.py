@@ -72,7 +72,7 @@ class Packet:
         self.hop = False                  # If packet was forwarder -> 1, else -> 0             bit: 5
         self.debug_hops = False           # Overrides payload to get path details (hops)        bit: 6
         # Change settings
-        self.change_sf = False            # If True, check payload to change SF                 bit: 7
+        self.change_rf = False            # If True, check payload to change SF                 bit: 7
 
         # For mesh
         self.id = None                    # Random number from 0 to 65.535
@@ -80,9 +80,9 @@ class Packet:
         self.content = None
 
     def __repr__(self):
-        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
+        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_rf={}, id={})".format(
             self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
-            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)
+            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_rf, self.id)
 
     def mac_compress(self, mac):
         int_mac = int(mac, 16)  # Convert the hexadecimal segment to an integer
@@ -202,13 +202,8 @@ class Packet:
     def get_sleep(self):
         return self.sleep
 
-    def get_change_sf(self):
-        return self.change_sf
-
-    def set_change_sf(self, sf):
-        self.set_ok()
-        self.change_sf = True
-        self.payload = dumps(sf).encode()
+    def get_change_rf(self):
+        return self.change_rf
 
      # Receives a dictionary with the new configuration
     def set_change_rf(self, rf_config):
@@ -222,7 +217,7 @@ class Packet:
         # Check if there is any change
         if any(changer.values()):
             self.set_ok()
-            self.change_sf = True
+            self.change_rf = True
             # only send the changes that are not None
             changer = {k: v for k, v in changer.items() if v is not None}
             self.payload = dumps(changer).encode()
@@ -286,7 +281,7 @@ class Packet:
                 flags = flags | (1<<5)
             if self.debug_hops:
                 flags = flags | (1<<6)
-            if self.change_sf:
+            if self.change_rf:
                 flags = flags | (1<<7)
 
             p = self.payload
@@ -321,7 +316,7 @@ class Packet:
         self.sleep = (flags >> 4) & 1 == 1
         self.hop = (flags >> 5) & 1 == 1
         self.debug_hops = (flags >> 6) & 1 == 1
-        self.change_sf = (flags >> 7) & 1 == 1
+        self.change_rf = (flags >> 7) & 1 == 1
 
     def load(self, packet):
         header  = packet[:self.HEADER_SIZE]
@@ -331,7 +326,7 @@ class Packet:
             self.source, self.destination, flags,  id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
             self.id = int.from_bytes(id, "little")
         else:
-             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+            self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
 
         self.parse_flags(flags)
 
@@ -356,7 +351,7 @@ class Packet:
             "hop" : self.hop,
             "sleep" : self.sleep,
             "debug_hops" : self.debug_hops,
-            "change_sf" : self.change_sf,
+            "change_rf" : self.change_rf,
             "id" :self.id,
             }
         return d
@@ -371,7 +366,7 @@ class Packet:
         self.hop = d["hop"]
         self.sleep = d["sleep"]
         self.debug_hops = d["debug_hops"]
-        self.change_sf = d["change_sf"]
+        self.change_rf = d["change_rf"]
         self.id = d["id"]
 
         self.check = self.checksum == self.get_checksum(self.payload)

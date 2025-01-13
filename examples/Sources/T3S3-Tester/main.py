@@ -35,7 +35,6 @@ with open("AlLoRa_logo.json", "r") as f:
     img_data = ujson.load(f)
 
 screen = OLED_Screen(device, img_data, layout_config=source_layout, button=False)
-n = 0
 
 def run():
     # AlLoRa setup
@@ -43,6 +42,7 @@ def run():
     connector = SX127x_connector()
     lora_node = Source(connector, config_file="LoRa.json")
     chunk_size = lora_node.get_chunk_size() #235
+    n = 0
 
     print("CHUNK SIZE: ", chunk_size)
 

@@ -302,7 +302,8 @@ Optional MAC compression can reduce header size, effectively increasing the payl
 <img align="center"
   src="readme_assets/figures/Packet-p2p.png"
   title="Point-to-Point Packet"
-  width="300" />
+  width="300"
+  style="background-color: white; padding: 10px;" />
 </pre>
 </td>
 <td>
@@ -310,7 +311,8 @@ Optional MAC compression can reduce header size, effectively increasing the payl
 <img align="center"
   src="readme_assets/figures/Packet-mesh.png"
   title="Mesh Packet"
-  width="300" />
+  width="300"
+  style="background-color: white; padding: 10px;" />
 </pre>
 </td>
 </tr>
@@ -324,7 +326,7 @@ Optional MAC compression can reduce header size, effectively increasing the payl
 The Flag byte controls the behavior of the packet and consists of:
 
 <p align="center">
-  <img src="readme_assets/figures/FlagBytes.png" 
+  <img src="readme_assets/figures/Flags.png" 
        alt="Flag Byte Composition"
        width="500" />
 </p>

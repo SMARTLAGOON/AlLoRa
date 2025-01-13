@@ -77,13 +77,14 @@ class Gateway(Requester):
                         
                         self.update_subscribers(ep)
                         # Check if additional time is needed due to incomplete file transfer
-                        if ep.lock_on_file_receive and ep.get_current_file().get_missing_chunks():
-                            # Extend the listening for one additional period if there are missing chunks
-                            if self.debug:
-                                print("Listening to endpoint {} ({}) for {}s due to missing chunks".format(ep.get_name(), ep.get_mac_address(), ep.max_listen_time_when_locked))
-                            self.listen_to_endpoint(ep, ep.max_listen_time_when_locked,
-                                                    print_file=print_file_content, save_file=save_files)
-                            self.update_subscribers(ep)
+                        if ep.get_current_file() is not None:
+                            if ep.lock_on_file_receive and ep.get_current_file().get_missing_chunks():
+                                # Extend the listening for one additional period if there are missing chunks
+                                if self.debug:
+                                    print("Listening to endpoint {} ({}) for {}s due to missing chunks".format(ep.get_name(), ep.get_mac_address(), ep.max_listen_time_when_locked))
+                                self.listen_to_endpoint(ep, ep.max_listen_time_when_locked,
+                                                        print_file=print_file_content, save_file=save_files)
+                                self.update_subscribers(ep)
 
                     except Exception as e:
                         if self.debug:

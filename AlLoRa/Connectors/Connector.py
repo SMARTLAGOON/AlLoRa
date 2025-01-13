@@ -48,7 +48,6 @@ class Connector:
 
             self.adaptive_timeout = self.max_timeout
             self.backup_timeout = self.adaptive_timeout
-            self.sf_backup = self.sf
             self.backup_rf_config()
         else:
             if self.debug:

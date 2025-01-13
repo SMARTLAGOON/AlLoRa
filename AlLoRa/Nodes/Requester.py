@@ -115,15 +115,19 @@ class Requester(Node):
             return b"0", response_packet.get_hop()
         if response_packet.get_command() == Packet.DATA:
             try:
+                chunk = response_packet.get_payload()
                 if self.mesh_mode:
                     id = response_packet.get_id()
                     if not self.check_id_list(id):
                         return None, None
-                chunk = response_packet.get_payload()
-                hop = response_packet.get_hop()
-                if self.debug and hop:
-                    print("CHUNK + HOP: {} -> {} - Node: {}".format(chunk, hop, self.status["SMAC"]))
-                return chunk, hop
+                    hop = response_packet.get_hop()
+                    if self.debug and hop:
+                        print("CHUNK + HOP: {} -> {} - Node: {}".format(chunk, hop, self.status["SMAC"]))
+                    return chunk, hop
+                else: 
+                    if self.debug:
+                        print("CHUNK: {} - Node: {}".format(chunk, self.status["SMAC"]))
+                    return chunk, None
 
             except Exception as e:
                 if self.debug:
@@ -273,13 +277,13 @@ class Requester(Node):
             return True
         return False
 
-    def ask_change_sf(self, digital_endpoint, new_sf):
+    def ask_change_rf(self, digital_endpoint, new_sf):
         try_for = 3
         if 7 <= new_sf <= 12:
             while True:
                 packet = Packet(self.mesh_mode, self.short_mac)
                 packet.set_destination(digital_endpoint.get_mac_address())
-                packet.set_change_sf(new_sf)
+                packet.set_change_rf(new_sf)
                 if digital_endpoint.get_mesh():
                     packet.enable_mesh()
                     if not digital_endpoint.get_sleep():

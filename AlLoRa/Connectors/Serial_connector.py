@@ -98,8 +98,9 @@ class Serial_connector(Connector):
 
     def send_and_wait_response(self, packet: Packet):
         packet.set_source(self.get_mac())  # Adding mac address to packet
-        command = b"S&W:" + packet.get_content() + b"<<END>>\n"  # Append the custom end phrase to the command
-        packet_size_sent = len(packet.get_content())
+        content = packet.get_content()
+        command = b"S&W:" + content + b"<<END>>\n"  # Append the custom end phrase to the command
+        packet_size_sent = len(content)
         response = self.send_command(command)
         # Response should be ACK:adaptive_timeout
         if not response:
