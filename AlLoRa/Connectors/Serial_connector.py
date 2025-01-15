@@ -98,7 +98,7 @@ class Serial_connector(Connector):
 
     def send_and_wait_response(self, packet: Packet):
         print("DEBUG: Sending and waiting for response")
-        packet("DEBUG: Going to add mac address to packet: ", self.get_mac())
+        print("DEBUG: Going to add mac address to packet: ", self.get_mac())
         packet.set_source(self.get_mac())  # Adding mac address to packet
         print("DEBUG: MAC address added to packet")
         content = packet.get_content()
