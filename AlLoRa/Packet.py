@@ -286,7 +286,11 @@ class Packet:
             p = self.payload
             self.checksum = self.get_checksum(p)
             
-            print("DEBUG: ", self.source, self.destination, flags, self.checksum, p)
+            if isinstance(self.source, str):
+                self.source = self.source.encode('utf-8')
+            if isinstance(self.destination, str):
+                self.destination = self.destination.encode('utf-8')
+
             if self.mesh_mode:
                 try:
                     id_bytes = self.id.to_bytes(2, 'little')
