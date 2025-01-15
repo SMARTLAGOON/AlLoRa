@@ -285,7 +285,8 @@ class Packet:
 
             p = self.payload
             self.checksum = self.get_checksum(p)
-
+            
+            print("DEBUG: ", self.source, self.destination, flags, self.checksum, p)
             if self.mesh_mode:
                 try:
                     id_bytes = self.id.to_bytes(2, 'little')
