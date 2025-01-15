@@ -123,7 +123,9 @@ class Connector:
         self.adaptive_timeout = max(new_timeout, max(self.min_timeout, self.observed_min_timeout))
 
     def send_and_wait_response(self, packet):
+        print("DEBUG: send_and_wait_response")
         packet.set_source(self.get_mac())  # Adding Mac address to packet
+        print("DEBUG: send_and_wait_response, source setted")
         packet.close_packet()              # Rebuild the packet with the new source
         focus_time = self.adaptive_timeout
         packet_size_sent = len(packet.get_content())
