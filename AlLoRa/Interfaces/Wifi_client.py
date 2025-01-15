@@ -109,7 +109,7 @@ class WiFi_Client_Interface(Interface):
                 #Response to the Source
                 packet = Packet(self.connector.mesh_mode, self.connector.short_mac)
                 packet.load_dict(response_json['packet'])
-                response_packet = self.connector.send_and_wait_response(packet)
+                response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet)
                 if response_packet.get_command():
                     json_response = dumps({"response_packet": response_packet.get_dict()})
                     clientsocket.send(http + json_response)
