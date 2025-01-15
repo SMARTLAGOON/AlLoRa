@@ -24,16 +24,8 @@ By [Benjamín Arratia](https://www.notion.so/Benjam-n-Arratia-87712584b5584733ac
 
 ## Running AlLoRa in T3S3
 
- 1.	Use [**ampy**](#installing-and-using-ampy) to “put” the files into the micropython device . Some are .py files like your main.py and others can be .mpy like PyLora_SX127x_extensions. (How to generate the .mpy files? )
- 
+ 1.	Use [**ampy**](#installing-and-using-ampy) to “put” the files into the micropython device. For each device put the corresponding main and LoRa.json file:
 
-```bash
-ampy --port /dev/tty.usbmodem1234561 ls #To check the files
-ampy --port /dev/tty.usbmodem1234561 put PyLora_SX127x_extensions
-ampy --port /dev/tty.usbmodem1234561 put AlLoRa
-```
-
-2.	For each device put the corresponding main and LoRa.json file
 ```bash
 ampy --port /dev/tty.usbmodem1234561 put main.py 
 ampy --port /dev/tty.usbmodem1234561 put LoRa.json #Configuration file for AlLoRa

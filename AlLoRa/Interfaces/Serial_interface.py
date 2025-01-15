@@ -69,7 +69,7 @@ class Serial_Interface(Interface):
         if self.debug:
             print("Sending ACK: ", ack)
         self.uart.write(ack)
-        response_packet = self.connector.send_and_wait_response(packet_from_rpi)
+        response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
         if response_packet:
             if response_packet.get_command():
                 response = response_packet.get_content() + b"<<END>>\n"

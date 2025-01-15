@@ -124,6 +124,7 @@ class Connector:
 
     def send_and_wait_response(self, packet):
         packet.set_source(self.get_mac())  # Adding Mac address to packet
+        packet.close_packet()              # Rebuild the packet with the new source
         focus_time = self.adaptive_timeout
         packet_size_sent = len(packet.get_content())
         try:
