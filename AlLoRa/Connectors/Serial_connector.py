@@ -97,7 +97,10 @@ class Serial_connector(Connector):
                 print("Reset recently triggered, waiting...")
 
     def send_and_wait_response(self, packet: Packet):
+        print("DEBUG: Sending and waiting for response")
+        packet("DEBUG: Going to add mac address to packet: ", self.get_mac())
         packet.set_source(self.get_mac())  # Adding mac address to packet
+        print("DEBUG: MAC address added to packet")
         content = packet.get_content()
         command = b"S&W:" + content + b"<<END>>\n"  # Append the custom end phrase to the command
         packet_size_sent = len(content)
