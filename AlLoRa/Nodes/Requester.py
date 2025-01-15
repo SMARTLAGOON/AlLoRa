@@ -57,6 +57,7 @@ class Requester(Node):
         return packet
 
     def send_request(self, packet: Packet) -> Packet:
+        print("Debug Send Request")
         if self.mesh_mode:
             packet.set_id(self.generate_id())
             if self.debug_hops:
