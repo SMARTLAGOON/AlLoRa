@@ -57,16 +57,17 @@ class Requester(Node):
         return packet
 
     def send_request(self, packet: Packet) -> Packet:
-        print("Debug Send Request")
         if self.mesh_mode:
             packet.set_id(self.generate_id())
             if self.debug_hops:
                 packet.enable_debug_hops()
 
+        print("Debug: calculating time between requests")
         self.time_since_last_request = time() - self.time_request
         self.time_request = time()
+        print("Debug: going to send and wait response")
         response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet)
-
+        print("Debug: response_packet: ", response_packet)
         if self.subscribers:
             self.status['PSizeS'] = packet_size_sent
             self.status['PSizeR'] = packet_size_received
