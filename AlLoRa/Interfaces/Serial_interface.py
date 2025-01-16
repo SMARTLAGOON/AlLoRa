@@ -72,7 +72,7 @@ class Serial_Interface(Interface):
         if self.debug:
             print("Sending ACK: ", ack)
         self.uart.write(ack)
-        packet_from_rpi.replace_source(str(self.connector.get_mac()))
+        packet_from_rpi.replace_source(self.connector.get_mac())
         response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
         if response_packet:
             if response_packet.get_command():

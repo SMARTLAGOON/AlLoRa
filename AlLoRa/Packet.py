@@ -275,7 +275,7 @@ class Packet:
             self.source = self.source.encode('utf-8')
         if isinstance(self.destination, str):
             self.destination = self.destination.encode('utf-8')
-            
+
         if self.mesh_mode:
             try:
                 id_bytes = self.id.to_bytes(2, 'little')
@@ -318,7 +318,7 @@ class Packet:
             self.content = h + self.payload
 
     def get_content(self):
-        if self.content:
+        if self.content is not None:
             return self.content
         else:
             self.close_packet()
@@ -340,13 +340,15 @@ class Packet:
         content = packet[self.HEADER_SIZE:]
 
         if self.mesh_mode:
-            self.source, self.destination, flags,  id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+            self.source, self.destination, flags, id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
             self.id = int.from_bytes(id, "little")
         else:
             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+        
+        self.flags = flags
 
-        self.source = self.source.decode('utf-8').strip()
-        self.destination = self.destination.decode('utf-8').strip()
+        self.source = self.source.decode('utf-8').strip()           # Mac address of the source to string
+        self.destination = self.destination.decode('utf-8').strip() # Mac address of the destination to string
 
         self.parse_flags(flags)
 
