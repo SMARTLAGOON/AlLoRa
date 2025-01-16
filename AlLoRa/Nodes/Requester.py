@@ -140,6 +140,7 @@ class Requester(Node):
     def listen_to_endpoint(self, digital_endpoint: Digital_Endpoint, listening_time=None,
                        print_file=False, save_file=False, one_file=False):
         stop = False
+
         mac = digital_endpoint.get_mac_address()
         if self.subscribers:
             self.status['SMAC'] = mac
@@ -258,15 +259,15 @@ class Requester(Node):
                 if stop:
                     break
 
-        if not stop:
-            final_ok = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
-            final_ok.set_ok()
-            final_ok.set_source(self.connector.get_mac())
-            sleep(1)
-            if self.debug:
-                print("Sending final OK to ", mac)
-            self.send_lora(final_ok)
-            digital_endpoint.reset_state()
+        # if not stop:
+        #     final_ok = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
+        #     final_ok.set_ok()
+        #     final_ok.set_source(self.connector.get_mac())
+        #     sleep(1)
+        #     if self.debug:
+        #         print("Sending final OK to ", mac)
+        #     self.send_lora(final_ok)
+        #     digital_endpoint.reset_state()
             
     def save_hops(self, packet):
         if packet is None:
