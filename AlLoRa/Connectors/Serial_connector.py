@@ -43,6 +43,8 @@ class Serial_connector(Connector):
             # Wait for ack response
             response = self.serial_receive(self.timeout)
             if response is None:  # Check if no response was received
+                if self.debug:
+                    print("No response received (timeout).")
                 raise Exception("No ACK received")
             else:
                 self.attempt_count = 0

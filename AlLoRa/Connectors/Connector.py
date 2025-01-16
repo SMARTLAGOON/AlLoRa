@@ -148,7 +148,8 @@ class Connector:
                     print("WAIT_RESPONSE({}) || No response, FT: {}".format(td, focus_time))
                 
                 self.increase_adaptive_timeout()
-                return None, packet_size_sent, packet_size_received, td
+                #return None, packet_size_sent, packet_size_received, td
+                return "NADA :(", packet_size_sent, packet_size_received, td
 
             response_packet = Packet(self.mesh_mode, self.short_mac)
             if self.debug:
@@ -164,7 +165,8 @@ class Connector:
                         return response_packet, packet_size_sent, packet_size_received, td
                 else:
                     #raise Exception("Corrupted packet")
-                    return None, packet_size_sent, packet_size_received, td
+                    #return None, packet_size_sent, packet_size_received, td
+                    return response_packet, packet_size_sent, packet_size_received, td
 
             except Exception as e:
                 if self.debug:
@@ -175,7 +177,8 @@ class Connector:
                 focus_time = self.min_timeout
                 if self.debug:
                     print("Connector: Can't wait more")
-                return None, packet_size_sent, packet_size_received, td
+                #return None, packet_size_sent, packet_size_received, td
+                return response_packet, packet_size_sent, packet_size_received, td
 
     # This function returns the RSSI of the last received packet
     def get_rssi(self):

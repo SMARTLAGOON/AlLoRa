@@ -72,18 +72,25 @@ class Serial_Interface(Interface):
         if self.debug:
             print("Sending ACK: ", ack)
         self.uart.write(ack)
-        packet_from_rpi.replace_source(self.connector.get_mac())
-        response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
-        if response_packet:
-            if response_packet.get_command():
-                response = response_packet.get_content() + b"<<END>>\n"
+        try:
+            packet_from_rpi.replace_source(self.connector.get_mac())
+            response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
+            if response_packet:
+                if response_packet.get_command():
+                    response = response_packet.get_content() + b"<<END>>\n"
+                    if self.debug:
+                        print("Sending serial: ", len(response), " -> {}".format(response))
+                    self.uart.write(response)
+                    return True
+            else:
                 if self.debug:
-                    print("Sending serial: ", len(response), " -> {}".format(response))
-                self.uart.write(response)
-                return True
-        else:
+                    print("No response...")
+                self.uart.write(b'No response' + b"<<END>>\n")
+                return False
+        except Exception as e:
             if self.debug:
-                print("No response...")
+                print("Error sending and waiting: ", e)
+            serial.write(b'Error' + e.encode() + b"<<END>>\n")
             return False
     
     def handle_source_mode(self, command):
