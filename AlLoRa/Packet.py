@@ -271,6 +271,11 @@ class Packet:
         return (ha[-3:])
 
     def build_header(self):
+        if isinstance(self.source, str):
+            self.source = self.source.encode('utf-8')
+        if isinstance(self.destination, str):
+            self.destination = self.destination.encode('utf-8')
+            
         if self.mesh_mode:
             try:
                 id_bytes = self.id.to_bytes(2, 'little')
