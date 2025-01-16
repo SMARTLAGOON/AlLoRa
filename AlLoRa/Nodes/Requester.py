@@ -263,6 +263,8 @@ class Requester(Node):
             final_ok.set_ok()
             final_ok.set_source(self.connector.get_mac())
             sleep(1)
+            if self.debug:
+                print("Sending final OK to ", mac)
             self.send_lora(final_ok)
             digital_endpoint.reset_state()
             

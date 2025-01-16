@@ -100,7 +100,7 @@ class Serial_Interface(Interface):
         self.uart.write(ack)
         try:
             packet_from_source.load(command[5:])
-            packet_from_source.set_source(self.connector.get_mac())
+            packet_from_source.replace_source(self.connector.get_mac())
             success = self.connector.send(packet_from_source)
             if success:
                 return True
