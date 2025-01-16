@@ -18,7 +18,7 @@ class SX127x_connector(Connector):
         wlan_sta = network.WLAN(network.STA_IF)
         wlan_sta.active(True)
         wlan_mac = wlan_sta.config('mac')
-        self.MAC = ubinascii.hexlify(wlan_mac).decode()[-8:]
+        self.MAC = str(ubinascii.hexlify(wlan_mac).decode()[-8:])
         wlan_sta.active(False)
 
     def config(self, config_json):

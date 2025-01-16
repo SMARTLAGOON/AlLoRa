@@ -63,12 +63,16 @@ class Serial_Interface(Interface):
     def handle_send_and_wait(self, command):
         packet_from_rpi = Packet(self.connector.mesh_mode, self.connector.short_mac)
         data = command.split(b"S&W:")[-1]
-        packet_from_rpi.load(data)
+        check = packet_from_rpi.load(data)
         # Send ACK:adaptive_timeout from connector
-        ack = b"ACK:" + str(self.connector.adaptive_timeout).encode() + b"<<END>>\n"
+        if check:
+            ack = b"ACK:" + str(self.connector.adaptive_timeout).encode() + b"<<END>>\n"
+        else:
+            ack = b"ACK:0<<END>>\n" # Error (0) in loading packet
         if self.debug:
             print("Sending ACK: ", ack)
         self.uart.write(ack)
+        packet_from_rpi.replace_source(str(self.connector.get_mac()))
         response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
         if response_packet:
             if response_packet.get_command():

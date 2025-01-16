@@ -100,12 +100,20 @@ class Packet:
         else:
             self.source = source
 
+    def replace_source(self, source: str):
+        if self.short_mac:
+            self.source = self.mac_compress(source)
+        else:
+            self.source = source.encode()
+        
+        h = self.build_header()
+        self.content = h + self.payload
+
     def get_source(self):
         if self.short_mac:
             return self.mac_decompress(self.source)
         else:
             return self.source.decode()
-        #return self.mac_decompress(self.source)
 
     def set_destination(self, destination: str):    # 8 Bytes mac address
         if self.short_mac:
@@ -118,7 +126,6 @@ class Packet:
             return self.mac_decompress(self.destination)
         else:
             return self.destination.decode()
-        #return self.mac_decompress(self.destination)
 
     def get_command(self):
         return self.command
@@ -263,6 +270,19 @@ class Packet:
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
 
+    def build_header(self):
+        if self.mesh_mode:
+            try:
+                id_bytes = self.id.to_bytes(2, 'little')
+            except:
+                print(self.source, self.destination, self.flags, self.id, self.checksum)
+            h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, self.flags, id_bytes, self.checksum)
+        else:
+            h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, self.flags, self.checksum)
+        
+        return h
+
+
     def close_packet(self):
         if self.command in self.COMMAND:
             command_bits = self.COMMAND[self.command]
@@ -283,26 +303,14 @@ class Packet:
             if self.change_rf:
                 flags = flags | (1<<7)
 
+            self.flags = flags
+
             p = self.payload
             self.checksum = self.get_checksum(p)
-            
-            if isinstance(self.source, str):
-                self.source = self.source.encode('utf-8')
-            if isinstance(self.destination, str):
-                self.destination = self.destination.encode('utf-8')
 
-            if self.mesh_mode:
-                try:
-                    id_bytes = self.id.to_bytes(2, 'little')
-                except:
-                    print(self.source, self.destination, flags, self.id, self.checksum)
-                #print(self.source, self.destination, flags, id_bytes, self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, flags, id_bytes, self.checksum)
-            else:
-                #print(self.source, self.destination, flags,  self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, flags,  self.checksum)
+            h = self.build_header()
 
-            self.content = h+p
+            self.content = h + self.payload
 
     def get_content(self):
         if self.content:
@@ -331,6 +339,9 @@ class Packet:
             self.id = int.from_bytes(id, "little")
         else:
             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+
+        self.source = self.source.decode('utf-8').strip()
+        self.destination = self.destination.decode('utf-8').strip()
 
         self.parse_flags(flags)
 

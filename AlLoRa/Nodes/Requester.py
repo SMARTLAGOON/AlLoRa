@@ -49,6 +49,7 @@ class Requester(Node):
 
     def create_request(self, destination, mesh_active, sleep_mesh):
         packet = Packet(self.mesh_mode, self.short_mac)
+        packet.set_source(self.connector.get_mac())
         packet.set_destination(destination)
         if mesh_active:
             packet.enable_mesh()
