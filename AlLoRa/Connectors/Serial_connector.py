@@ -68,7 +68,7 @@ class Serial_connector(Connector):
         start_time = time()
         full_message = bytearray()  # Use a bytearray to accumulate the message
         while True:
-            if time() - start_time > focus_time:
+            if time() - start_time > focus_time + 1:    # Add 1 second to the focus time to allow for the end phrase
                 if self.debug:
                     print("Timeout waiting for response.")
                 return None  # Return None to indicate a timeout occurred
