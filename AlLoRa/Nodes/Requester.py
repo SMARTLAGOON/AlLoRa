@@ -109,6 +109,11 @@ class Requester(Node):
                     print("Error received during request: ", response_packet)
                 return None  # Signal failure
 
+        elif isinstance(response_packet, dict):
+            if self.debug:
+                print("Error received during request: ", response_packet)
+            return None
+
         return response_packet  # Return valid packet if successful
 
     def ask_ok(self, packet: Packet):
