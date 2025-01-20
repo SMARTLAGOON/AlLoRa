@@ -98,54 +98,6 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Reset recently triggered, waiting...")
 
-    # def send_and_wait_response(self, packet: Packet):
-    #     content = packet.get_content()
-    #     command = b"S&W:" + content + b"<<END>>\n"  # Append the custom end phrase to the command
-    #     packet_size_sent = len(content)
-    #     response = self.send_command(command)
-    #     # Response should be ACK:adaptive_timeout
-    #     if not response:
-    #         return None, packet_size_sent, 0, 0
-
-    #     if self.debug:
-    #         print("ACK Response: ", response)
-
-    #     try:
-    #         if response.startswith(b"ACK:"):
-    #             response = response.split(b"ACK:")[1]
-    #             self.adaptive_timeout = float(response) + 0.5
-    #             # Now wait for the actual response
-    #             focus_time = self.adaptive_timeout
-
-    #             t0 = time()
-    #             received_data = self.serial_receive(focus_time)
-    #             td = (time() - t0) / 1000  # Calculate the time difference in seconds
-    #             packet_size_received = len(received_data) if received_data else 0
-
-    #             if self.debug:
-    #                 print("Received data: ", received_data)
-
-    #             if received_data:
-    #                 response_packet = Packet(self.mesh_mode, self.short_mac)
-    #                 check = response_packet.load(received_data)
-    #                 if check:
-    #                     return response_packet, packet_size_sent, packet_size_received, td
-    #                 else:
-    #                     if self.debug:
-    #                         print("Error loading packet")
-    #                     return None, packet_size_sent, packet_size_received, td
-    #             else:
-    #                 if self.debug:
-    #                     print("No data received")
-    #                 return None, packet_size_sent, packet_size_received, td
-    #         else:
-    #             if self.debug:
-    #                 print("No ACK received")
-    #             return None, packet_size_sent, 0, 0
-    #     except Exception as e:
-    #         if self.debug:
-    #             print("Error S&W: ", e)
-    #         return None, packet_size_sent, 0, 0
     def send_and_wait_response(self, packet: Packet):
         content = packet.get_content()
         command = b"S&W:" + content + b"<<END>>\n"  # Append the custom end phrase to the command
@@ -181,8 +133,10 @@ class Serial_connector(Connector):
                 packet_size_received = len(received_data) if received_data else 0
 
                 if received_data:
-                    if isinstance(received_data, dict):
-                        return received_data, packet_size_sent, packet_size_received, td
+                    if received_data.startswith(b"ERROR_TYPE:"):
+                        parsed_error = parse_error_message(received_data)
+                        return parsed_error, packet_size_sent, packet_size_received, td
+
                     response_packet = Packet(self.mesh_mode, self.short_mac)
                     if response_packet.load(received_data):
                         return response_packet, packet_size_sent, packet_size_received, td
@@ -257,4 +211,26 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Error changing RF config via WiFi: {}".format(response["error"]))
         return False
+
+
+    def parse_error_message(error_data):
+        """
+        Parse the error string into a dictionary.
+        Example format: "ERROR_TYPE:TIMEOUT|MESSAGE:No response received|FOCUS_TIME:1.684544"
+        """
+        error_str = error_data.decode()  # Convert bytearray to string
+        error_dict = {}
+        try:
+            parts = error_str.split("|")
+            for part in parts:
+                if ":" in part:
+                    key, value = part.split(":", 1)  # Split only on the first ":"
+                    error_dict[key.strip()] = value.strip()
+        except Exception as e:
+            return {
+                "type": "PARSE_ERROR",
+                "message": f"Failed to parse error message: {e}",
+                "raw_data": error_str,
+            }
+        return error_dict
     
