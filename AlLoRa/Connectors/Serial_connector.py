@@ -134,7 +134,7 @@ class Serial_connector(Connector):
 
                 if received_data:
                     if received_data.startswith(b"ERROR_TYPE:"):
-                        parsed_error = parse_error_message(received_data)
+                        parsed_error = self.parse_error_message(received_data)
                         return parsed_error, packet_size_sent, packet_size_received, td
 
                     response_packet = Packet(self.mesh_mode, self.short_mac)
@@ -213,7 +213,7 @@ class Serial_connector(Connector):
         return False
 
 
-    def parse_error_message(error_data):
+    def parse_error_message(self, error_data):
         """
         Parse the error string into a dictionary.
         Example format: "ERROR_TYPE:TIMEOUT|MESSAGE:No response received|FOCUS_TIME:1.684544"
