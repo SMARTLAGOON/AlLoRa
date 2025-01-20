@@ -123,10 +123,3 @@ class WiFi_connector(Connector):
             if self.debug:
                 print("Error changing RF config via WiFi: {}".format(response["error"]))
         return False
-
-    def update_rf_params(self, params):
-        self.frequency = params.get("frequency", self.frequency)
-        self.sf = params.get("sf", self.sf)
-        self.bw = params.get("bw", self.bw)
-        self.cr = params.get("cr", self.cr)
-        self.tx_power = params.get("tx_power", self.tx_power)

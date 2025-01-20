@@ -247,10 +247,16 @@ class Connector:
                             response_packet.add_hop(self.name, self.get_rssi(), 0)
                         return response_packet, packet_size_sent, packet_size_received, td
                 else:
-                    error_info = {
-                        "type": "CORRUPTED_PACKET",
-                        "message": "Received a corrupted packet",
-                    }
+                    if len(received_data) > 0:
+                        error_info = {
+                            "type": "CORRUPTED_PACKET",
+                            "message": "{}".format(received_data),
+                        }
+                    else:
+                        error_info = {
+                            "type": "NO_PACKET",
+                            "message": "No packet received",
+                        }
                     if self.debug:
                         print(error_info["message"])
                     return error_info, packet_size_sent, packet_size_received, td

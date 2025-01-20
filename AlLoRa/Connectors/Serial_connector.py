@@ -181,14 +181,17 @@ class Serial_connector(Connector):
                 packet_size_received = len(received_data) if received_data else 0
 
                 if received_data:
+                    if isinstance(received_data, dict):
+                        return received_data, packet_size_sent, packet_size_received, td
                     response_packet = Packet(self.mesh_mode, self.short_mac)
                     if response_packet.load(received_data):
                         return response_packet, packet_size_sent, packet_size_received, td
                     else:
                         return {
                             "type": "CORRUPTED_PACKET",
-                            "message": "Received corrupted packet",
+                            "message": "Failed to load packet: {}".format(received_data),
                         }, packet_size_sent, packet_size_received, td
+
                 else:
                     return {
                         "type": "TIMEOUT",
@@ -198,7 +201,7 @@ class Serial_connector(Connector):
             else:
                 return {
                     "type": "INVALID_ACK",
-                    "message": "Unexpected response format",
+                    "message": "Unexpected response format: {}".format(response),
                 }, packet_size_sent, 0, 0
 
         except Exception as e:
