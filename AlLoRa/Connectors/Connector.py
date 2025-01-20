@@ -122,39 +122,122 @@ class Connector:
         self.observed_min_timeout = min(self.observed_min_timeout, td)
         self.adaptive_timeout = max(new_timeout, max(self.min_timeout, self.observed_min_timeout))
 
+    # def send_and_wait_response(self, packet):
+    #     focus_time = self.adaptive_timeout
+    #     packet_size_sent = len(packet.get_content())
+    #     try:
+    #         send_success = self.send(packet)
+    #         if not send_success:
+    #             if self.debug:
+    #                 print("SEND_PACKET || Error sending packet")
+    #             return None, 0, 0, 0
+    #     except Exception as e:
+    #         if self.debug:
+    #             print("SEND_PACKET || Error sending packet: ", e)
+    #         self.increase_adaptive_timeout()
+    #         return None, 0, 0, 0
+
+    #     while focus_time > 0:
+    #         t0 = time()
+    #         received_data = self.recv(focus_time)
+    #         td = (time() - t0) / 1000  # Calculate the time difference in seconds
+    #         packet_size_received = len(received_data) if received_data else 0
+
+    #         if not received_data:
+    #             if self.debug:
+    #                 print("WAIT_RESPONSE({}) || No response, FT: {}".format(td, focus_time))
+                
+    #             self.increase_adaptive_timeout()
+    #             return None, packet_size_sent, packet_size_received, td
+
+    #         response_packet = Packet(self.mesh_mode, self.short_mac)
+    #         if self.debug:
+    #             print("WAIT_RESPONSE({}) at: {}|| source_reply: {}".format(td, self.adaptive_timeout, received_data))
+    #             #print("RSSI: ", self.get_rssi(), "SNR: ", self.get_snr())
+    #         try:
+    #             if response_packet.load(received_data):
+    #                 if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
+    #                     if len(received_data) > response_packet.HEADER_SIZE + 60:  # Hardcoded for only chunks
+    #                         self.decrease_adaptive_timeout(td)
+    #                     if response_packet.get_debug_hops():
+    #                         response_packet.add_hop(self.name, self.get_rssi(), 0)
+    #                     return response_packet, packet_size_sent, packet_size_received, td
+    #             else:
+    #                 #raise Exception("Corrupted packet")
+    #                 return None, packet_size_sent, packet_size_received, td
+
+    #         except Exception as e:
+    #             if self.debug:
+    #                 print("Connector: ", e)
+
+    #         focus_time = self.adaptive_timeout - td
+    #         if focus_time < self.min_timeout:
+    #             focus_time = self.min_timeout
+    #             if self.debug:
+    #                 print("Connector: Can't wait more")
+    #             return None, packet_size_sent, packet_size_received, td
+    
     def send_and_wait_response(self, packet):
         focus_time = self.adaptive_timeout
         packet_size_sent = len(packet.get_content())
         try:
             send_success = self.send(packet)
             if not send_success:
+                error_info = {
+                    "type": "SEND_ERROR",
+                    "message": "Error sending packet",
+                    "focus_time": focus_time,
+                    "adaptive_timeout": self.adaptive_timeout,
+                }
                 if self.debug:
-                    print("SEND_PACKET || Error sending packet")
-                return None, 0, 0, 0
+                    print(error_info["message"])
+                return error_info, packet_size_sent, 0, 0
         except Exception as e:
+            error_info = {
+                "type": "EXCEPTION",
+                "message": "Exception during send: {}".format(e),
+                "focus_time": focus_time,
+                "adaptive_timeout": self.adaptive_timeout,
+            }
             if self.debug:
-                print("SEND_PACKET || Error sending packet: ", e)
+                print(error_info["message"])
             self.increase_adaptive_timeout()
-            return None, 0, 0, 0
+            return error_info, packet_size_sent, 0, 0
 
         while focus_time > 0:
             t0 = time()
-            received_data = self.recv(focus_time)
+            try:
+                received_data = self.recv(focus_time)
+            except Exception as e:
+                error_info = {
+                    "type": "EXCEPTION",
+                    "message": "Exception during recv: {}".format(e),
+                    "focus_time": focus_time,
+                    "adaptive_timeout": self.adaptive_timeout,
+                }
+                if self.debug:
+                    print(error_info["message"])
+                return error_info, packet_size_sent, 0, 0
+
             td = (time() - t0) / 1000  # Calculate the time difference in seconds
             packet_size_received = len(received_data) if received_data else 0
 
             if not received_data:
+                error_info = {
+                    "type": "TIMEOUT",
+                    "message": "No response received",
+                    "focus_time": focus_time,
+                    "time_difference": td,
+                    "adaptive_timeout": self.adaptive_timeout,
+                }
                 if self.debug:
-                    print("WAIT_RESPONSE({}) || No response, FT: {}".format(td, focus_time))
-                
+                    print(error_info["message"])
                 self.increase_adaptive_timeout()
-                #return None, packet_size_sent, packet_size_received, td
-                return "NADA :(", packet_size_sent, packet_size_received, td
+                return error_info, packet_size_sent, packet_size_received, td
 
             response_packet = Packet(self.mesh_mode, self.short_mac)
             if self.debug:
                 print("WAIT_RESPONSE({}) at: {}|| source_reply: {}".format(td, self.adaptive_timeout, received_data))
-                #print("RSSI: ", self.get_rssi(), "SNR: ", self.get_snr())
             try:
                 if response_packet.load(received_data):
                     if response_packet.get_source() == packet.get_destination() and response_packet.get_destination() == self.get_mac():
@@ -164,21 +247,34 @@ class Connector:
                             response_packet.add_hop(self.name, self.get_rssi(), 0)
                         return response_packet, packet_size_sent, packet_size_received, td
                 else:
-                    #raise Exception("Corrupted packet")
-                    #return None, packet_size_sent, packet_size_received, td
-                    return response_packet, packet_size_sent, packet_size_received, td
+                    error_info = {
+                        "type": "CORRUPTED_PACKET",
+                        "message": "Received a corrupted packet",
+                    }
+                    if self.debug:
+                        print(error_info["message"])
+                    return error_info, packet_size_sent, packet_size_received, td
 
             except Exception as e:
+                error_info = {
+                    "type": "EXCEPTION",
+                    "message": "Exception during packet load: {}, data: {}".format(e, received_data),
+                }
                 if self.debug:
-                    print("Connector: ", e)
+                    print(error_info["message"])
+                return error_info, packet_size_sent, packet_size_received, td
 
             focus_time = self.adaptive_timeout - td
             if focus_time < self.min_timeout:
                 focus_time = self.min_timeout
+                error_info = {
+                    "type": "MIN_TIMEOUT_REACHED",
+                    "message": "Minimum timeout reached, can't wait more",
+                    "focus_time": focus_time,
+                }
                 if self.debug:
-                    print("Connector: Can't wait more")
-                #return None, packet_size_sent, packet_size_received, td
-                return response_packet, packet_size_sent, packet_size_received, td
+                    print(error_info["message"])
+                return error_info, packet_size_sent, packet_size_received, td
 
     # This function returns the RSSI of the last received packet
     def get_rssi(self):
@@ -233,6 +329,19 @@ class Connector:
                                     self.bw, 
                                     self.cr, 
                                     self.tx_power]
+
+    def update_rf_params(self, params):
+        """
+        Updates the connector's RF parameters.
+        Override in derived classes if needed.
+        """
+        self.frequency = params.get("frequency", self.frequency)
+        self.sf = params.get("sf", self.sf)
+        self.bw = params.get("bw", self.bw)
+        self.cr = params.get("cr", self.cr)
+        self.tx_power = params.get("tx_power", self.tx_power)
+        if self.debug:
+            print("Updated RF parameters:", self.get_rf_config())
 
     def restore_rf_config(self):
         frequency =  self.last_rf_config[0]

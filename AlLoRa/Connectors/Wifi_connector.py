@@ -8,25 +8,10 @@ from AlLoRa.Connectors.Connector import Connector
 from AlLoRa.utils.debug_utils import print
 
 class WiFi_connector(Connector):
-
     def __init__(self):
         super().__init__()
 
     def config(self, config_json):
-        # JSON Example:
-        # {
-        #     "name": "N",
-        #     "mesh_mode": false,
-        #     "debug": false,
-        #     "min_timeout": 0.5,
-        #     "max_timeout": 6
-        #     "requester_api_host": "192.168.4.1",
-        #     "requester_api_port": 80,
-        #     "socket_timeout": 10,
-        #     "socket_recv_size": 10000,
-        #     "packet_retry_sleep": 0.5,
-        #     "logger_error": None
-        # }
         super().config(config_json)
         if self.config_parameters:
             self.REQUESTER_API_HOST = self.config_parameters.get('requester_api_host', "192.168.4.1")
@@ -34,57 +19,114 @@ class WiFi_connector(Connector):
             self.SOCKET_TIMEOUT = self.config_parameters.get('socket_timeout', 10)
             self.SOCKET_RECV_SIZE = self.config_parameters.get('socket_recv_size', 10000)
             self.PACKET_RETRY_SLEEP = self.config_parameters.get('packet_retry_sleep', 0.5)
-            self.logger_error = self.config_parameters.get('logger_error', None)
             if self.debug:
-                print("Serial Connector configure: requester_api_host: {}, requester_api_port: {}, socket_timeout: {}, socket_recv_size: {}, packet_retry_sleep: {}".format(self.REQUESTER_API_HOST, 
-                self.REQUESTER_API_PORT, self.SOCKET_TIMEOUT, self.SOCKET_RECV_SIZE, self.PACKET_RETRY_SLEEP))
+                print("WiFi Connector configured: host={}, port={}, timeout={}, recv_size={}, retry_sleep={}".format(
+                    self.REQUESTER_API_HOST, self.REQUESTER_API_PORT, self.SOCKET_TIMEOUT, self.SOCKET_RECV_SIZE, self.PACKET_RETRY_SLEEP
+                ))
 
+    def send_command(self, command):
+        try:
+            s = socket.socket()
+            s.settimeout(self.SOCKET_TIMEOUT)
+            addr = socket.getaddrinfo(self.REQUESTER_API_HOST, self.REQUESTER_API_PORT)[0][-1]
+            s.connect(addr)
 
-    def send_and_wait_response(self, packet: Packet) -> Packet:
-        json_response = None
-        retry = True
-        max_retries = 1
-        response_packet = Packet(self.mesh_mode, self.short_mac)
-        while max_retries > 0 and retry:
-            try:
-                s = socket.socket()
-                s.setblocking(True)
-                addr = socket.getaddrinfo(self.REQUESTER_API_HOST, self.REQUESTER_API_PORT)[0][-1]
-                s.settimeout(self.SOCKET_TIMEOUT)
-                s.connect(addr)
+            # Prepare HTTP request
+            content = json.dumps({"command": command})
+            httpreq = ("POST /command HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n"
+                       "Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{}").format(
+                           self.REQUESTER_API_HOST, len(content), content
+                       )
+            s.send(httpreq.encode())
 
-                content_str = packet.get_dict()
-                content = json.dumps({"packet": content_str})
-
-                httpreq = 'POST {} HTTP/1.1\r\nHost: {}\r\nConnection: close\r\nAccept: */*\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{}'.format(
-                    "/send-packet", self.REQUESTER_API_HOST, len(content), content).encode('utf-8')
-
-                ready_to_read, ready_to_write, in_error = select.select([],
-                                                                        [s],
-                                                                        [],
-                                                                        15)
-                s.send(httpreq)
-                ready_to_read, ready_to_write, in_error = select.select([s],
-                                                                        [],
-                                                                        [s],
-                                                                        15)
-                response = s.recv(self.SOCKET_RECV_SIZE)
-                retry = False
+            # Receive response
+            response = s.recv(self.SOCKET_RECV_SIZE)
+            if response:
                 try:
                     extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
-                    json_response = json.loads(extracted_response)
-                    response_packet.load_dict(json_response['response_packet'])
+                    return json.loads(extracted_response)
                 except Exception as e:
-                    #print("Error in load: ", e)
-                    pass    # It fails when response is empty
+                    if self.debug:
+                        print("Error parsing response:", e)
+            return None
+        except Exception as e:
+            if self.debug:
+                print("Error in send_command:", e)
+            return None
+        finally:
+            try:
+                s.close()
+            except Exception:
+                pass
 
-            except Exception as e:
-                if self.debug:
-                    print("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
-                #self.logger_error.error("Allowed Exception (Network connection was interrupted by some reason, but will keep trying to reconnect): {}".format(e))
-                sleep(self.PACKET_RETRY_SLEEP)
-                retry = True
-            finally:
-                max_retries -= 1
+    def send(self, packet: Packet):
+        command = "Send:" + packet.get_content().decode()
+        response = self.send_command(command)
+        return response and response.get("ACK") == "OK"
 
-        return response_packet
+    def send_and_wait_response(self, packet: Packet):
+        command = "S&W:" + packet.get_content().decode()
+        packet_size_sent = len(packet.get_content())
+        response = self.send_command(command)
+
+        if not response or "ACK" not in response:
+            return {"type": "SEND_ERROR", "message": "No ACK received"}, packet_size_sent, 0, 0
+
+        try:
+            self.adaptive_timeout = float(response["ACK"]) + 0.5
+        except Exception as e:
+            return {"type": "PARSE_ERROR", "message": str(e)}, packet_size_sent, 0, 0
+
+        t0 = time()
+        received_data = self.recv(self.adaptive_timeout)
+        td = time() - t0
+        if received_data:
+            response_packet = Packet(self.mesh_mode, self.short_mac)
+            if response_packet.load(received_data):
+                return response_packet, packet_size_sent, len(received_data), td
+            return {"type": "CORRUPTED_PACKET", "message": "Failed to load packet"}, packet_size_sent, len(received_data), td
+
+        return {"type": "TIMEOUT", "message": "No response received"}, packet_size_sent, 0, td
+
+    def recv(self, focus_time):
+        command = "Listen:{}".format(focus_time)
+        response = self.send_command(command)
+
+        if not response or response.get("ACK") != "OK":
+            if self.debug:
+                print("Listen command not acknowledged or failed")
+            return None
+
+        if "response" in response:
+            return response["response"]
+        elif "error" in response:
+            if self.debug:
+                print("Error in recv response:", response["error"])
+        return None
+
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
+        command = {
+            "command": "CHANGE_RF_CONFIG",
+            "params": {
+                "frequency": frequency,
+                "sf": sf,
+                "bw": bw,
+                "cr": cr,
+                "tx_power": tx_power,
+            }
+        }
+        response = self.send_command(json.dumps(command))
+        if response and response.get("ACK") == "OK":
+            self.update_rf_params(response.get("params", {}))
+            return True
+        elif response and "error" in response:
+            if self.debug:
+                print("Error changing RF config via WiFi: {}".format(response["error"]))
+        return False
+
+    def update_rf_params(self, params):
+        self.frequency = params.get("frequency", self.frequency)
+        self.sf = params.get("sf", self.sf)
+        self.bw = params.get("bw", self.bw)
+        self.cr = params.get("cr", self.cr)
+        self.tx_power = params.get("tx_power", self.tx_power)

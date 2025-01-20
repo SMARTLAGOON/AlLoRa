@@ -347,9 +347,6 @@ class Packet:
         
         self.flags = flags
 
-        self.source = self.source.decode('utf-8').strip()           # Mac address of the source to string
-        self.destination = self.destination.decode('utf-8').strip() # Mac address of the destination to string
-
         self.parse_flags(flags)
 
         self.payload = content

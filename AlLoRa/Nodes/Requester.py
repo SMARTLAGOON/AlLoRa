@@ -57,6 +57,30 @@ class Requester(Node):
                 packet.disable_sleep()
         return packet
 
+    # def send_request(self, packet: Packet) -> Packet:
+    #     if self.mesh_mode:
+    #         packet.set_id(self.generate_id())
+    #         if self.debug_hops:
+    #             packet.enable_debug_hops()
+
+    #     self.time_since_last_request = time() - self.time_request
+    #     self.time_request = time()
+
+    #     response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet)
+        
+    #     if self.subscribers:
+    #         self.status['PSizeS'] = packet_size_sent
+    #         self.status['PSizeR'] = packet_size_received
+    #         self.status['TimePR'] = time_pr * 1000  # Time in ms
+    #         self.status['TimeBtw'] = self.time_since_last_request * 1000  # Time in ms
+    #         self.status['RSSI'] = self.connector.get_rssi()
+    #         self.status['SNR'] = self.connector.get_snr()
+    #         if response_packet is None:
+    #             self.status['Retransmission'] += 1
+    #             if packet_size_received > 0:
+    #                 self.status['CorruptedPackets'] += 1
+
+    #     return response_packet
     def send_request(self, packet: Packet) -> Packet:
         if self.mesh_mode:
             packet.set_id(self.generate_id())
@@ -66,8 +90,9 @@ class Requester(Node):
         self.time_since_last_request = time() - self.time_request
         self.time_request = time()
 
+        # Get the response from the connector
         response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet)
-        
+
         if self.subscribers:
             self.status['PSizeS'] = packet_size_sent
             self.status['PSizeR'] = packet_size_received
@@ -75,12 +100,16 @@ class Requester(Node):
             self.status['TimeBtw'] = self.time_since_last_request * 1000  # Time in ms
             self.status['RSSI'] = self.connector.get_rssi()
             self.status['SNR'] = self.connector.get_snr()
-            if response_packet is None:
-                self.status['Retransmission'] += 1
-                if packet_size_received > 0:
-                    self.status['CorruptedPackets'] += 1
 
-        return response_packet
+            if isinstance(response_packet, dict):  # Handle errors
+                self.status['Retransmission'] += 1
+                if response_packet.get("type") == "CORRUPTED_PACKET":
+                    self.status['CorruptedPackets'] += 1
+                if self.debug:
+                    print("Error received during request: ", response_packet)
+                return None  # Signal failure
+
+        return response_packet  # Return valid packet if successful
 
     def ask_ok(self, packet: Packet):
         packet.set_ok()
