@@ -191,11 +191,10 @@ class Requester(Node):
         t0 = time()
         if listening_time is None:
             listening_time = float('inf')
-        end_time = t0 + listening_time
+        end_time = t0 + (listening_time / 1000)
         
         while time() < end_time:
             t0 = time()
-            print(t0, end_time, listening_time)
             try:
                 packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
 

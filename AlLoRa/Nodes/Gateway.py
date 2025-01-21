@@ -64,7 +64,7 @@ class Gateway(Requester):
         next_check_times = {ep.get_mac_address(): 0 for ep in self.digital_endpoints}
 
         while True:
-            current_time = time()
+            current_time = time() / 1000
             for ep in sorted(self.digital_endpoints, key=lambda x: next_check_times[x.get_mac_address()]):
                 if current_time >= next_check_times[ep.get_mac_address()]:
                     try:
@@ -91,7 +91,7 @@ class Gateway(Requester):
                             print("Error listening to endpoint {} ({}): {}".format(ep.get_name(), ep.get_mac_address(), e))
                     finally:
                         # Reschedule next check regardless of success or error
-                        next_check_times[ep.get_mac_address()] = time() + ep.asking_frequency
+                        next_check_times[ep.get_mac_address()] = (time()/1000) + ep.asking_frequency
 
                 sleep(self.NEXT_ACTION_TIME_SLEEP)
 
