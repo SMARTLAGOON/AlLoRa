@@ -455,6 +455,8 @@ class Requester(Node):
         return min_sleep_time, max_sleep_time
 
     def prepare_connector(self, digital_endpoint):
+        if self.debug:
+            print("Preparing connector for endpoint: ", digital_endpoint)
         de_freq = digital_endpoint.freq
         de_sf = digital_endpoint.sf
         de_bw = digital_endpoint.bw
