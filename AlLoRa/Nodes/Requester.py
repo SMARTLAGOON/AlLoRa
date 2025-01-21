@@ -195,6 +195,7 @@ class Requester(Node):
         
         while time() < end_time:
             t0 = time()
+            print(t0, end_time, listening_time)
             try:
                 packet_request = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
 
