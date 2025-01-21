@@ -79,9 +79,6 @@ class SX127x_connector(Connector):
             if self.debug:
                 print("nothing received or error")
             return None
-    
-    def set_rf_config(self, frequency, sf, bw, cr, tx_power):
-        self.change_rf_config(frequency, sf, bw, cr, tx_power)
 
     def set_frequency(self, freq):
         if self.frequency != freq:

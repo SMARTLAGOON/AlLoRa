@@ -59,94 +59,12 @@ class Serial_Interface(Interface):
             return self.handle_source_mode(command)
         elif command.startswith(b"Listen:"):
             return self.handle_requester_mode(command)
-        elif command.startswith(b"CHANGE_RF_CONFIG:"):
+        elif command.startswith(b"C_RFC:"):
             return self.handle_rf_config_command(command)
+        elif command.startswith(b"GET_RFC:"):
+            return self.handle_get_rf_config_command(command)
         else:
             return self.handle_invalid_command(command)
-
-    # def handle_send_and_wait(self, command):
-    #     packet_from_rpi = Packet(self.connector.mesh_mode, self.connector.short_mac)
-    #     data = command.split(b"S&W:")[-1]
-    #     check = packet_from_rpi.load(data)
-    #     # Send ACK:adaptive_timeout from connector
-    #     if check:
-    #         ack = b"ACK:" + str(self.connector.adaptive_timeout).encode() + b"<<END>>\n"
-    #     else:
-    #         ack = b"ACK:0<<END>>\n" # Error (0) in loading packet
-    #     if self.debug:
-    #         print("Sending ACK: ", ack)
-    #     self.uart.write(ack)
-    #     try:
-    #         packet_from_rpi.replace_source(self.connector.get_mac())
-    #         response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
-    #         if response_packet:
-    #             if response_packet.get_command():
-    #                 response = response_packet.get_content() + b"<<END>>\n"
-    #                 if self.debug:
-    #                     print("Sending serial: ", len(response), " -> {}".format(response))
-    #                 self.uart.write(response)
-    #                 return True
-    #         else:
-    #             if self.debug:
-    #                 print("No response...")
-    #             self.uart.write(b'No response' + b"<<END>>\n")
-    #             return False
-    #     except Exception as e:
-    #         if self.debug:
-    #             print("Error sending and waiting: ", e)
-    #         serial.write(b'Error' + e.encode() + b"<<END>>\n")
-    #         return False
-    
-    #def handle_send_and_wait(self, command):
-        # packet_from_rpi = Packet(self.connector.mesh_mode, self.connector.short_mac)
-        # data = command.split(b"S&W:")[-1]
-        # check = packet_from_rpi.load(data)
-        # # Send ACK:adaptive_timeout from connector
-        # if check:
-        #     ack = b"ACK:" + str(self.connector.adaptive_timeout).encode() + b"<<END>>\n"
-        # else:
-        #     ack = b"ACK:0<<END>>\n"  # Error (0) in loading packet
-        # if self.debug:
-        #     print("Sending ACK: ", ack)
-        # self.uart.write(ack)
-        # try:
-        #     packet_from_rpi.replace_source(self.connector.get_mac())
-        #     response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet_from_rpi)
-            
-        #     # Handle error response
-        #     if isinstance(response_packet, dict) and "type" in response_packet:
-        #         error_message = (
-        #             "ERROR_TYPE:{}|MESSAGE:{}|FOCUS_TIME:{}<<END>>\n".format(
-        #                 response_packet["type"],
-        #                 response_packet["message"],
-        #                 response_packet.get("focus_time", "N/A"),
-        #             )
-        #         ).encode()
-        #         self.uart.write(error_message)
-        #         if self.debug:
-        #             print("Error transmitted to Raspberry Pi: ", error_message)
-        #         return False
-
-        #     # Handle successful response
-        #     if response_packet:
-        #         if response_packet.get_command():
-        #             response = response_packet.get_content() + b"<<END>>\n"
-        #             if self.debug:
-        #                 print("Sending serial: ", len(response), " -> {}".format(response))
-        #             self.uart.write(response)
-        #             return True
-        #     else:
-        #         if self.debug:
-        #             print("No response...")
-        #         self.uart.write(b'No response' + b"<<END>>\n")
-        #         return False
-
-        # except Exception as e:
-        #     error_message = "EXCEPTION:{}<<END>>\n".format(e).encode()
-        #     if self.debug:
-        #         print("Error sending and waiting: ", e)
-        #     self.uart.write(error_message)
-        #     return False
 
     def handle_send_and_wait(self, command):
         packet_from_rpi = Packet(self.connector.mesh_mode, self.connector.short_mac)
@@ -243,16 +161,28 @@ class Serial_Interface(Interface):
     def handle_change_rf_config(self, command):
         """
         Handle the RF configuration change command from the client_API.
-        Expected format: CHANGE_RF_CONFIG:<frequency>,<sf>,<bw>,<cr>,<tx_power><<END>>
+        Expected format: "C_RFC:FREQ:frequency|SF:sf|BW:bw|CR:cr|TX_POWER:tx_power<<END>>\n"
         """
         try:
-            # Parse the parameters from the command
-            params = command.split(b"CHANGE_RF_CONFIG:")[-1].decode().split(",")
-            frequency = float(params[0]) if params[0] else None
-            sf = int(params[1]) if params[1] else None
-            bw = int(params[2]) if params[2] else None
-            cr = int(params[3]) if params[3] else None
-            tx_power = int(params[4]) if params[4] else None
+            # Parse the command
+            command = command.decode()
+            params = command.split(":")[1].split("|")
+            frequency = None
+            sf = None
+            bw = None
+            cr = None
+            tx_power = None
+            for param in params:
+                if param.startswith("FREQ"):
+                    frequency = int(param.split(":")[1])
+                elif param.startswith("SF"):
+                    sf = int(param.split(":")[1])
+                elif param.startswith("BW"):
+                    bw = int(param.split(":")[1])
+                elif param.startswith("CR"):
+                    cr = int(param.split(":")[1])
+                elif param.startswith("TX_POWER"):
+                    tx_power = int(param.split(":")[1])
 
             # Change the RF configuration
             success = self.connector.change_rf_config(
@@ -264,23 +194,40 @@ class Serial_Interface(Interface):
             )
 
             if success:
-                # Send acknowledgment with updated RF config
-                ack_message = "ACK:{}".format(json.dumps(self.connector.get_rf_config()))
-                self.uart.write(ack_message.encode() + b"<<END>>\n")
-                return True
+                response = b"OK<<END>>\n"
             else:
-                # Send error message
-                error_message = b"ERROR:Failed to change RF configuration<<END>>\n"
-                self.uart.write(error_message)
-                return False
+                response = b"ERROR<<END>>\n"
+            self.uart.write(response)
+        
         except Exception as e:
-            # Send exception error message
-            error_message = "ERROR:{}<<END>>\n".format(str(e)).encode()
-            self.uart.write(error_message)
+            error_message = "EXCEPTION:{}<<END>>\n".format(e).encode()
             if self.debug:
-                print("Error in handle_change_rf_config:", e)
-            return False
+                print("Error changing RF config: ", e)
+            self.uart.write(error_message)
 
+    def handle_get_rf_config_command(self, command):
+        """
+        Handle the get RF configuration command from the client_API.
+        Expected format: "GET_RFC<<END>>\n"
+        """
+        try:
+            # Get the RF configuration
+            rf_config = self.connector.get_rf_config()
+            response = "FREQ:{}|SF:{}|BW:{}|CR:{}|TX_POWER:{}<<END>>\n".format(
+                rf_config["frequency"],
+                rf_config["sf"],
+                rf_config["bw"],
+                rf_config["cr"],
+                rf_config["tx_power"],
+            ).encode()
+            self.uart.write(response)
+        
+        except Exception as e:
+            error_message = "EXCEPTION:{}<<END>>\n".format(e).encode()
+            if self.debug:
+                print("Error getting RF config: ", e)
+            self.uart.write(error_message)
+                
     def handle_invalid_command(self, command):
         """
         Handle invalid commands by sending an error response to the UART.

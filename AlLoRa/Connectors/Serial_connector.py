@@ -193,25 +193,41 @@ class Serial_connector(Connector):
         return None
 
     def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
-        command = {
-            "command": "CHANGE_RF_CONFIG",
-            "params": {
-                "frequency": frequency,
-                "sf": sf,
-                "bw": bw,
-                "cr": cr,
-                "tx_power": tx_power,
-            }
-        }
-        response = self.send_command(json.dumps(command))
-        if response and response.get("ACK") == "OK":
-            self.update_rf_params(response.get("params", {}))  # Sync RF parameters
+        command = b"C_RFC:"
+        if frequency:
+            command += b"FREQ:" + str(frequency).encode() + b"|"
+        if sf:
+            command += b"SF:" + str(sf).encode() + b"|"
+        if bw:
+            command += b"BW:" + str(bw).encode() + b"|"
+        if cr:
+            command += b"CR:" + str(cr).encode() + b"|"
+        if tx_power:
+            command += b"TX_POWER:" + str(tx_power).encode() + b"|"
+        command += b"<<END>>\n"
+        response = self.send_command(command)
+        if response and response.startswith(b"OK"):
             return True
-        elif response and "error" in response:
+        else:
             if self.debug:
-                print("Error changing RF config via WiFi: {}".format(response["error"]))
-        return False
+                print("Error changing RF config: {}".format(response))
 
+    def get_rf_config(self):
+        command = b"GET_RFC:<<END>>\n"
+        response = self.send_command(command)
+        # Example of expected response format: "FREQ:868000000|SF:12|BW:125|CR:4|TX_POWER:14|<<END>>\n"
+        if response and response.startswith(b"FREQ:"):
+            params = response.split(b"|")
+            rf_params = {}
+            for param in params:
+                key, value = param.split(b":")
+                rf_params[key] = value
+            return rf_params
+        else:
+            if self.debug:
+                print("Error getting RF config: {}".format(response))
+        return {}
+            
 
     def parse_error_message(self, error_data):
         """
