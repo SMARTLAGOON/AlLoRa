@@ -475,11 +475,17 @@ class Requester(Node):
                         if rf_params:
                             # Check that the RF configuration has been changed successfully
                             if rf_params[0] == de_freq and rf_params[1] == de_sf and rf_params[2] == de_bw and rf_params[3] == de_cr and rf_params[4] == de_tx_power:
+                                if self.debug:
+                                    print("RF configuration changed successfully")
                                 return True
                             break
                         sleep(1)
                 sleep(1)
+            if self.debug:
+                print("Failed to change RF configuration")
             return False    # Failed to change RF configuration
+        if self.debug:
+            print("RF config already set to endpoint config")
         return True
             
 
