@@ -180,10 +180,6 @@ class Requester(Node):
             self.status['SMAC'] = mac
         save_to = self.result_path + "/" + mac
         sleep_mesh = digital_endpoint.get_sleep()
-        t0 = time()
-        if listening_time is None:
-            listening_time = float('inf')
-        end_time = t0 + listening_time
 
         connector_ok = self.prepare_connector(digital_endpoint)
 
@@ -191,6 +187,11 @@ class Requester(Node):
             if self.debug:
                 print("Connector not ready for endpoint: ", mac)
             return False
+
+        t0 = time()
+        if listening_time is None:
+            listening_time = float('inf')
+        end_time = t0 + listening_time
         
         while time() < end_time:
             t0 = time()
