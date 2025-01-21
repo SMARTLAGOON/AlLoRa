@@ -64,7 +64,7 @@ class Gateway(Requester):
         next_check_times = {ep.get_mac_address(): 0 for ep in self.digital_endpoints}
 
         while True:
-            current_time = time() / 1000
+            current_time = time()   # Current time in miliseconds
             for ep in sorted(self.digital_endpoints, key=lambda x: next_check_times[x.get_mac_address()]):
                 if current_time >= next_check_times[ep.get_mac_address()]:
                     try:
