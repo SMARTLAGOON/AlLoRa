@@ -464,6 +464,8 @@ class Requester(Node):
         de_tx_power = digital_endpoint.tx_power
 
         freq, sf, bw, cr, tx_power = self.connector.get_rf_config()
+        print("Current RF config: ", freq, sf, bw, cr, tx_power)
+        print("Endpoint RF config: ", de_freq, de_sf, de_bw, de_cr, de_tx_power)
         if de_freq != freq or de_sf != sf or de_bw != bw or de_cr != cr or de_tx_power != tx_power:
             if self.debug:
                 print("Changing RF config to: ", de_freq, de_sf, de_bw, de_cr, de_tx_power)

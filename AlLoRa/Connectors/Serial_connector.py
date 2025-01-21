@@ -223,7 +223,7 @@ class Serial_connector(Connector):
             for param in params:
                 key, value = param.split(b":")
                 decoded_key = key.decode("utf-8")
-                decoded_value = value.decode("utf-8")
+                decoded_value = int(value.decode("utf-8"))
                 rf_params.append(decoded_value)
             if len(rf_params) == 5:
                 if self.debug:
