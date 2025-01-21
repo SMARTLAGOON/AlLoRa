@@ -185,7 +185,12 @@ class Requester(Node):
             listening_time = float('inf')
         end_time = t0 + listening_time
 
-        self.prepare_connector(digital_endpoint)
+        connector_ok = self.prepare_connector(digital_endpoint)
+
+        if not connector_ok:
+            if self.debug:
+                print("Connector not ready for endpoint: ", mac)
+            return False
         
         while time() < end_time:
             t0 = time()
