@@ -38,6 +38,11 @@ class Digital_Endpoint:
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = config.get('MAX_RETRANSMISSIONS_BEFORE_MESH', MAX_RETRANSMISSIONS_BEFORE_MESH)
             self.lock_on_file_receive = config.get('lock_on_file_receive', lock_on_file_receive)
             self.max_listen_time_when_locked = config.get('max_listen_time_when_locked', max_listen_time_when_locked)
+            self.freq = config.get('freq', 868)
+            self.sf = config.get('sf', 7)
+            self.bw = config.get('bw', 125)
+            self.cr = config.get('cr', 1)
+            self.tx_power = config.get('tx_power', 14)
         else:
             self.name = name
             self.mac_address = mac_address[-8:]
@@ -48,6 +53,11 @@ class Digital_Endpoint:
             self.MAX_RETRANSMISSIONS_BEFORE_MESH = MAX_RETRANSMISSIONS_BEFORE_MESH
             self.lock_on_file_receive = lock_on_file_receive
             self.max_listen_time_when_locked = max_listen_time_when_locked
+            self.freq = 868
+            self.sf = 7
+            self.bw = 125
+            self.cr = 1
+            self.tx_power = 14
 
         self.state = Digital_Endpoint.OK
         self.current_file = None

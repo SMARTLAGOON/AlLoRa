@@ -184,6 +184,8 @@ class Requester(Node):
         if listening_time is None:
             listening_time = float('inf')
         end_time = t0 + listening_time
+
+        self.prepare_connector(digital_endpoint)
         
         while time() < end_time:
             t0 = time()
@@ -446,6 +448,35 @@ class Requester(Node):
         if self.debug:
             print("Min sleep time: ", min_sleep_time, "Max sleep time: ", max_sleep_time)
         return min_sleep_time, max_sleep_time
+
+    def prepare_connector(self, digital_endpoint):
+        de_freq = digital_endpoint.freq
+        de_sf = digital_endpoint.sf
+        de_bw = digital_endpoint.bw
+        de_cr = digital_endpoint.cr
+        de_tx_power = digital_endpoint.tx_power
+
+        freq, sf, bw, cr, tx_power = self.connector.get_rf_config()
+        if de_freq != freq or de_sf != sf or de_bw != bw or de_cr != cr or de_tx_power != tx_power:
+            if self.debug:
+                print("Changing RF config to: ", de_freq, de_sf, de_bw, de_cr, de_tx_power)
+            # try 3 times to change the RF config to fit the endpoint configuration
+            for i in range(3):
+                success = self.connector.change_rf_config(frequency=de_freq, sf=de_sf, bw=de_bw, cr=de_cr, tx_power=de_tx_power)
+                if success:
+                    sleep(1)
+                    for i in range(3):
+                        rf_params = connector.get_rf_config()
+                        if rf_params:
+                            # Check that the RF configuration has been changed successfully
+                            if rf_params[0] == de_freq and rf_params[1] == de_sf and rf_params[2] == de_bw and rf_params[3] == de_cr and rf_params[4] == de_tx_power:
+                                return True
+                            break
+                        sleep(1)
+                sleep(1)
+            return False    # Failed to change RF configuration
+        return True
+            
 
 
 
