@@ -218,15 +218,17 @@ class Serial_connector(Connector):
         # Example of expected response format: "FREQ:868000000|SF:12|BW:125|CR:4|TX_POWER:14|<<END>>\n"
         if response and response.startswith(b"FREQ:"):
             params = response.split(b"|")
-            rf_params = {}
+            rf_params = []
             for param in params:
                 key, value = param.split(b":")
-                rf_params[key] = value
+                if self.debug:
+                    print("{}, {}".format(key, value))
+                rf_params.append(value)
             return rf_params
         else:
             if self.debug:
                 print("Error getting RF config: {}".format(response))
-        return {}
+        return []
             
 
     def parse_error_message(self, error_data):
