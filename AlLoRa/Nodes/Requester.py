@@ -471,7 +471,7 @@ class Requester(Node):
                 if success:
                     sleep(1)
                     for i in range(3):
-                        rf_params = connector.get_rf_config()
+                        rf_params = self.connector.get_rf_config()
                         if rf_params:
                             # Check that the RF configuration has been changed successfully
                             if rf_params[0] == de_freq and rf_params[1] == de_sf and rf_params[2] == de_bw and rf_params[3] == de_cr and rf_params[4] == de_tx_power:
