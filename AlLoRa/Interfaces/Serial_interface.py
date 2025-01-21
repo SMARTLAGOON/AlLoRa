@@ -60,9 +60,9 @@ class Serial_Interface(Interface):
         elif command.startswith(b"Listen:"):
             return self.handle_requester_mode(command)
         elif command.startswith(b"C_RFC:"):
-            return self.handle_rf_config_command(command)
+            return self.handle_change_rf_config(command)
         elif command.startswith(b"GET_RFC:"):
-            return self.handle_get_rf_config_command(command)
+            return self.handle_get_rf_config(command)
         else:
             return self.handle_invalid_command(command)
 
@@ -205,7 +205,7 @@ class Serial_Interface(Interface):
                 print("Error changing RF config: ", e)
             self.uart.write(error_message)
 
-    def handle_get_rf_config_command(self, command):
+    def handle_get_rf_config(self, command):
         """
         Handle the get RF configuration command from the client_API.
         Expected format: "GET_RFC<<END>>\n"
@@ -213,12 +213,13 @@ class Serial_Interface(Interface):
         try:
             # Get the RF configuration
             rf_config = self.connector.get_rf_config()
+            #  [self.frequency, self.sf, self.bw, self.cr, self.tx_power]
             response = "FREQ:{}|SF:{}|BW:{}|CR:{}|TX_POWER:{}<<END>>\n".format(
-                rf_config["frequency"],
-                rf_config["sf"],
-                rf_config["bw"],
-                rf_config["cr"],
-                rf_config["tx_power"],
+                rf_config[0],
+                rf_config[1],
+                rf_config[2],
+                rf_config[3],
+                rf_config[4],
             ).encode()
             self.uart.write(response)
         
