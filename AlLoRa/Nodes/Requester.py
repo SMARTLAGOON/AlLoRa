@@ -45,6 +45,7 @@ class Requester(Node):
                     print("Error creating result path: {}".format(e))
 
         self.status["SMAC"] = "-"   # Source MAC
+        self.source_mac = None
         self.time_request = time()
 
     def create_request(self, destination, mesh_active, sleep_mesh):
@@ -158,16 +159,16 @@ class Requester(Node):
                         return None, None
                     hop = response_packet.get_hop()
                     if self.debug and hop:
-                        print("CHUNK + HOP: {} -> {} - Node: {}".format(chunk, hop, self.status["SMAC"]))
+                        print("CHUNK + HOP: {} -> {} - Node: {}".format(chunk, hop, self.source_mac))
                     return chunk, hop
                 else: 
                     if self.debug:
-                        print("CHUNK: {} - Node: {}".format(chunk, self.status["SMAC"]))
+                        print("CHUNK: {} - Node: {}".format(chunk, self.source_mac))
                     return chunk, None
 
             except Exception as e:
                 if self.debug:
-                    print("ASKING DATA ERROR: {} Node {}".format(e, self.status["SMAC"]))
+                    print("ASKING DATA ERROR: {} Node {}".format(e, self.source_mac))
                 return None, None
         return None, None
 
@@ -176,6 +177,8 @@ class Requester(Node):
         stop = False
 
         mac = digital_endpoint.get_mac_address()
+        self.source_mac = mac
+
         if self.subscribers:
             self.status['SMAC'] = mac
         save_to = self.result_path + "/" + mac
