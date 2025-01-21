@@ -191,7 +191,7 @@ class Requester(Node):
         t0 = time()
         if listening_time is None:
             listening_time = float('inf')
-        end_time = t0 + listening_time
+        end_time = t0 + (listening_time * 1000)
         
         while time() < end_time:
             t0 = time()
