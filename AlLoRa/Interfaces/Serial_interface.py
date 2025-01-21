@@ -164,25 +164,33 @@ class Serial_Interface(Interface):
         Expected format: "C_RFC:FREQ:frequency|SF:sf|BW:bw|CR:cr|TX_POWER:tx_power<<END>>\n"
         """
         try:
-            # Parse the command
-            command = command.decode()
-            params = command.split(":")[1].split("|")
+            # Decode the command
+            command = command.decode().strip()
+            if not command.startswith("C_RFC:"):
+                raise ValueError("Invalid command format")
+
+            # Parse the parameters
+            params = command[len("C_RFC:"):].split("|")
             frequency = None
             sf = None
             bw = None
             cr = None
             tx_power = None
+
             for param in params:
-                if param.startswith("FREQ"):
-                    frequency = int(param.split(":")[1])
-                elif param.startswith("SF"):
-                    sf = int(param.split(":")[1])
-                elif param.startswith("BW"):
-                    bw = int(param.split(":")[1])
-                elif param.startswith("CR"):
-                    cr = int(param.split(":")[1])
-                elif param.startswith("TX_POWER"):
-                    tx_power = int(param.split(":")[1])
+                if ":" not in param:
+                    continue  # Skip invalid entries
+                key, value = param.split(":", 1)
+                if key == "FREQ":
+                    frequency = int(value)
+                elif key == "SF":
+                    sf = int(value)
+                elif key == "BW":
+                    bw = int(value)
+                elif key == "CR":
+                    cr = int(value)
+                elif key == "TX_POWER":
+                    tx_power = int(value)
 
             # Change the RF configuration
             success = self.connector.change_rf_config(
@@ -193,14 +201,16 @@ class Serial_Interface(Interface):
                 tx_power=tx_power,
             )
 
+            # Send response
             if success:
                 response = b"OK<<END>>\n"
             else:
                 response = b"ERROR<<END>>\n"
             self.uart.write(response)
-        
+    
         except Exception as e:
-            error_message = "EXCEPTION:{}<<END>>\n".format(e).encode()
+            # Send an error response with exception details
+            error_message = f"EXCEPTION:{e}<<END>>\n".encode()
             if self.debug:
                 print("Error changing RF config: ", e)
             self.uart.write(error_message)
