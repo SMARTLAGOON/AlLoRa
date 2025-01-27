@@ -389,6 +389,10 @@ class Packet:
         self.id = d["id"]
 
         self.check = self.checksum == self.get_checksum(self.payload)
+
+        if self.check:
+            self.close_packet()
+        
         return self.check
 
 if __name__ == "__main__":

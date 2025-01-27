@@ -16,13 +16,12 @@ class WiFi_connector(Connector):
         if self.config_parameters:
             self.REQUESTER_API_HOST = self.config_parameters.get('requester_api_host', "192.168.4.1")
             self.REQUESTER_API_PORT = self.config_parameters.get('requester_api_port', 80)
-            self.SOCKET_TIMEOUT = self.config_parameters.get('socket_timeout', 10)
+            self.SOCKET_TIMEOUT = self.config_parameters.get('socket_timeout', 20)  # Increased timeout
             self.SOCKET_RECV_SIZE = self.config_parameters.get('socket_recv_size', 10000)
             self.PACKET_RETRY_SLEEP = self.config_parameters.get('packet_retry_sleep', 0.5)
             if self.debug:
-                print("WiFi Connector configured: host={}, port={}, timeout={}, recv_size={}, retry_sleep={}".format(
-                    self.REQUESTER_API_HOST, self.REQUESTER_API_PORT, self.SOCKET_TIMEOUT, self.SOCKET_RECV_SIZE, self.PACKET_RETRY_SLEEP
-                ))
+                print(f"WiFi Connector configured: host={self.REQUESTER_API_HOST}, port={self.REQUESTER_API_PORT}, "
+                    f"timeout={self.SOCKET_TIMEOUT}, recv_size={self.SOCKET_RECV_SIZE}, retry_sleep={self.PACKET_RETRY_SLEEP}")
 
     def send_command(self, command):
         try:
@@ -30,96 +29,108 @@ class WiFi_connector(Connector):
             s.settimeout(self.SOCKET_TIMEOUT)
             addr = socket.getaddrinfo(self.REQUESTER_API_HOST, self.REQUESTER_API_PORT)[0][-1]
             s.connect(addr)
-
-            # Prepare HTTP request
-            content = json.dumps({"command": command})
+            content = json.dumps(command)
             httpreq = ("POST /command HTTP/1.1\r\nHost: {}\r\nConnection: close\r\n"
-                       "Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{}").format(
-                           self.REQUESTER_API_HOST, len(content), content
-                       )
+                    "Content-Type: application/json\r\nContent-Length: {}\r\n\r\n{}").format(
+                        self.REQUESTER_API_HOST, len(content), content
+                    )
             s.send(httpreq.encode())
 
-            # Receive response
-            response = s.recv(self.SOCKET_RECV_SIZE)
+            # Accumulate response in case it arrives in chunks
+            response = b""
+            while True:
+                chunk = s.recv(self.SOCKET_RECV_SIZE)
+                if not chunk:
+                    break
+                response += chunk
+
             if response:
-                try:
-                    extracted_response = response.decode('utf-8').split('\r\n\r\n')[1]
-                    return json.loads(extracted_response)
-                except Exception as e:
-                    if self.debug:
-                        print("Error parsing response:", e)
+                # Debug: Print the full raw response
+                print("Raw response received:", response.decode())
+
+                # Split the response into multiple HTTP parts
+                responses = response.decode().split("\r\n\r\n")
+                parsed_responses = []
+                for resp in responses[1:]:  # Skip the HTTP headers
+                    try:
+                        parsed_responses.append(json.loads(resp))
+                    except json.JSONDecodeError:
+                        continue
+
+                # Debug: Print parsed responses
+                print("Parsed responses:", parsed_responses)
+
+                # Return all parsed responses for further processing
+                return parsed_responses[0]
             return None
         except Exception as e:
             if self.debug:
                 print("Error in send_command:", e)
             return None
         finally:
-            try:
-                s.close()
-            except Exception:
-                pass
+            s.close()
 
     def send(self, packet: Packet):
-        command = "Send:" + packet.get_content().decode()
+        command = {"command": "Send", "data": packet.get_content().decode()}
         response = self.send_command(command)
         return response and response.get("ACK") == "OK"
 
     def send_and_wait_response(self, packet: Packet):
-        command = "S&W:" + packet.get_content().decode()
+        command = {"command": "S&W", "data": packet.get_content().decode()}
         packet_size_sent = len(packet.get_content())
-        response = self.send_command(command)
+        responses = self.send_command(command)
+        print("Responses:", responses)
+       
+        # # Process the `ACK` response
+        # ack_response = responses[0]
+        # if "ACK" not in ack_response:
+        #     return {"type": "SEND_ERROR", "message": "No ACK received"}, packet_size_sent, 0, 0
 
-        if not response or "ACK" not in response:
-            return {"type": "SEND_ERROR", "message": "No ACK received"}, packet_size_sent, 0, 0
+        # try:
+        #     self.adaptive_timeout = float(ack_response["ACK"]) + 0.5
+        # except Exception as e:
+        #     return {"type": "PARSE_ERROR", "message": str(e)}, packet_size_sent, 0, 0
 
+        # Process the `response_packet` response
         try:
-            self.adaptive_timeout = float(response["ACK"]) + 0.5
-        except Exception as e:
-            return {"type": "PARSE_ERROR", "message": str(e)}, packet_size_sent, 0, 0
-
-        t0 = time()
-        received_data = self.recv(self.adaptive_timeout)
-        td = time() - t0
-        if received_data:
             response_packet = Packet(self.mesh_mode, self.short_mac)
-            if response_packet.load(received_data):
-                return response_packet, packet_size_sent, len(received_data), td
-            return {"type": "CORRUPTED_PACKET", "message": "Failed to load packet"}, packet_size_sent, len(received_data), td
+            try:
+                response_packet.load_dict(responses)
+                return response_packet, packet_size_sent, len(response_packet.get_content()), self.adaptive_timeout
+            except Exception as e:
+                return {"type": "LOAD_ERROR", "message": str(e)}, packet_size_sent, 0, self.adaptive_timeout
+            # else:
+            #     print("Failed to load packet")
+            #     return {"type": "CORRUPTED_PACKET", "message": "Failed to load packet"}, packet_size_sent, len(response_packet.get_content()), self.adaptive_timeout
 
-        return {"type": "TIMEOUT", "message": "No response received"}, packet_size_sent, 0, td
+            return {"type": "TIMEOUT", "message": "No response received"}, packet_size_sent, 0, self.adaptive_timeout
+        except Exception as e:
+            print("Error in send_and_wait_response:", e)
 
-    def recv(self, focus_time):
-        command = "Listen:{}".format(focus_time)
-        response = self.send_command(command)
-
-        if not response or response.get("ACK") != "OK":
-            if self.debug:
-                print("Listen command not acknowledged or failed")
-            return None
-
-        if "response" in response:
-            return response["response"]
-        elif "error" in response:
-            if self.debug:
-                print("Error in recv response:", response["error"])
-        return None
-
-    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None):
         command = {
             "command": "CHANGE_RF_CONFIG",
-            "params": {
-                "frequency": frequency,
-                "sf": sf,
-                "bw": bw,
-                "cr": cr,
-                "tx_power": tx_power,
-            }
+            "params": {"frequency": frequency, "sf": sf, "bw": bw, "cr": cr, "tx_power": tx_power}
         }
-        response = self.send_command(json.dumps(command))
+        response = self.send_command(command)
         if response and response.get("ACK") == "OK":
             self.update_rf_params(response.get("params", {}))
             return True
-        elif response and "error" in response:
-            if self.debug:
-                print("Error changing RF config via WiFi: {}".format(response["error"]))
         return False
+
+    def get_rf_config(self):
+        command = {"command": "GET_RFC"}
+        response = self.send_command(command)
+
+        if response and all(key in response for key in ["FREQ", "SF", "BW", "CR", "TX_POWER"]):
+            return [
+                response["FREQ"],
+                response["SF"],
+                response["BW"],
+                response["CR"],
+                response["TX_POWER"]
+            ]
+
+        # Log error for unexpected response
+        print(f"Invalid RF config response: {response}")
+        return []

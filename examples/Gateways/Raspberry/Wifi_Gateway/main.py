@@ -9,8 +9,7 @@ if __name__ == "__main__":
 
     # Set up the Gateway Node with the connector, we will focus 10 seconds at a time per Node...
     lora_gateway = Gateway(connector = connector, config_file = config_file,
-                            debug_hops = False, TIME_PER_ENDPOINT = 10, nodes_file=node_file)
-
+                            debug_hops = False)
     # Listen to the digital_endpoints and print and save the files as they come in
     lora_gateway.check_digital_endpoints(print_file_content=True, save_files=True)   
 

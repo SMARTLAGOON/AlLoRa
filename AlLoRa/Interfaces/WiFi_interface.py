@@ -89,78 +89,141 @@ class WiFi_Interface(Interface):
                     print("Exception connecting to WiFi:", e)
 
     def client_API(self):
-        (clientsocket, address) = self.serversocket.accept()
-        clientsocket.settimeout(0)
+        (clientsocket, _) = self.serversocket.accept()
+        clientsocket.settimeout(5)
         try:
-            r = clientsocket.recv(512)
-            if len(r) == 0:
-                clientsocket.close()
-                return
+            # Initialize an empty buffer to accumulate the request
+            data = b""
 
-            if self.debug:
-                print("Received by WiFi: {}".format(str(r)))
+            # Loop to read incoming data until headers and Content-Length are processed
+            while True:
+                chunk = clientsocket.recv(512)  # Read data in chunks
+                if not chunk:
+                    break
+                data += chunk
+                # Check if headers and body separator ("\r\n\r\n") are in the buffer
+                if b"\r\n\r\n" in data:
+                    break
 
-            http = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection:close \r\n\r\n"
-            request = loads(str(r).split("\\r\\n\\r\\n")[1][:-1])
-
-            if request["command"] == "CHANGE_RF_CONFIG":
-                response = self.handle_change_rf_config(request["params"])
-                clientsocket.send(http + dumps(response))
+            # Decode the headers and split the buffer into headers and body
+            decoded_data = data.decode()
+            if "\r\n\r\n" in decoded_data:
+                headers, body = decoded_data.split("\r\n\r\n", 1)
             else:
-                clientsocket.send(http + dumps({"error": "Invalid Command"}))
+                raise ValueError("Malformed HTTP request: Missing headers or body separator.")
+
+            # Extract Content-Length from headers
+            content_length = 0
+            for line in headers.split("\r\n"):
+                if line.startswith("Content-Length:"):
+                    content_length = int(line.split(":")[1].strip())
+                    break
+
+            # Continue receiving the body if it's incomplete
+            while len(body) < content_length:
+                body += clientsocket.recv(512).decode()
+
+            # Debug: Show the received HTTP request
+            if self.debug:
+                print(f"Received by WiFi: {decoded_data}")
+
+            # Parse the JSON body
+            request = loads(body)
+            # Extract command and parameters
+            command = request.get("command")
+            params = request.get("data", {})
+
+            # Debug: Show extracted command and params
+            if self.debug:
+                print(f"Command: {command}, Params: {params}")
+
+            # HTTP response header
+            http_response = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n"
+
+            # Handle commands
+            if command == "S&W":
+                print("Handling S&W")  # Debug to confirm entry into this block
+                self.handle_send_and_wait(params, clientsocket, http_response)
+            elif command == "Send":
+                print("Handling Send")
+                self.handle_source_mode(params, clientsocket, http_response)
+            elif command == "Listen":
+                print("Handling Listen")
+                self.handle_requester_mode(params, clientsocket, http_response)
+            elif command == "CHANGE_RF_CONFIG":
+                print("Handling CHANGE_RF_CONFIG")
+                response = self.handle_change_rf_config(params)
+                clientsocket.send(http_response + dumps(response))
+            elif command == "GET_RFC":
+                print("Handling GET_RFC")
+                self.handle_get_rf_config(clientsocket, http_response)
+            else:
+                print("Invalid command received")
+                self.handle_invalid_command(clientsocket, http_response)
+
         except Exception as e:
             if self.debug:
-                print("Error in WiFi API:", e)
+                print(f"Error in WiFi API: {e}")
         finally:
             clientsocket.close()
 
-    def handle_send_and_wait(self, command, clientsocket, http):
-        packet = Packet(self.connector.mesh_mode, self.connector.short_mac)
-        data = command.split("S&W:")[-1]
-        check = packet.load(data)
+    
+    def handle_send_and_wait(self, params, clientsocket, http_response):
+        try:
+            print("Entered handle_send_and_wait")
+            print(f"Params received: {params}")
 
-        ack = {"ACK": self.connector.adaptive_timeout if check else 0}
-        clientsocket.send(http + dumps(ack))
+            packet = Packet(self.connector.mesh_mode, self.connector.short_mac)
+            data = params.encode()
+            print(f"Data to load into packet: {data}")
 
-        if not check:
-            return False
+            check = packet.load(data)
+            print(f"Packet loaded successfully: {check}")
+            print(f"Packet payload: {packet.get_content()}")
 
-        packet.replace_source(self.connector.get_mac())
-        response_packet, packet_size_sent, packet_size_received, time_pr = self.connector.send_and_wait_response(packet)
+            # Send initial ACK response
+            ack = {"ACK": self.connector.adaptive_timeout if check else 0}
+            clientsocket.send(http_response + dumps(ack))  # Initial ACK response
+            if not check:
+                print("Packet load failed. Exiting handle_send_and_wait.")
+                return
 
-        if isinstance(response_packet, dict):  # Handle errors
-            clientsocket.send(http + dumps({"error": response_packet}))
-            return False
+            # Send the packet
+            packet.replace_source(self.connector.get_mac())
+            if self.debug:
+                print("Sending packet:", packet.get_content())
 
-        if response_packet:
-            clientsocket.send(http + dumps({"response_packet": response_packet.get_dict()}))
-            return True
-        else:
-            clientsocket.send(http + dumps({"error": "No Response"}))
-            return False
+            # Wait for a response
+            response_packet, *_ = self.connector.send_and_wait_response(packet)
+            print(f"Response packet received: {response_packet}")
 
-    def handle_source_mode(self, command, clientsocket, http):
+            if isinstance(response_packet, dict):  # Error response
+                print(f"Error in response packet: {response_packet}")
+                clientsocket.send(http_response + dumps({"error": response_packet}))
+            else:  # Valid packet response
+                # Convert the packet to a dictionary for safe transport
+                response_payload = response_packet.get_dict()
+                print(f"Valid response packet: {response_payload}")
+                clientsocket.send(http_response + dumps(response_payload))
+        except Exception as e:
+            print(f"Exception in handle_send_and_wait: {e}")
+            clientsocket.send(http_response + dumps({"error": str(e)}))
+
+    def handle_source_mode(self, params, clientsocket, http):
         packet = Packet(self.connector.mesh_mode, self.connector.short_mac)
         ack = {"ACK": "OK"}
         clientsocket.send(http + dumps(ack))
-
         try:
-            packet.load(command.split("Send:")[-1])
+            packet.load(params.get("data", "").encode())
             packet.replace_source(self.connector.get_mac())
-            success = self.connector.send(packet)
-            return success
+            self.connector.send(packet)
         except Exception as e:
             clientsocket.send(http + dumps({"error": str(e)}))
-            return False
 
-    def handle_requester_mode(self, command, clientsocket, http):
-        focus_time = int(command.split("Listen:")[-1])
+    def handle_requester_mode(self, params, clientsocket, http):
+        focus_time = int(params.get("focus_time", 12))
         ack = {"ACK": "OK"}
         clientsocket.send(http + dumps(ack))
-
-        if self.debug:
-            print("Listening for: ", focus_time)
-
         data = self.connector.recv(focus_time)
         if data:
             try:
@@ -182,12 +245,24 @@ class WiFi_Interface(Interface):
                 tx_power=params.get("tx_power"),
             )
             if success:
-                return {
-                    "ACK": "OK",
-                    "params": self.connector.get_rf_config()
-                }
+                return {"ACK": "OK", "params": self.connector.get_rf_config()}
             else:
                 return {"error": "Failed to change RF configuration"}
         except Exception as e:
             return {"error": str(e)}
+
+    def handle_get_rf_config(self, clientsocket, http):
+        try:
+            rf_config = self.connector.get_rf_config()
+            response = {
+                "FREQ": rf_config[0], "SF": rf_config[1], "BW": rf_config[2],
+                "CR": rf_config[3], "TX_POWER": rf_config[4]
+            }
+            clientsocket.send(http + dumps(response))
+        except Exception as e:
+            clientsocket.send(http + dumps({"error": str(e)}))
+
+    def handle_invalid_command(self, clientsocket, http):
+        clientsocket.send(http + dumps({"error": "Invalid Command"}))
+
         
