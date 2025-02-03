@@ -63,7 +63,6 @@ class Connector:
 
     def update_timeouts(self):
         # Calculate the min and max timeouts based on the ToA for the current RF settings
-        #max_toa = self.calculate_toa(self.sf, self.bw, self.cr, 255)  # Max payload
         self.max_payload_size = self.get_max_payload_size()
         min_toa = self.calculate_toa(self.sf, self.bw, self.cr, self.max_payload_size)   # Max payload
         max_toa = min_toa * 2

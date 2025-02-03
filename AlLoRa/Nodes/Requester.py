@@ -266,9 +266,7 @@ class Requester(Node):
                         self.sf_trial = False
 
                 dt = (time() - t0) / 1000
-                # if dt >= self.connector.adaptive_timeout:
-                #     if self.debug:
-                #         print("Timeout reached")
+                
                 self.increase_sleep_time()
                 self.successful_interactions_count = 0
                 self.failure_count += 1
@@ -304,16 +302,6 @@ class Requester(Node):
                 
                 if stop:
                     break
-
-        # if not stop:
-        #     final_ok = self.create_request(mac, digital_endpoint.get_mesh(), sleep_mesh)
-        #     final_ok.set_ok()
-        #     final_ok.set_source(self.connector.get_mac())
-        #     sleep(1)
-        #     if self.debug:
-        #         print("Sending final OK to ", mac)
-        #     self.send_lora(final_ok)
-        #     digital_endpoint.reset_state()
             
     def save_hops(self, packet):
         if packet is None:
@@ -389,7 +377,7 @@ class Requester(Node):
                     changed = self.change_rf_config(new_config)
                     if not changed:
                         return False
-                        #raise Exception("Error changing config")
+                        
                     self.notify_subscribers()
                     self.reset_sleep_time()
                     return True

@@ -123,10 +123,7 @@ class Source(Node):
                         response_packet.set_ok()
 
                         if packet.get_change_rf():
-                            #new_sf = packet.get_payload().decode()
                             new_sf = packet.get_config()
-                            # transform the payload to a dictionary
-                            #response_packet.set_change_rf(new_sf)
                             response_packet.set_change_rf(new_sf)
                         if self.mesh_mode and packet.get_mesh() and packet.get_hop():
                             response_packet.enable_mesh()
@@ -143,7 +140,6 @@ class Source(Node):
                             self.notify_subscribers() 
 
                         if new_sf:
-                            #self.change_rf(int(new_sf))
                             response_packet.set_change_rf(new_sf)
                             self.change_rf_config(new_sf)
                                 
@@ -167,7 +163,6 @@ class Source(Node):
                     response_packet, new_sf = self.response(packet)
                     self.send_response(response_packet)
                     if new_sf:
-                        #self.change_rf(int(new_sf))
                         backup_cks = self.chunk_size
                         self.change_rf_config(new_sf)
                         if self.chunk_size != backup_cks:
@@ -177,7 +172,6 @@ class Source(Node):
             elif self.sf_trial:
                 self.sf_trial -= 1
                 if self.sf_trial <= 0:
-                    #self.restore_sf()
                     self.restore_rf_config()
                     self.sf_trial = False
 
@@ -264,9 +258,7 @@ class Source(Node):
             response_packet.set_ok()
 
             if packet.get_change_rf():
-                #new_sf = packet.get_payload().decode()
                 new_sf = packet.get_config()
-                #response_packet.set_change_rf(new_sf)
                 response_packet.set_change_rf(new_sf)
             elif self.file.first_sent and not self.file.last_sent:	# If some chunks are already sent...
                 self.file.sent_ok()

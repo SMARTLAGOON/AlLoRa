@@ -220,29 +220,19 @@ class E5_connector(Connector):
                 self.rssi = int(rssi_match.group(1))
             except ValueError:
                 self.rssi = None
-                # if self.debug:
-                #     print("Error parsing RSSI value from match:", rssi_match.group(0))
         else:
             self.rssi = None
-            # if self.debug:
-            #     print("RSSI value not found in response")
 
         if snr_match:
             try:
                 self.snr = int(snr_match.group(1))
             except ValueError:
                 self.snr = None
-                # if self.debug:
-                #     print("Error parsing SNR value from match:", snr_match.group(0))
+               
         else:
             self.snr = None
-            # if self.debug:
-            #     print("SNR value not found in response")
-        # time_1 = utime.ticks_ms()
-        # if self.debug:
-        #     print("extract_packet_info Time:", utime.ticks_diff(time_1, time_0), "ms")
     
-    # Connector Functions
+    # Connector Methods
     def send(self, packet):
         data = packet.get_content()
         hex_data = self.bytes_to_hex(data)

@@ -31,7 +31,7 @@ source_layout = [
 screen = OLED_Screen(t3s3, img_data, button=True, layout_config=source_layout)
 
 connector = SX127x_connector()
-lora_node = Requester(connector, config_file = "LoRa_requester.json", NEXT_ACTION_TIME_SLEEP=0.1)
+lora_node = Requester(connector, config_file = "LoRa.json", NEXT_ACTION_TIME_SLEEP=0.1)
 
 node_test = "X"
 noce_mac_address = "42007BC9"   #"da58597c" "75e0604c"   #

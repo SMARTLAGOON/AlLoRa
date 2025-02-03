@@ -46,7 +46,8 @@ class WiFi_connector(Connector):
 
             if response:
                 # Debug: Print the full raw response
-                print("Raw response received:", response.decode())
+                if self.debug:
+                    print("Raw response received:", response.decode())
 
                 # Split the response into multiple HTTP parts
                 responses = response.decode().split("\r\n\r\n")
@@ -58,7 +59,8 @@ class WiFi_connector(Connector):
                         continue
 
                 # Debug: Print parsed responses
-                print("Parsed responses:", parsed_responses)
+                if self.debug:
+                    print("Parsed responses:", parsed_responses)
 
                 # Return all parsed responses for further processing
                 return parsed_responses[0]
@@ -79,19 +81,7 @@ class WiFi_connector(Connector):
         command = {"command": "S&W", "data": packet.get_content().decode()}
         packet_size_sent = len(packet.get_content())
         responses = self.send_command(command)
-        print("Responses:", responses)
-       
-        # # Process the `ACK` response
-        # ack_response = responses[0]
-        # if "ACK" not in ack_response:
-        #     return {"type": "SEND_ERROR", "message": "No ACK received"}, packet_size_sent, 0, 0
-
-        # try:
-        #     self.adaptive_timeout = float(ack_response["ACK"]) + 0.5
-        # except Exception as e:
-        #     return {"type": "PARSE_ERROR", "message": str(e)}, packet_size_sent, 0, 0
-
-        # Process the `response_packet` response
+      
         try:
             response_packet = Packet(self.mesh_mode, self.short_mac)
             try:
@@ -99,10 +89,7 @@ class WiFi_connector(Connector):
                 return response_packet, packet_size_sent, len(response_packet.get_content()), self.adaptive_timeout
             except Exception as e:
                 return {"type": "LOAD_ERROR", "message": str(e)}, packet_size_sent, 0, self.adaptive_timeout
-            # else:
-            #     print("Failed to load packet")
-            #     return {"type": "CORRUPTED_PACKET", "message": "Failed to load packet"}, packet_size_sent, len(response_packet.get_content()), self.adaptive_timeout
-
+            
             return {"type": "TIMEOUT", "message": "No response received"}, packet_size_sent, 0, self.adaptive_timeout
         except Exception as e:
             print("Error in send_and_wait_response:", e)
