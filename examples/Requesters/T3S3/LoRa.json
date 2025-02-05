@@ -2,12 +2,14 @@
     "name": "R",
     "chunk_size": 235,
     "mesh_mode": false,
+    "short_mac": true,
     "debug": false,
     "connector": {
       "sf": 7,
       "freq": 868,
       "min_timeout": 0.5,
-      "max_timeout": 12
+      "max_timeout": 12,
+      "debug": false
       }
   }
   

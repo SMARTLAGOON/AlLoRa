@@ -1,0 +1,27 @@
+{
+    "name": "X",
+    "chunk_size": 234,
+    "mesh_mode": false,
+    "debug": true,
+    "connector": {
+      "uart_id": 1,
+      "baudrate": 230400,
+      "tx": 43,
+      "rx": 44,
+      "bits": 8,
+      "parity": null,
+      "stop": 1,
+      "timeout": 190,
+      "sf": 7,
+      "freq": 868,
+      "bandwidth": 125,
+      "tx_preamble": 8,
+      "rx_preamble": 8,
+      "tx_power": 14,
+      "crc": "ON",
+      "iq": "OFF",
+      "net": "ON",
+      "min_timeout": 0.5,
+      "max_timeout": 12
+  }
+ }

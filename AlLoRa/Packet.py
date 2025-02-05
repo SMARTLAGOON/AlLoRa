@@ -8,10 +8,17 @@ except:
 
 class Packet:
 
-    HEADER_SIZE_P2P  = 20
-    HEADER_FORMAT_P2P  = "!8s8sB3s" #Source, Destination, Flags, Check Sum
-    HEADER_SIZE_MESH  = 22
-    HEADER_FORMAT_MESH  = "!8s8sB2s3s" #Source, Destination, Flags, ID, Check Sum
+    # SM = Short MAC
+    HEADER_SIZE_P2P_SM  = 12 #20
+    HEADER_FORMAT_P2P_SM  = "!4s4sB3s" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH_SM  = 14  #22
+    HEADER_FORMAT_MESH_SM  = "!4s4sB2s3s" #Source, Destination, Flags, ID, Check Sum
+
+    # LM = Long MAC
+    HEADER_SIZE_P2P_LM  = 20
+    HEADER_FORMAT_P2P_LM  = "!8s8sB3s" #Source, Destination, Flags, Check Sum
+    HEADER_SIZE_MESH_LM  = 22
+    HEADER_FORMAT_MESH_LM  = "!8s8sB2s3s" #Source, Destination, Flags, ID, Check Sum
 
     OK = "OK"
     METADATA = "METADATA"  #"request-data-info"
@@ -26,15 +33,28 @@ class Packet:
             return True
         return False
 
-    def __init__(self, mesh_mode):
+    def __init__(self, mesh_mode, short_mac=False):
         self.mesh_mode = mesh_mode
+        self.short_mac = short_mac
 
         if not self.mesh_mode:
-            self.HEADER_SIZE = self.HEADER_SIZE_P2P
-            self.HEADER_FORMAT = self.HEADER_FORMAT_P2P
+            if self.short_mac:
+                self.HEADER_SIZE = self.HEADER_SIZE_P2P_SM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_P2P_SM
+            else:
+                self.HEADER_SIZE = self.HEADER_SIZE_P2P_LM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_P2P_LM
+            # self.HEADER_SIZE = self.HEADER_SIZE_P2P
+            # self.HEADER_FORMAT = self.HEADER_FORMAT_P2P
         else:
-            self.HEADER_SIZE = self.HEADER_SIZE_MESH
-            self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
+            if self.short_mac:
+                self.HEADER_SIZE = self.HEADER_SIZE_MESH_SM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_MESH_SM
+            else:
+                self.HEADER_SIZE = self.HEADER_SIZE_MESH_LM
+                self.HEADER_FORMAT = self.HEADER_FORMAT_MESH_LM
+            # self.HEADER_SIZE = self.HEADER_SIZE_MESH
+            # self.HEADER_FORMAT = self.HEADER_FORMAT_MESH
 
         self.source = ''                  # 8 Bytes mac address of the source
         self.destination = ''             # 8 Bytes mac address of the destination
@@ -52,27 +72,60 @@ class Packet:
         self.hop = False                  # If packet was forwarder -> 1, else -> 0             bit: 5
         self.debug_hops = False           # Overrides payload to get path details (hops)        bit: 6
         # Change settings
-        self.change_sf = False            # If True, check payload to change SF                 bit: 7
+        self.change_rf = False            # If True, check payload to change SF                 bit: 7
 
         # For mesh
         self.id = None                    # Random number from 0 to 65.535
 
-    def __repr__(self):
-        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_sf={}, id={})".format(
-            self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
-            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_sf, self.id)
+        self.content = None
 
+    def __repr__(self):
+        return "Packet(mesh_mode={}, source='{}', destination='{}', checksum={}, payload={}, check={}, command={}, mesh={}, sleep={}, hop={}, debug_hops={}, change_rf={}, id={})".format(
+            self.mesh_mode, self.source, self.destination, self.checksum, self.payload, self.check, self.command,
+            self.mesh, self.sleep, self.hop, self.debug_hops, self.change_rf, self.id)
+
+    def mac_compress(self, mac):
+        int_mac = int(mac, 16)  # Convert the hexadecimal segment to an integer
+        compressed_source = struct.pack('I', int_mac)  # Compress the value into 4 bytes unsigned int
+        return compressed_source
+
+    def mac_decompress(self, compressed_mac):
+        decompressed_value = struct.unpack('I', compressed_mac)[0]  # Decompress the 4-byte value back to an unsigned int
+        decompressed_hex_value = hex(decompressed_value)  # Convert the integer back to a hexadecimal string
+        return str(decompressed_hex_value)[2:10]  # Ensure the string is 8 characters long
+    
     def set_source(self, source: str):
-        self.source = source
+        if self.short_mac:
+            self.source = self.mac_compress(source)
+        else:
+            self.source = source
+
+    def replace_source(self, source: str):
+        if self.short_mac:
+            self.source = self.mac_compress(source)
+        else:
+            self.source = source.encode()
+        
+        h = self.build_header()
+        self.content = h + self.payload
 
     def get_source(self):
-        return self.source
+        if self.short_mac:
+            return self.mac_decompress(self.source)
+        else:
+            return self.source.decode()
 
-    def set_destination(self, destination: str):
-        self.destination = destination
+    def set_destination(self, destination: str):    # 8 Bytes mac address
+        if self.short_mac:
+            self.destination = self.mac_compress(destination)
+        else:
+            self.destination = destination.encode()
 
     def get_destination(self):
-        return self.destination
+        if self.short_mac:
+            return self.mac_decompress(self.destination)
+        else:
+            return self.destination.decode()
 
     def get_command(self):
         return self.command
@@ -85,8 +138,13 @@ class Packet:
 
     def set_metadata(self, length, name):
         self.command = "METADATA"
-        metadata = {"LENGTH" : length, "FILENAME": name}
-        self.payload = dumps(metadata).encode()
+        if self.short_mac:
+            length_bytes = length.to_bytes(2, 'little')
+            name_bytes = name.encode()
+            self.payload = length_bytes + name_bytes
+        else:
+            metadata = {"LENGTH" : length, "FILENAME": name}
+            self.payload = dumps(metadata).encode()
 
     def get_payload(self):
         return self.payload
@@ -94,9 +152,20 @@ class Packet:
     def get_metadata(self):
         if self.command == "METADATA":
             try:
-                return loads(self.payload)
+                if self.short_mac:
+                    length = int.from_bytes(self.payload[:2], 'little')
+                    name = self.payload[2:].decode()
+                    return {"LENGTH": length, "FILENAME": name}
+                else:
+                    return loads(self.payload)
             except:
                 return None
+
+    def get_config(self):   # RF configuration
+        try:
+            return loads(self.payload)
+        except:
+            return None
 
     def ask_data(self, next_chunk):
         self.command = "CHUNK"
@@ -139,13 +208,28 @@ class Packet:
     def get_sleep(self):
         return self.sleep
 
-    def get_change_sf(self):
-        return self.change_sf
+    def get_change_rf(self):
+        return self.change_rf
 
-    def set_change_sf(self, sf):
-        self.set_ok()
-        self.change_sf = True
-        self.payload = dumps(sf).encode()
+     # Receives a dictionary with the new configuration
+    def set_change_rf(self, rf_config):
+        changer = {}
+        changer["freq"] = rf_config.get("freq", None)
+        changer["sf"] = rf_config.get("sf", None)
+        changer["bw"] = rf_config.get("bw", None)
+        changer["cr"] = rf_config.get("cr", None)
+        changer["tx_power"] = rf_config.get("tx_power", None)
+        changer["cks"] = rf_config.get("cks", None)
+        # Check if there is any change
+        if any(changer.values()):
+            self.set_ok()
+            self.change_rf = True
+            # only send the changes that are not None
+            changer = {k: v for k, v in changer.items() if v is not None}
+            self.payload = dumps(changer).encode()
+            return True
+        else:
+            return False
 
     def get_message_path(self):
         if self.debug_hops:
@@ -186,7 +270,25 @@ class Packet:
         ha = binascii.hexlify(h.digest())
         return (ha[-3:])
 
-    def get_content(self):
+    def build_header(self):
+        if isinstance(self.source, str):
+            self.source = self.source.encode('utf-8')
+        if isinstance(self.destination, str):
+            self.destination = self.destination.encode('utf-8')
+
+        if self.mesh_mode:
+            try:
+                id_bytes = self.id.to_bytes(2, 'little')
+            except:
+                print(self.source, self.destination, self.flags, self.id, self.checksum)
+            h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, self.flags, id_bytes, self.checksum)
+        else:
+            h = struct.pack(self.HEADER_FORMAT, self.source, self.destination, self.flags, self.checksum)
+        
+        return h
+
+
+    def close_packet(self):
         if self.command in self.COMMAND:
             command_bits = self.COMMAND[self.command]
 
@@ -203,24 +305,24 @@ class Packet:
                 flags = flags | (1<<5)
             if self.debug_hops:
                 flags = flags | (1<<6)
-            if self.change_sf:
+            if self.change_rf:
                 flags = flags | (1<<7)
+
+            self.flags = flags
 
             p = self.payload
             self.checksum = self.get_checksum(p)
 
-            if self.mesh_mode:
-                try:
-                    id_bytes = self.id.to_bytes(2, 'little')
-                except:
-                    print(self.source.encode(), self.destination.encode(), flags, self.id, self.checksum)
-                #print(self.source, self.destination, flags, id_bytes, self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags, id_bytes, self.checksum)
-            else:
-                #print(self.source, self.destination, flags,  self.checksum, p)
-                h = struct.pack(self.HEADER_FORMAT, self.source.encode(), self.destination.encode(), flags,  self.checksum)
+            h = self.build_header()
 
-            return h+p
+            self.content = h + self.payload
+
+    def get_content(self):
+        if self.content is not None:
+            return self.content
+        else:
+            self.close_packet()
+            return self.content
 
     def parse_flags(self, flags: int):
         c0 = "1" if (flags >> 0) & 1 == 1 else "0"
@@ -231,26 +333,29 @@ class Packet:
         self.sleep = (flags >> 4) & 1 == 1
         self.hop = (flags >> 5) & 1 == 1
         self.debug_hops = (flags >> 6) & 1 == 1
-        self.change_sf = (flags >> 7) & 1 == 1
+        self.change_rf = (flags >> 7) & 1 == 1
 
     def load(self, packet):
         header  = packet[:self.HEADER_SIZE]
         content = packet[self.HEADER_SIZE:]
 
         if self.mesh_mode:
-            self.source, self.destination, flags,  id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+            self.source, self.destination, flags, id, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
             self.id = int.from_bytes(id, "little")
         else:
-             self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
-
-        self.source = self.source.decode()
-        self.destination = self.destination.decode()
+            self.source, self.destination, flags, self.checksum = struct.unpack(self.HEADER_FORMAT, header)
+        
+        self.flags = flags
 
         self.parse_flags(flags)
 
         self.payload = content
 
         self.check = self.checksum == self.get_checksum(self.payload)
+
+        if self.check:
+            self.content = packet
+        
         return self.check
 
     def get_dict(self):
@@ -265,7 +370,7 @@ class Packet:
             "hop" : self.hop,
             "sleep" : self.sleep,
             "debug_hops" : self.debug_hops,
-            "change_sf" : self.change_sf,
+            "change_rf" : self.change_rf,
             "id" :self.id,
             }
         return d
@@ -280,10 +385,14 @@ class Packet:
         self.hop = d["hop"]
         self.sleep = d["sleep"]
         self.debug_hops = d["debug_hops"]
-        self.change_sf = d["change_sf"]
+        self.change_rf = d["change_rf"]
         self.id = d["id"]
 
         self.check = self.checksum == self.get_checksum(self.payload)
+
+        if self.check:
+            self.close_packet()
+        
         return self.check
 
 if __name__ == "__main__":
@@ -333,8 +442,8 @@ if __name__ == "__main__":
     print("Packet: {}".format(packet))
     #print(p3.get_payload())
     metadata = p3.get_metadata()
-    length = metadata["LENGTH"]
-    filename = metadata["FILENAME"]
+    length = metadata["L"]
+    filename = metadata["FN"]
     print(length, filename)
 
     print(Packet.check_command("OK"))

@@ -5,6 +5,7 @@ from sx1262 import SX1262
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class SX1262_connector(Connector):
     def __init__(self):
@@ -19,7 +20,8 @@ class SX1262_connector(Connector):
         
         except Exception as e:
             self.MAC = "HELTECV3"
-            print("Error assigning MAC Connector: ", e, "\nUsing default MAC: ", self.MAC)
+            if self.debug:
+                print("Error assigning MAC Connector: ", e, "\nUsing default MAC: ", self.MAC)
             
 
     def config(self, config_json):

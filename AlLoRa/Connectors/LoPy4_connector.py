@@ -2,6 +2,7 @@ from time import sleep
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 from network import LoRa
 import socket
 import binascii

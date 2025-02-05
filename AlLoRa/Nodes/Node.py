@@ -1,12 +1,11 @@
-try:
-    from uos import urandom
-    from ujson import loads, dumps
-except:
-    from os import urandom
-    from json import loads, dumps
-
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os 
+from AlLoRa.utils.json_utils import json
+
+from os import urandom
+from json import loads, dumps
     
 class Node:
 
@@ -26,17 +25,40 @@ class Node:
 
         self.config_connector()
 
+        self.status["Freq"] = self.connector.frequency
+        self.status["SF"] = self.connector.sf
+        self.status["BW"] = self.connector.bw
+        self.status["CR"] = self.connector.cr
+        self.status["TX_P"] = self.connector.tx_power
+
+        self.status["Status"] = "WAIT"  # Status of the requester
+        self.status["RSSI"] = "-" # Signal strength
+        self.status["SNR"] = "-"  # Signal to Noise Ratio
+
+        self.status["Chunk"] = "-"  # Chunk being received/sent
+        self.status["File"] = "-"   # File name being received/sent
+        self.status["PSizeS"] = "-" # Packet Size Sent
+        self.status["PSizeR"] = "-" # Packet Size Received
+        self.status["Retransmission"] = 0   # Number of retransmissions
+        self.status["TimePS"] = "-"    # Time to send packet
+        self.status["TimePR"] = "-"    # Waiting time for response
+        self.status["TimeBtw"] = "-"  # Time between reply
+        self.status["CorruptedPackets"] = 0  # Number of corrupted packets
+
 
     def open_backup(self):
         with open(self.config_file, "r") as f:
             self.config = loads(f.read())
 
         self.name = self.config.get('name', "N")
-        self.debug = self.config.get('debug', True)
+        self.debug = self.config.get('debug', False)
         self.mesh_mode = self.config.get('mesh_mode', False)
+        self.short_mac = self.config.get('short_mac', False)
         self.chunk_size = self.config.get('chunk_size', 235)
 
         self.config_connector_dic = self.config.get('connector', None)    #{"freq" : lora_config['freq'], "sf": lora_config['sf']}
+        self.config_connector_dic['mesh_mode'] = self.mesh_mode
+        self.config_connector_dic['short_mac'] = self.short_mac
 
         if self.debug:
             print(self.config)
@@ -45,6 +67,7 @@ class Node:
         conf = {"name": self.name,
                 "chunk_size": self.chunk_size,
                 "mesh_mode": self.mesh_mode,
+                "short_mac": self.short_mac,
                 "debug": self.debug,
                 "connector" : self.connector.backup_config()}
         with open(self.config_file, "w") as f:
@@ -52,7 +75,6 @@ class Node:
 
     def config_connector(self):
         self.connector.config(self.config_connector_dic)
-        self.connector.debug = self.debug
 
         self.MAC = self.connector.get_mac()[-8:]
         self.status["MAC"] = self.MAC
@@ -82,32 +104,54 @@ class Node:
     def send_lora(self, packet):
         return self.connector.send(packet)
 
-    def send_request(self, packet: Packet) -> Packet:
-        if self.mesh_mode:
-            packet.set_id(self.generate_id())
-            if self.debug_hops:
-                packet.enable_debug_hops()
+    def change_rf_config(self, new_config):
+        print("Changing RF Config to: ", new_config)
+        frequency = new_config.get("freq", None)
+        sf = new_config.get("sf", None)
+        bw = new_config.get("bw", None)
+        cr = new_config.get("cr", None)
+        tx_power = new_config.get("tx_power", None)
+        chunk_size = new_config.get("cks", None)
+        if self.debug:
+            print("Changing RF Config to: ", frequency, sf, bw, cr, tx_power, chunk_size)
+        changed = self.connector.change_rf_config(frequency=frequency, 
+                                        sf=sf, bw=bw, cr=cr, 
+                                        tx_power=tx_power)
+        if chunk_size:
+            self.chunk_size = chunk_size
 
-        response_packet = self.connector.send_and_wait_response(packet)
-        return response_packet
-
-    def send_response(self, response_packet: Packet):
-        if response_packet:
-            if self.mesh_mode:
-                response_packet.set_id(self.generate_id())
+        max_chunk_size = self.calculate_max_chunk_size()
+        if self.chunk_size > max_chunk_size:
+            self.chunk_size = max_chunk_size
+            print("Chunk size too big, changing to: ", self.chunk_size)
             
-            self.send_lora(response_packet)
-            if self.debug:
-                print("SENT:", response_packet.get_content())
-            if self.subscribers:
-                self.notify_subscribers()
+        if changed:
+            self.sf_trial = 15
+            self.status["Freq"] = self.connector.frequency
+            self.status["SF"] = self.connector.sf
+            self.status["BW"] = self.connector.bw
+            self.status["CR"] = self.connector.cr
+            self.status["TX_P"] = self.connector.tx_power
+            return True
+        return False
 
-    def change_sf(self, sf):
-        self.connector.backup_sf()
-        self.connector.set_sf(sf)
+    def calculate_max_chunk_size(self):
+        if self.mesh_mode:
+            if self.short_mac:
+                header_size = Packet.HEADER_SIZE_MESH_SM
+            else:
+                header_size = Packet.HEADER_SIZE_MESH_LM
+            #header_size = Packet.HEADER_SIZE_MESH
+        else:
+            if self.short_mac:
+                header_size = Packet.HEADER_SIZE_P2P_SM
+            else:
+                header_size = Packet.HEADER_SIZE_P2P_LM
+            #header_size = Packet.HEADER_SIZE_P2P
+        return self.connector.get_max_payload_size() - header_size
 
-    def restore_sf(self):
-        self.connector.restore_sf()
+    def restore_rf_config(self):
+        self.connector.restore_rf_config()
 
     # Subscribers stuff:
     def register_subscriber(self, subscriber):

@@ -3,7 +3,9 @@ from AlLoRa.Nodes.Node import Node, Packet, urandom, loads, dumps
 from AlLoRa.File import CTP_File
 from AlLoRa.Connectors.Connector import Connector
 from AlLoRa.Interfaces.Interface import Interface
-from time import sleep, time
+from AlLoRa.utils.time_utils import current_time_ms as time, sleep
+from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.os_utils import os
 
 class Adapter(Node):
 
@@ -13,7 +15,8 @@ class Adapter(Node):
         self.sf_trial = None
         self.interface = interface
         self.config_interface()
-        self.status["Signal"] = "-"
+        self.status["RSSI"] = "-"
+        self.status["SNR"] = "-"
 
     def config_interface(self):
         with open(self.config_file, "r") as f:
@@ -39,7 +42,8 @@ class Adapter(Node):
                     break
                 success = self.interface.client_API()  # change name
                 if success:
-                    self.status["Signal"] = self.connector.get_rssi()
+                    self.status["RSSI"] = self.connector.get_rssi()
+                    self.status["SNR"] = self.connector.get_snr()
                     self.notify_subscribers()
                     gc.collect()
                 sleep(0.1)

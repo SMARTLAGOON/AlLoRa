@@ -12,6 +12,7 @@
     },
 
   "interface": {
+    "mode": "hotspot",
     "ssid": "AlLoRa_Network",
     "psw": "AlLoRa_Network",
     "host": "192.168.4.1",

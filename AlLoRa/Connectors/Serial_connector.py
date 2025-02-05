@@ -3,6 +3,7 @@ from time import sleep, time
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
+from AlLoRa.utils.debug_utils import print
 
 class Serial_connector(Connector):
     MAX_ATTEMPTS = 30  # Maximum attempts before resetting
@@ -42,6 +43,8 @@ class Serial_connector(Connector):
             # Wait for ack response
             response = self.serial_receive(self.timeout)
             if response is None:  # Check if no response was received
+                if self.debug:
+                    print("No response received (timeout).")
                 raise Exception("No ACK received")
             else:
                 self.attempt_count = 0
@@ -60,8 +63,6 @@ class Serial_connector(Connector):
                     print("Max attempts not reached: ", self.attempt_count)
 
             return None
-
-
 
     def serial_receive(self, focus_time, end_phrase=b"<<END>>\n"):
         start_time = time()
@@ -89,7 +90,7 @@ class Serial_connector(Connector):
                     print("Resetting...")
                 self.reset_function()  # Call the passed-in reset function
                 self.attempt_count = 0
-                self.last_reset_time = time.time()
+                self.last_reset_time = time()
             else:
                 if self.debug:
                     print("No reset function provided.")
@@ -97,41 +98,71 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Reset recently triggered, waiting...")
 
-    def send_and_wait_response(self, packet: Packet) -> Packet:
-        packet.set_source(self.get_mac())  # Adding mac address to packet
-        command = b"S&W:" + packet.get_content() + b"<<END>>\n"  # Append the custom end phrase to the command
-        response = self.send_command(command)
-        # Response should be ACK:adaptive_timeout
-        if not response:
-            return None
-        if self.debug:
-            print("ACK Response: ", response)
+    def send_and_wait_response(self, packet: Packet):
+        content = packet.get_content()
+        command = b"S&W:" + content + b"<<END>>\n"  # Append the custom end phrase to the command
+        packet_size_sent = len(content)
+
         try:
-            if response.startswith(b"ACK:"):
-                response = response.split(b"ACK:")[1]
-                self.adaptive_timeout = float(response) + 0.5
-                # Now wait for the actual response
-                focus_time = self.adaptive_timeout
-                received_data = self.serial_receive(focus_time)
-                if self.debug:
-                    print("Received data: ", received_data)
-                if received_data:
-                    response_packet = Packet(self.mesh_mode)
-                    check = response_packet.load(received_data)
-                    if check:
-                        return response_packet
-                    else:
-                        if self.debug:
-                            print("Error loading packet")
-                else:
-                    if self.debug:
-                        print("No data received")
-            else:
-                if self.debug:
-                    print("No ACK received")
-        except Exception as e:
+            response = self.send_command(command)
+            if not response:
+                return {
+                    "type": "SEND_ERROR",
+                    "message": "No ACK received from serial interface",
+                }, packet_size_sent, 0, 0
+
             if self.debug:
-                print("Error S&W: ", e)
+                print("ACK Response: ", response)
+
+            if response.startswith(b"ACK:"):
+                # Extract adaptive timeout from the ACK
+                try:
+                    ack_value = float(response.split(b"ACK:")[1])
+                    self.adaptive_timeout = ack_value + 0.5
+                except Exception as e:
+                    return {
+                        "type": "PARSE_ERROR",
+                        "message": "Failed to parse ACK: {}".format(e),
+                    }, packet_size_sent, 0, 0
+
+                # Wait for the actual response
+                focus_time = self.adaptive_timeout
+                t0 = time()
+                received_data = self.serial_receive(focus_time)
+                td = (time() - t0) / 1000  # Calculate the time difference in seconds
+                packet_size_received = len(received_data) if received_data else 0
+
+                if received_data:
+                    if received_data.startswith(b"ERROR_TYPE:"):
+                        parsed_error = self.parse_error_message(received_data)
+                        return parsed_error, packet_size_sent, packet_size_received, td
+
+                    response_packet = Packet(self.mesh_mode, self.short_mac)
+                    if response_packet.load(received_data):
+                        return response_packet, packet_size_sent, packet_size_received, td
+                    else:
+                        return {
+                            "type": "CORRUPTED_PACKET",
+                            "message": "Failed to load packet: {}".format(received_data),
+                        }, packet_size_sent, packet_size_received, td
+
+                else:
+                    return {
+                        "type": "TIMEOUT",
+                        "message": "No data received within timeout",
+                    }, packet_size_sent, 0, td
+
+            else:
+                return {
+                    "type": "INVALID_ACK",
+                    "message": "Unexpected response format: {}".format(response),
+                }, packet_size_sent, 0, 0
+
+        except Exception as e:
+            return {
+                "type": "EXCEPTION",
+                "message": "Exception in serial send-and-wait: {}".format(e),
+            }, packet_size_sent, 0, 0
 
     def send(self, packet: Packet):
         command = b"Send:" + packet.get_content() + b"<<END>>\n"  # Append the custom end phrase to the command
@@ -160,4 +191,72 @@ class Serial_connector(Connector):
             if self.debug:
                 print("Listen command not acknowledged or error occurred.")
         return None
+
+    def change_rf_config(self, frequency=None, sf=None, bw=None, cr=None, tx_power=None, backup=True):
+        command = b"C_RFC:"
+        if frequency:
+            command += b"FREQ:" + str(frequency).encode() + b"|"
+        if sf:
+            command += b"SF:" + str(sf).encode() + b"|"
+        if bw:
+            command += b"BW:" + str(bw).encode() + b"|"
+        if cr:
+            command += b"CR:" + str(cr).encode() + b"|"
+        if tx_power:
+            command += b"TX_POWER:" + str(tx_power).encode() + b"|"
+        command += b"<<END>>\n"
+        response = self.send_command(command)
+        if response and response.startswith(b"OK"):
+            return True
+        else:
+            if self.debug:
+                print("Error changing RF config: {}".format(response))
+
+    def get_rf_config(self):
+        command = b"GET_RFC:<<END>>\n"
+        response = self.send_command(command)
+        # Example of expected response format: "FREQ:868000000|SF:12|BW:125|CR:4|TX_POWER:14|<<END>>\n"
+        if response and response.startswith(b"FREQ:"):
+            params = response.split(b"|")
+            # [frequency, sf, bw, cr, tx_power]
+            rf_params = []
+            for param in params:
+                key, value = param.split(b":")
+                decoded_key = key.decode("utf-8")
+                decoded_value = int(value.decode("utf-8"))
+                rf_params.append(decoded_value)
+            if len(rf_params) == 5:
+                if self.debug:
+                    print("RF Config: ", rf_params)
+                return rf_params
+            else:
+                if self.debug:
+                    print("Error getting RF config: ", response)
+                return []
+        else:
+            if self.debug:
+                print(f"Error getting RF config: {response.decode('utf-8', errors='ignore')}")
+        return []
+            
+
+    def parse_error_message(self, error_data):
+        """
+        Parse the error string into a dictionary.
+        Example format: "ERROR_TYPE:TIMEOUT|MESSAGE:No response received|FOCUS_TIME:1.684544"
+        """
+        error_str = error_data.decode()  # Convert bytearray to string
+        error_dict = {}
+        try:
+            parts = error_str.split("|")
+            for part in parts:
+                if ":" in part:
+                    key, value = part.split(":", 1)  # Split only on the first ":"
+                    error_dict[key.strip()] = value.strip()
+        except Exception as e:
+            return {
+                "type": "PARSE_ERROR",
+                "message": f"Failed to parse error message: {e}",
+                "raw_data": error_str,
+            }
+        return error_dict
     
