@@ -22,15 +22,13 @@ We're also developing a custom GPT, [AlLoRa Genius](https://chat.openai.com/g/g-
 -----
 ## Learn by doing with these examples:
 
-Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples!
+Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples. 
 
 Links of interest:
 
-- [Setting up AlLoRa  in LILYGO T3S3
-](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware)
+- [Setting up AlLoRa in LilyGo T3S3 devices](httpshttps://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware/T3S3)
 - [Setting up AlLoRa in LoPy4 devices](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Requesters/LopyRequester)
-  
-- [Raspberry Pi Gateways](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways/Raspberry)
+- [Setting up AlLoRa in Raspberry Pi or other computers](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways)
 
 
 ----

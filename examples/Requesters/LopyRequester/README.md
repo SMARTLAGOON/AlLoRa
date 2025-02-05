@@ -89,7 +89,8 @@ In order to run an example, if you are using a Python compatible device, you sho
 
             - Pysense 2
 
-                ![Untitled](readme_assets/Hardware_Setup/Untitled.png)
+                ![Untitled](https://github.com/SMARTLAGOON/AlLoRa/blob/b41412baa062e51e439111a3a023e93954281b50/readme_assets/Hardware_Setup/Untitled.png)
+                
 
             - Pygate
 
@@ -176,7 +177,7 @@ In order to run an example, if you are using a Python compatible device, you sho
        4. If everything is ok, you should see something like this on the terminal:
 
     <p align="center">
-    <img width="400" src="readme_assets/Hardware_Setup/Untitled%207.png">
+    <img width="400" src="https://github.com/SMARTLAGOON/AlLoRa/blob/b41412baa062e51e439111a3a023e93954281b50/readme_assets/Hardware_Setup/Untitled%207.png">
     </p>
 
 </details>
