@@ -1,7 +1,7 @@
 # This CITATION.cff file was generated with cffinit.
 # Visit https://bit.ly/cffinit to generate yours today!
 
-cff-version: 1.2.0
+cff-version: 2.0.0
 title: AlLoRa
 message: >-
   Modular, mesh and multi-device Advanced LoRa Content
@@ -15,7 +15,7 @@ authors:
     affiliation: UPV
 identifiers:
   - type: doi
-    value: 10.5281/zenodo.7741246
+    value: 10.5281/zenodo.7741245
 repository-code: 'https://github.com/SMARTLAGOON/AlLoRa'
 abstract: >-
   A modular, low-power, long-range communication protocol
@@ -30,6 +30,6 @@ keywords:
   - LPWAN
   - Micropython
 license: GPL-3.0
-commit: 98541a9fe4800f58e76b1a88df2df2f2b13c5c18
-version: 1.1.0
-date-released: '2023-03-16'
+commit: 731e9f3ddb2e221fee87fd7370a5a0db121f3558
+version: 2.0.0
+date-released: '2025-02-05'
