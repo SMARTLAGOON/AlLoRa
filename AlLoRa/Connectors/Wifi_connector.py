@@ -1,11 +1,11 @@
 import socket
-import json
 import select
-from time import sleep, time
 
 from AlLoRa.Packet import Packet
 from AlLoRa.Connectors.Connector import Connector
 from AlLoRa.utils.debug_utils import print
+from AlLoRa.utils.json_utils import json
+from AlLoRa.utils.time_utils import get_time, current_time_ms as time, sleep, sleep_ms
 
 class WiFi_connector(Connector):
     def __init__(self):
@@ -20,8 +20,8 @@ class WiFi_connector(Connector):
             self.SOCKET_RECV_SIZE = self.config_parameters.get('socket_recv_size', 10000)
             self.PACKET_RETRY_SLEEP = self.config_parameters.get('packet_retry_sleep', 0.5)
             if self.debug:
-                print(f"WiFi Connector configured: host={self.REQUESTER_API_HOST}, port={self.REQUESTER_API_PORT}, "
-                    f"timeout={self.SOCKET_TIMEOUT}, recv_size={self.SOCKET_RECV_SIZE}, retry_sleep={self.PACKET_RETRY_SLEEP}")
+                print("Serial Connector configure: requester_api_host: {}, requester_api_port: {}, socket_timeout: {}, socket_recv_size: {}, packet_retry_sleep: {}".format(self.REQUESTER_API_HOST, 
+                self.REQUESTER_API_PORT, self.SOCKET_TIMEOUT, self.SOCKET_RECV_SIZE, self.PACKET_RETRY_SLEEP))
 
     def send_command(self, command):
         try:
@@ -119,5 +119,6 @@ class WiFi_connector(Connector):
             ]
 
         # Log error for unexpected response
-        print(f"Invalid RF config response: {response}")
+        if self.debug:
+            print("Invalid RF config response: {}".format(response))
         return []

@@ -22,13 +22,13 @@ We're also developing a custom GPT, [AlLoRa Genius](https://chat.openai.com/g/g-
 -----
 ## Learn by doing with these examples:
 
-Check the [examples folder](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples) for more information about how to run the examples. 
+Check the [examples folder](examples) for more information about how to run the examples. 
 
 Links of interest:
 
-- [Setting up AlLoRa in LilyGo T3S3 devices](httpshttps://github.com/SMARTLAGOON/AlLoRa/tree/Dev/firmware/T3S3)
-- [Setting up AlLoRa in LoPy4 devices](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Requesters/LopyRequester)
-- [Setting up AlLoRa in Raspberry Pi or other computers](https://github.com/SMARTLAGOON/AlLoRa/tree/Dev/examples/Gateways)
+- [Setting up AlLoRa in LilyGo T3S3 devices](firmware/T3S3/)
+- [Setting up AlLoRa in LoPy4 devices](examples/Requesters/LopyRequester)
+- [Setting up AlLoRa in Raspberry Pi or other computers](examples/Gateways)
 
 
 ----
@@ -42,12 +42,12 @@ Inside the repository, you will find the following folders:
 <details>
 <summary>It contains all the code necessary to setup a communication network between devices, from a point-to-point to a mesh with a gateway and multiple Source nodes.</summary>
     
-### [Nodes](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Nodes)
+### [Nodes](AlLoRa/Nodes)
 
 <details>
 <summary>A node is the element in charge of managing the communication logic for the Content Transfer Protocol.</summary>
 
-  ### [Node.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Node.py)
+  ### [Node.py](AlLoRa/Nodes/Node.py)
 
   It is the parent class from whom the other nodes inherits them base and common attributes and methods.
   It receives a boolean to indicate if the system is working on **mesh mode** or not and a **Connector**
@@ -56,14 +56,14 @@ Inside the repository, you will find the following folders:
 
   The main methods in this class are send_request and send_response.
 
-  ### [Source.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Source.py)
+  ### [Source.py](AlLoRa/Nodes/Source.py)
 
   It is a structure whose purpose, as its name implies, is to send one or more **Files**. It waits and listens for requests from a **Requester** or **Gateway** Node and syncs with them to send blocks (we call them chunks) of bytes of a File, until it finishes and is ready to send another one.  
 
    <details>
    <summary><b><u>Usage</u></b></summary>
 
-   ### [Source](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Nodes/Source.py) usage:
+   ### [Source](AlLoRa/Nodes/Source.py) usage:
    1. Instantiation:
 
       For the user, the Source must be instantiated with the same parameters explained in **Node**, plus:
@@ -99,7 +99,7 @@ Inside the repository, you will find the following folders:
  ```
  </details>
 
- ### [Requester.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Requester.py)
+ ### [Requester.py](AlLoRa/Nodes/Requester.py)
 
  It is a structure whose purpose, as its name implies, is to receive **Files**. It asks information to a **Source** and listens for the responses. In order to communicate with an specific Node, the Requester must have the information of this endpoint, for this,  we use the **Digital_Endpoint** class, who contains the MAC Address of the endpoint and manages the states of the communication and generates the complete **File** when the Requester finishes collecting all the chunks.
 
@@ -135,55 +135,55 @@ content = ctp_file.get_content()
 ```
 </details>
 
-### [Gateway.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Nodes/Gateway.py)
+### [Gateway.py](AlLoRa/Nodes/Gateway.py)
 
 It is a practically a **Requester Node** (actually, it inherits from it) but it has the capability to manage multiple **Source Nodes**, receiving a list of **Digital_Endpoints** to check.
     
     
 </details>    
     
-### [Connectors](https://github.com/SMARTLAGOON/AlLoRa/tree/main/AlLoRa/Connectors)
+### [Connectors](AlLoRa/Connectors)
     
 <details>
 <summary>A connector is the element that gives and manages the access to LoRa to a Node. The main objective of the connector is to make AlLoRa available to as many type of devices as possible. Many devices have embedded LoRa capabilities, while others maybe not, so the connector is a class that acts as a bridge to LoRa.</summary>
         
-### [Connector.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Connectors/Connector.py)
+### [Connector.py](AlLoRa/Connectors/Connector.py)
 
 It is the parent class from whom the connectors inherits them base attributes and methods.
 
 It manages the methods to send and receive data using raw LoRa, gives access to the RSSI of the last received package and the MAC address of the device. It also contains the method send_and_wait_response, whose function is to send a packet (usually with a request) and wait for a predefined period of time (WAIT_MAX_TIMEOUT).
 
-### [LoPy4_connector.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Connectors/LoPy4_connector.py)
+### [LoPy4_connector.py](AlLoRa/Connectors/LoPy4_connector.py)
 
 This type of connector is very straightforward, it uses the native library for using LoRa from the LoPy4 (Only tested in LoPy4)
 
-### [SX127x_connector](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Connectors/SX127.py)
+### [SX127x_connector](AlLoRa/Connectors/SX127x_connector.py)
 
 This connector was developed to use in a Raspberry Pi connected to a Dragino LoRa/HPS HAT for RPi v1.4. It uses the SX127x library to manage the Raspberry Pi’s GPIOs in order to control the Dragino and send packages using a LoRa channel. It also works with ESP32 that uses the SX127x.
 
-### [Wifi_connector.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Connectors/Wifi_connector.py)
+### [Wifi_connector.py](AlLoRa/Connectors/Wifi_connector.py)
 
-Is the counterpart of the [AlLoRa-WiFi_adapter](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa-Adapters),  developed to use in a Raspberry Pi, but also tested on computers running macOS and Windows. 
+Is the counterpart of the [AlLoRa-WiFi_interface](AlLoRa/Interfaces/WiFi_interface.py), developed to use in a Raspberry Pi, but also tested on computers running macOS and Windows. 
 
 </details>
     
-### → [Datasource.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/DataSource.py)
+### → [Datasource.py](AlLoRa/DataSource.py)
 
 A Datasource is a handy class that can be use to manage the files to be send. It is supposed to be used to feed Files to send to a Source Nodes.
 
-### → [Digital_Endpoint.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Digital_Endpoint.py)
+### → [Digital_Endpoint.py](AlLoRa/Digital_Endpoint.py)
 
 Contains the MAC Address of the endpoint to communicate with and manages the states of the communication. It also manages the generation of the complete **File** when the Requester finishes collecting all the chunks.
 
 It also manages the “state” or phase in which the transfer is. 
 
-### → [File.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/File.py)
+### → [File.py](AlLoRa/File.py)
 
 It is the class who focus on the actual File to be sent or received. It can be used to obtain the chunks of the content to transfer to the Source Nodes and also assembly all the blocks received to obtain the complete File in the Requester/Gateway side.
 
 It can be instantiated with content (byte array) to be used by the Source to transmit the content, or it can also be instantiated as a “container”, in order to receive the chunks and finally assemble it to obtain the whole content, in the Requester side.
 
-### → [Packet.py](https://github.com/SMARTLAGOON/AlLoRa/blob/main/AlLoRa/Packet.py)
+### → [Packet.py](AlLoRa/Packet.py)
 
 This class structures the actual packet to be sent through LoRa. It manages the creation of the message to be sent and also is capable of load the data received by LoRa in order to check that the message was correctly received (with checksum). 
 It is composed by a header and the actual payload. 
@@ -224,7 +224,7 @@ The **Digital Endpoints** operates with the following states or phases of the co
     
 2. **Ask metadata**:
     
-    This is the first step for receiving a [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b), it asks the Source for the metadata of the content to be received and waits until a Packet arrives with the name and the number of chunks of the content. In this stage, the [Digital Endpoint](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) creates an empty [AlLoRa File](https://www.notion.so/AlLoRa-ec6d1adaabcb44b39bb59d41bdf75b9b) object that will act as a container for the incoming chunks. If successful, it continues to the next state.
+    This is the first step for receiving an **AlLoRa File**, it asks the Source for the metadata of the content to be received and waits until a Packet arrives with the name and the number of chunks of the content. In this stage, the **Digital Endpoint** creates an empty **AlLoRa File** object that will act as a container for the incoming chunks. If successful, it continues to the next state.
     
 3. **Ask for data**
     
@@ -238,7 +238,7 @@ The **Digital Endpoints** operates with the following states or phases of the co
 
 ## → Packet Structure
 
-The [Packet](https://github.com/SMARTLAGOON/AlLoRa/blob/ModuLoRa/AlLoRa/Packet.py) is the fundamental data unit transmitted via LoRa. It is designed to optimize the payload size while ensuring reliable reception by the designated Node. Each Packet has a maximum size of 255 bytes, which is the maximum payload supported by LoRa.
+The [Packet](AlLoRa/Packet.py) is the fundamental data unit transmitted via LoRa. It is designed to optimize the payload size while ensuring reliable reception by the designated Node. Each Packet has a maximum size of 255 bytes, which is the maximum payload supported by LoRa.
 
 ### Header Composition
 
