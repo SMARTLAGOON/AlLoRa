@@ -1,6 +1,7 @@
 # ****AlLoRa:**** Advanced layer LoRa
 
-Cite this repository: [![DOI](https://zenodo.org/badge/509513450.svg)](https://zenodo.org/badge/latestdoi/509513450)
+Cite this repository: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.7741245.svg)](https://doi.org/10.5281/zenodo.7741245)
+
 
 <p align="center">
     <img src="readme_assets/logo.png"  width="50%">
